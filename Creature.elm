@@ -1,6 +1,6 @@
-module Rogue.Creature exposing (Model, view, step, describe, createRat, createMonkey)
+module Creature exposing (Model, view, step, describe, createRat, createMonkey)
 
-import Rogue.Geometry exposing (Point, Direction, slide)
+import Geometry exposing (Point, Direction, slide)
 
 import Svg exposing (text')
 import Svg.Attributes exposing (x,y,fontSize,fontFamily)

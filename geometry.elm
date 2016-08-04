@@ -1,4 +1,4 @@
-module Rogue.Geometry exposing (Direction(..), Point, slide, aDirection, randomDirection, describeDirection)
+module Geometry exposing (Direction(..), Point, slide, aDirection, randomDirection, describeDirection)
 
 import Random
 

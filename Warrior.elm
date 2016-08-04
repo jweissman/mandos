@@ -1,6 +1,6 @@
-module Rogue.Warrior exposing (Model, init, view, step)
+module Warrior exposing (Model, init, view, step)
 
-import Rogue.Geometry exposing (Direction, Point, slide, aDirection)
+import Geometry exposing (Direction, Point, slide, aDirection)
 
 import Svg exposing (text')
 import Svg.Attributes exposing (x, y, fontSize, fontFamily)
@@ -17,6 +17,7 @@ type alias Model =
   , gold : Int
   , attack : Int
   , defense : Int
+  , steps : Int
   }
 
 
@@ -31,6 +32,7 @@ init =
   , gold = 0
   , attack = 3
   , defense = 1
+  , steps = 0
   }
 
 -- UPDATE
@@ -39,7 +41,9 @@ init =
 
 step : Direction -> Model -> Model
 step direction model =
-  { model | position = slide model.position direction }
+  { model | position = slide model.position direction
+          , steps = model.steps + 1
+          }
 
 -- VIEW
 view : Model -> Svg.Svg a
