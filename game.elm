@@ -1,4 +1,5 @@
-import Geometry exposing (Direction(..), slide, randomDirection, describeDirection)
+import Direction exposing (Direction(..)) --, slide, random, describe)
+import Point exposing (Point, slide)
 
 import Warrior
 import World

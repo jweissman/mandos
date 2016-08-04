@@ -1,8 +1,10 @@
 module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, moveCreaturesCommand)
 
 import Warrior exposing (Model)
-import Geometry exposing (Point, Direction, randomDirection, slide)
 import Creature exposing (Model, view, createRat)
+
+import Point exposing (Point, slide)
+import Direction exposing (Direction)
 
 import Log
 import Event exposing (..)
@@ -89,7 +91,7 @@ moveCreaturesCommand model superMsg =
 
 --moveCreatureRandom : superMsgType -> Rogue.Creature.Model -> Msg
 moveCreatureRandomly superMsg creature =
-  Random.generate (\dir -> superMsg (MoveCreature creature.id dir)) randomDirection
+  Random.generate (\dir -> superMsg (MoveCreature creature.id dir)) Direction.random
 
 
 -- PLAYER STEP
@@ -97,14 +99,11 @@ playerSteps : Direction -> Model -> Model
 playerSteps direction model =
   if not (canPlayerStep direction model) then
     model
-    |> playerAttacks direction -- model
+    |> playerAttacks direction
   else
     model
-    |> playerMoves direction --model
-    |> playerCollectsCoins --(playerMoves direction model)
-    --model
-    --|> playerMoves direction
-    --|> playerCollectsCoins --(playerMoves direction model)
+    |> playerMoves direction
+    |> playerCollectsCoins
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =

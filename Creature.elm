@@ -1,6 +1,9 @@
 module Creature exposing (Model, view, step, describe, createRat, createMonkey)
 
-import Geometry exposing (Point, Direction, slide)
+--import Geometry exposing (Point, Direction, slide)
+
+import Point exposing (Point, slide)
+import Direction
 
 import Svg exposing (text')
 import Svg.Attributes exposing (x,y,fontSize,fontFamily)
