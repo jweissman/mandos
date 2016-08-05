@@ -1,4 +1,4 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, moveCreaturesCommand)
+module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, turnCreaturesCommand, moveCreatures)
 
 import Warrior exposing (Model)
 import Creature exposing (Model, view, createRat)
@@ -29,10 +29,11 @@ type alias Model =
 init : Model
 init =
   { walls = assembleWalls
-  , coins = [{x=4,y=3}, {x=9,y=8}, {x=3,y=7}, {x=8,y=3}]
+  , coins = [{x=4,y=3}, {x=9,y=8}, {x=3,y=7}, {x=8,y=3}, {x=9,y=7}]
   , creatures =
       [ Creature.createRat 1 {x=3,y=3}
       , Creature.createMonkey 2 {x=6,y=9}
+      , Creature.createBandit 3 {x=5,y=6}
       ]
   , player = Warrior.init
   , events = Log.init
@@ -41,9 +42,9 @@ init =
 -- just a little four walled room for now...
 assembleWalls =
   List.map (\x -> {x=x,y=2}) [0..10] ++
-  List.map (\x -> {x=x,y=10}) [0..10] ++
-  List.map (\y -> {x=0,y=y}) [2..10] ++
-  List.map (\y -> {x=10,y=y}) [2..10]
+  List.map (\x -> {x=x,y=20}) [0..10] ++
+  List.map (\y -> {x=0,y=y}) [2..20] ++
+  List.map (\y -> {x=10,y=y}) [2..20]
 
 -- HELPER
 
@@ -69,30 +70,34 @@ isBlocked model position =
   isCreature model position ||
   isPlayer model position
 
+--isAlive : { hp : Int } -> Bool
 isAlive livingThing =
   livingThing.hp > 0
 
 -- UPDATE
-type Msg = MoveCreature Int Direction
+type Msg = TurnCreature Int Direction
 
 update : Msg -> Model -> Model
 update message model =
   case message of
-    MoveCreature id direction ->
-      creatureSteps id direction model
+    TurnCreature id direction ->
+      model
+      |> creatureTurns id direction
+      --creatureSteps id direction model
 
 -- command ctors
-moveCreaturesCommand : Model -> (Msg -> superMsgType) -> Cmd superMsgType
-moveCreaturesCommand model superMsg =
-  Cmd.batch
-    ( --List.map (\msg -> (superMsg msg))
-      (List.map (\creature -> moveCreatureRandomly superMsg creature) model.creatures)
-    )
+turnCreaturesCommand : Model -> (Msg -> a) -> Cmd a
+turnCreaturesCommand model superMsg =
+  let
+    commands =
+      model.creatures
+      |> List.map (\creature -> turnCreatureRandomly superMsg creature)
+  in
+    Cmd.batch commands
 
---moveCreatureRandom : superMsgType -> Rogue.Creature.Model -> Msg
-moveCreatureRandomly superMsg creature =
-  Random.generate (\dir -> superMsg (MoveCreature creature.id dir)) Direction.random
-
+turnCreatureRandomly : (Msg -> a) -> Creature.Model -> Cmd a
+turnCreatureRandomly superMsg creature =
+  Random.generate (\dir -> superMsg (TurnCreature creature.id dir)) Direction.random
 
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
@@ -124,15 +129,13 @@ playerCollectsCoins model =
   else
     let
       coinsWithoutCollectedCoin =
-        List.filter (\coin -> not (coin == model.player.position)) model.coins
+        model.coins
+        |> List.filter (\coin -> not (coin == model.player.position))
 
       collectionEvent =
-        Event.pickupCoinEvent
-
-      player =
-        model.player
+        Event.pickupCoin
     in
-      { model | player = { player | gold = player.gold + 1 }
+      { model | player = Warrior.enrich 1 model.player
               , coins  = coinsWithoutCollectedCoin
               , events = model.events ++ [collectionEvent]
       }
@@ -187,11 +190,11 @@ creatureTakesDamage creature amount model =
       List.map (damageIndicatedCreature creature.id amount) model.creatures
 
     attackEvent =
-      Event.attackEvent creature amount
+      Event.attack creature amount
   in
     { model | creatures = creatures
             , events = model.events ++ [attackEvent]
-  }
+    }
 
 damageIndicatedCreature : Int -> Int -> Creature.Model -> Creature.Model
 damageIndicatedCreature id amount creature =
@@ -214,35 +217,62 @@ removeDeceasedCreatures model =
       List.filter (\c -> not (isAlive c)) model.creatures
 
     deathEvents =
-      List.map Event.killEnemyEvent killed
+      List.map Event.killEnemy killed
   in
     { model | creatures = survivors
             , events = model.events ++ deathEvents
     }
 
 -- CREATURE MOVE
-creatureSteps id direction model =
-  model
-  |> creatureMoves id direction
-  |> creatureAttacks id direction
-
-creatureMoves id direction model =
+creatureTurns : Int -> Direction -> Model -> Model
+creatureTurns id direction model =
   let
     creatures =
-      List.map (moveIndicatedCreature id direction model) model.creatures
+      model.creatures
+      |> List.map (turnIndicatedCreature id direction)
   in
     { model | creatures = creatures }
 
-moveIndicatedCreature id direction model creature =
+turnIndicatedCreature : Int -> Direction -> Creature.Model -> Creature.Model
+turnIndicatedCreature id direction creature =
+  let
+    isIndicated =
+      creature.id == id
+  in
+    if isIndicated then
+      Creature.turn direction creature
+    else
+      creature
+
+moveCreatures : Model -> Model
+moveCreatures model =
+  List.foldl (creatureSteps) model model.creatures
+
+creatureSteps : Creature.Model -> Model -> Model
+creatureSteps creature model =
+  model
+  |> creatureMoves creature
+  |> creatureAttacksPlayer creature
+
+creatureMoves : Creature.Model -> Model -> Model
+creatureMoves creature model =
+  let
+    creatures =
+      List.map (moveIndicatedCreature creature.id model) model.creatures
+  in
+    { model | creatures = creatures }
+
+moveIndicatedCreature : Int -> Model -> Creature.Model -> Creature.Model
+moveIndicatedCreature id model creature =
   let
     isIndicated =
       creature.id == id
 
     shouldMove =
-      canCreatureStep creature direction model
+      canCreatureStep creature creature.direction model
   in
-    if (isIndicated && shouldMove) then
-      { creature | position = slide creature.position direction }
+    if isIndicated && shouldMove then
+      Creature.step creature
     else
       creature
 
@@ -254,25 +284,11 @@ canCreatureStep creature direction model =
   in
     not (isBlocked model nextPosition)
 
-creatureAttacks : Int -> Direction -> Model -> Model
-creatureAttacks id direction model =
-  let
-    maybeCreature =
-      creatureById model.creatures id
-  in
-    case maybeCreature of
-      Nothing ->
-        model
-
-      Just creature ->
-        model
-        |> creatureAttacksPlayer creature direction
-
-creatureAttacksPlayer : Creature.Model -> Direction -> Model -> Model
-creatureAttacksPlayer creature direction model =
+creatureAttacksPlayer : Creature.Model -> Model -> Model
+creatureAttacksPlayer creature model =
   let
     attackedPosition =
-      slide creature.position direction
+      slide creature.position creature.direction
 
     damage =
       creature.attack - model.player.defense
@@ -288,20 +304,19 @@ playerTakesDamage : Creature.Model -> Int -> Model -> Model
 playerTakesDamage creature amount model =
   let
     player =
-      model.player
+      (Warrior.takeDamage amount model.player)
 
     defenseEvent =
-      Event.defendEvent creature amount
+      Event.defend creature amount
   in
     { model |
-      player = { player | hp = player.hp - amount }
+      player = player
     , events = model.events ++ [defenseEvent]
     }
 
 checkPlayerLife : Model -> Model
 checkPlayerLife model =
   if not (isAlive model.player) then
-    -- TODO shift to game over state?
     init
   else
     model

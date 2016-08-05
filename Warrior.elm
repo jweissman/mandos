@@ -1,4 +1,4 @@
-module Warrior exposing (Model, init, view, step)
+module Warrior exposing (Model, init, view, step, takeDamage, enrich)
 
 --import Geometry exposing (Direction, Point, slide, aDirection)
 
@@ -47,6 +47,14 @@ step direction model =
   { model | position = slide model.position direction
           , steps = model.steps + 1
           }
+
+takeDamage : Int -> Model -> Model
+takeDamage amount model =
+  { model | hp = model.hp - amount }
+
+enrich : Int -> Model -> Model
+enrich amount model =
+  { model | gold = model.gold + amount }
 
 -- VIEW
 view : Model -> Svg.Svg a

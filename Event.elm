@@ -1,4 +1,4 @@
-module Event exposing (Event, awakenEvent, pickupCoinEvent, attackEvent, killEnemyEvent, defendEvent, describeEvent)
+module Event exposing (Event, awaken, pickupCoin, attack, killEnemy, defend, describe)
 
 import Creature
 
@@ -12,24 +12,24 @@ type Event
   | DefendEnemy Creature.Model Int
 
 -- ctors
-awakenEvent =
+awaken =
   Awaken
 
-pickupCoinEvent =
+pickupCoin =
   PickupCoin
 
-attackEvent target damage =
+attack target damage =
   AttackEnemy target damage
 
-killEnemyEvent target =
+killEnemy target =
   KillEnemy target
 
-defendEvent target damage =
+defend target damage =
   DefendEnemy target damage
 
 -- helpers
-describeEvent : Event -> String
-describeEvent event =
+describe : Event -> String
+describe event =
   case event of
     Awaken -> "You awaken in the Timeless Halls of Mandos..."
     PickupCoin -> "You find a glittering golden coin."

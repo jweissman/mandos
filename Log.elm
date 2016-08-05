@@ -12,14 +12,14 @@ type alias Model = List Event
 
 -- INIT
 init : Model
-init = [ Event.awakenEvent ]
+init = [ Event.awaken ]
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
 view model =
   let
     notes =
-      List.take 5 (List.reverse (List.map Event.describeEvent model))
+      List.take 5 (List.reverse (List.map Event.describe model))
 
     logLines =
       List.indexedMap logLineView notes

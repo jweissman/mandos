@@ -49,7 +49,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
     WorldMsg subMsg ->
-      let 
+      let
         world = World.update (subMsg) model.world
       in
         ({ model | world = world }, Cmd.none)
@@ -67,10 +67,10 @@ update message model =
             'h' -> World.playerSteps West  model.world
             _ -> model.world
 
-        stepCreatureCommands =
-          World.moveCreaturesCommand model.world WorldMsg
+        turnCreatureCommands =
+          World.turnCreaturesCommand model.world WorldMsg
       in
-        ({ model | world = world }, stepCreatureCommands)
+        ({ model | world = (World.moveCreatures world)}, turnCreatureCommands)
 
 -- SUBS
 subscriptions : Model -> Sub Msg

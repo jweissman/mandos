@@ -1,9 +1,11 @@
-module Creature exposing (Model, view, step, describe, createRat, createMonkey)
+module Creature exposing (Model, view, step, turn, describe, createRat, createMonkey, createBandit)
 
 --import Geometry exposing (Point, Direction, slide)
 
+import Species exposing (Species)
+
 import Point exposing (Point, slide)
-import Direction
+import Direction exposing (Direction(..))
 
 import Svg exposing (text')
 import Svg.Attributes exposing (x,y,fontSize,fontFamily)
@@ -12,39 +14,6 @@ import Html
 import String
 
 -- MODEL
-
-type Species = Bandit | Rat | Snake | Tiger | Dragon | Monkey
-
-speciesGlyph : Species -> Char
-speciesGlyph species =
-  case species of
-    Bandit -> 'b'
-    Rat    -> 'r'
-    Snake  -> 's'
-    Tiger  -> 't'
-    Dragon -> 'd'
-    Monkey -> 'm'
-
-speciesName : Species -> String
-speciesName species =
-  case species of
-    Bandit -> "bandit"
-    Rat    -> "rat"
-    Snake  -> "snake"
-    Tiger  -> "tiger"
-    Dragon -> "drake"
-    Monkey -> "monkey"
-
-speciesHp : Species -> Int
-speciesHp species =
-  case species of
-    Rat -> 10
-    Snake -> 20
-    Monkey -> 35
-    Bandit -> 50
-    Tiger -> 100
-    Dragon -> 200
-
 type alias Model =
   { id : Int
   , hp : Int
@@ -55,6 +24,7 @@ type alias Model =
   , species : Species
   , glyph : Char
   , name : String
+  , direction : Direction
   }
 
 -- INIT
@@ -62,24 +32,35 @@ type alias Model =
 init : Species -> Int -> Point -> Model
 init species id point =
   { id = id
-  , hp = speciesHp species
-  , maxHp = speciesHp species
+  , hp = Species.hp species
+  , maxHp = Species.hp species
   , position = point
   , species = species
-  , glyph = speciesGlyph species
-  , name = speciesName species
-  , defense = 2
-  , attack = 3
+  , glyph = Species.glyph species
+  , name = Species.name species
+  , defense = 1
+  , attack = 2
+  , direction = North
   }
 
 createRat id point =
-  init Rat id point
+  init Species.rat id point
 
 createMonkey id point =
-  init Monkey id point
+  init Species.monkey id point
 
-step direction model =
-  { model | position = slide model.position direction }
+createBandit id point =
+  init Species.bandit id point
+
+step model =
+  let
+    position =
+      slide model.position model.direction
+  in
+    { model | position = position }
+
+turn direction model =
+  { model | direction = direction }
 
 describe : Model -> String
 describe model =
