@@ -1,0 +1,38 @@
+--module Path exposing (Path, between) --, length)
+--
+--import Direction
+--import Point exposing (Point)
+--
+--import Set exposing (Set)
+
+--type Path = EmptyPath
+--          | PathContext Direction Path 
+--
+--none : Path
+--none = EmptyPath
+--
+---- note that you create a path in reverse owing to the data structure
+--create : Direction -> Path
+--create direction =
+--  PathContext direction none
+--
+--extend : Direction -> Path -> Path
+--extend direction path =
+--  PathContext direction path
+--
+----fromPoints : List Point -> Path
+----fromPoints points = 
+--
+--type alias Obstacles = List Point
+--
+--between : Point -> Point -> Obstacles -> Maybe Path -- (List Point)
+--between point_a point_b obstacles =
+--  Just EmptyPath
+--
+----type bbalias Frontier = List Point
+--
+--dfs : Obstacles -> List Point -> List Point
+--dfs obstacles visited =
+--  let
+--    frontier =
+--      neighborsOf visited

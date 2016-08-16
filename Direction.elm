@@ -1,8 +1,12 @@
-module Direction exposing (Direction(..), random, describe)
+module Direction exposing (Direction(..), random, describe, invert, directions)
 
 import Random
 
 type Direction = North | South | East | West
+
+directions : List Direction
+directions = 
+  [ North, South, East, West ]
 
 random : Random.Generator Direction
 random =
@@ -21,3 +25,11 @@ describe direction =
     South -> "south"
     East  -> "east"
     West  -> "west"
+
+invert : Direction -> Direction
+invert direction =
+  case direction of
+    North -> South
+    South -> North
+    East -> West
+    West -> East

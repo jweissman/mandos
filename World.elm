@@ -1,17 +1,20 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, turnCreaturesCommand, moveCreatures)
-
-import Warrior exposing (Model)
-import Creature exposing (Model, view, createRat)
+module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, turnCreaturesCommand, moveCreatures, isWall, isCoin, isPlayer, isBlocked, entityAt, bfs) --, toGraph)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 
+import Warrior --exposing (Model)
+import Creature --exposing (Model, createRat)
+import Entity exposing (Entity)
+
 import Log
 import Event exposing (..)
 
+import Graph
+
 import Html
-import Svg exposing (text')
-import Svg.Attributes exposing (x,y,fontSize,fontFamily)
+import Graphics
+import Svg
 
 import Random
 
@@ -23,56 +26,159 @@ type alias Model =
   , creatures : List Creature.Model
   , player : Warrior.Model
   , events : Log.Model
+  , debugPath : List Point
   }
 
 -- INIT
 init : Model
 init =
-  { walls = assembleWalls
-  , coins = [{x=4,y=3}, {x=9,y=8}, {x=3,y=7}, {x=8,y=3}, {x=9,y=7}]
+  { walls = assembleWalls {x=2,y=3} 20 20
+  , coins = [{x=4,y=10}, {x=9,y=8}, {x=5,y=7}, {x=8,y=8}, {x=9,y=7}]
   , creatures =
-      [ Creature.createRat 1 {x=3,y=3}
-      , Creature.createMonkey 2 {x=6,y=9}
-      , Creature.createBandit 3 {x=5,y=6}
+      [ Creature.createRat 1 {x=10,y=8}
+      , Creature.createMonkey 2 {x=16,y=9}
+      , Creature.createBandit 3 {x=15,y=6}
       ]
-  , player = Warrior.init
+  , player = Warrior.init {x=10,y=10}
   , events = Log.init
+  , debugPath = []
   }
 
 -- just a little four walled room for now...
-assembleWalls =
-  List.map (\x -> {x=x,y=2}) [0..10] ++
-  List.map (\x -> {x=x,y=20}) [0..10] ++
-  List.map (\y -> {x=0,y=y}) [2..20] ++
-  List.map (\y -> {x=10,y=y}) [2..20]
+assembleWalls {x,y} width height =
+  List.map (\x' -> {x=x+x',y=y}) [0..width] ++
+  List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
+  List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
+  List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
 
 -- HELPER
 
-isWall : Model -> Point -> Bool
-isWall model position =
+type alias Path = List Point
+
+bfs : Point -> (Point -> Bool) -> Model -> Maybe Path
+bfs source predicate model =
+  bfs' [] [] source predicate 100 model
+
+bfs' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> Int -> Model -> Maybe Path
+bfs' visited frontier source predicate depth model =
+  if depth < 0 then
+    Nothing
+  else
+    let
+      matches =
+        \(v,_) -> predicate v
+
+      maybeGoal =
+        frontier
+        |> List.filter matches
+        |> List.head 
+    in
+      case maybeGoal of
+        Just (goal,_) -> 
+          Debug.log "found path"
+          Just (List.reverse (constructPath (visited ++ frontier) source goal))
+
+        Nothing -> --Nothing
+          if List.length frontier == 0 then
+            let
+              availableToVisit =
+                Direction.directions
+                |> List.map (\direction -> (slide source direction, direction))
+                |> List.filter (\(p,_) -> (not (isBlocked p model)))
+            in
+              bfs' visited availableToVisit source predicate (depth-1) model
+          else
+            let
+              extendVisited =
+                \pt -> Direction.directions 
+                    |> List.map (\dir -> (slide pt dir, dir))
+
+              visitedPositions =
+                List.map (fst) newVisited --(visited ++ frontier)
+
+              newFrontier =
+                frontier
+                |> List.concatMap (\(p,_) -> extendVisited p)
+                |> List.filter (\(p,_) -> (not (List.member p visitedPositions)))
+                |> List.filter (\(p,_) -> (not (isBlocked p model)))
+
+              newVisited =
+                visited ++ frontier
+            in 
+              if List.length frontier > 0 then
+                bfs' newVisited newFrontier source predicate (depth-1) model
+              else
+                Nothing
+
+
+constructPath : List (Point, Direction) -> Point -> Point -> Path
+constructPath visited source destination =
+  let
+    maybeDestination =
+      visited
+      |> List.filter (\(pt,_) -> pt == destination)
+      |> List.head
+  in
+     if source == destination then
+        []
+     else
+       case maybeDestination of
+         Nothing -> []
+         Just (point, direction) ->
+           let
+             newDest =
+               slide point (Direction.invert direction)
+           in
+             [destination] ++ (constructPath visited source newDest)
+
+---
+
+isWall : Point -> Model -> Bool
+isWall position model =
   List.any (\pos -> pos == position) model.walls
 
-isCoin : Model -> Point -> Bool
-isCoin model position =
+isCoin : Point -> Model -> Bool
+isCoin position model =
   List.any (\pos -> pos == position) model.coins
 
-isCreature : Model -> Point -> Bool
-isCreature model position =
+isCreature : Point -> Model -> Bool
+isCreature position model =
   List.any (\pos -> pos == position) (List.map .position model.creatures)
 
-isPlayer : Model -> Point -> Bool
-isPlayer model position =
+isPlayer : Point -> Model -> Bool
+isPlayer position model =
   model.player.position == position
 
-isBlocked : Model -> Point -> Bool
-isBlocked model position =
-  isWall model position ||
-  isCreature model position ||
-  isPlayer model position
+isBlocked : Point -> Model -> Bool
+isBlocked position model =
+  isWall position model ||
+  isCreature position model ||
+  isPlayer position model
 
---isAlive : { hp : Int } -> Bool
 isAlive livingThing =
   livingThing.hp > 0
+
+entityAt : Point -> Model -> Maybe Entity
+entityAt point world =
+  if isWall point world then
+    Just (Entity.wall point)
+  else
+    if isCoin point world then
+      Just (Entity.coin point)
+    else
+      if isPlayer point world then
+        Just (Entity.player world.player)
+      else
+        let
+          creature =
+            creatureAt point world
+        in
+          -- seems like the 'right' place to use Maybe.withDefault?
+          case creature of
+            Just creature ->
+              Just (Entity.monster creature)
+            Nothing ->
+              Nothing
 
 -- UPDATE
 type Msg = TurnCreature Int Direction
@@ -100,6 +206,9 @@ turnCreatureRandomly superMsg creature =
   Random.generate (\dir -> superMsg (TurnCreature creature.id dir)) Direction.random
 
 -- PLAYER STEP
+--playerExplores : Model -> Model
+--playerExplores model =
+
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
   if not (canPlayerStep direction model) then
@@ -120,11 +229,11 @@ canPlayerStep direction model =
     nextPosition =
       slide model.player.position direction
   in
-    not (isBlocked model nextPosition)
+    not (isBlocked nextPosition model)
 
 playerCollectsCoins : Model -> Model
 playerCollectsCoins model =
-  if (not (isCoin model model.player.position)) then
+  if (not (isCoin model.player.position model)) then
     model
   else
     let
@@ -147,7 +256,7 @@ playerAttacks direction model =
       slide model.player.position direction
 
     maybeCreature =
-      creatureAt model.creatures attackedPosition
+      creatureAt attackedPosition model
   in
     case maybeCreature of
       Nothing ->
@@ -158,8 +267,8 @@ playerAttacks direction model =
         |> playerAttacksCreature creature
         |> removeDeceasedCreatures
 
-creatureAt : List Creature.Model -> Point -> Maybe Creature.Model
-creatureAt creatures position =
+creatureAt : Point -> Model -> Maybe Creature.Model
+creatureAt position {creatures} =
   let
     creaturesAtPosition =
       List.filter (\c -> c.position == position) creatures
@@ -179,9 +288,14 @@ playerAttacksCreature creature model =
   let
     damage =
       model.player.attack - creature.defense
+
+    --inverseDirection =
+    --  Direction.invert model.player.direction
   in
     model
     |> creatureTakesDamage creature damage
+    --|> creatureTurns creature.id inverseDirection
+    |> creatureBecomesEngaged creature
 
 creatureTakesDamage : Creature.Model -> Int -> Model -> Model
 creatureTakesDamage creature amount model =
@@ -223,7 +337,6 @@ removeDeceasedCreatures model =
             , events = model.events ++ deathEvents
     }
 
--- CREATURE MOVE
 creatureTurns : Int -> Direction -> Model -> Model
 creatureTurns id direction model =
   let
@@ -239,11 +352,32 @@ turnIndicatedCreature id direction creature =
     isIndicated =
       creature.id == id
   in
-    if isIndicated then
+    if isIndicated && not (creature.engaged) then
       Creature.turn direction creature
     else
       creature
 
+creatureBecomesEngaged : Creature.Model -> Model -> Model
+creatureBecomesEngaged creature model =
+  let
+    creatures =
+      model.creatures
+      |> List.map (engageIndicatedCreature creature.id)
+  in
+    { model | creatures = creatures }
+
+engageIndicatedCreature : Int -> Creature.Model -> Creature.Model
+engageIndicatedCreature id creature =
+  let
+    isIndicated =
+      creature.id == id
+  in
+    if isIndicated then
+      Creature.engage creature
+    else
+      creature
+
+-- CREATURE MOVE
 moveCreatures : Model -> Model
 moveCreatures model =
   List.foldl (creatureSteps) model model.creatures
@@ -282,7 +416,7 @@ canCreatureStep creature direction model =
     nextPosition =
       slide creature.position direction
   in
-    not (isBlocked model nextPosition)
+    not (isBlocked nextPosition model)
 
 creatureAttacksPlayer : Creature.Model -> Model -> Model
 creatureAttacksPlayer creature model =
@@ -321,37 +455,45 @@ checkPlayerLife model =
   else
     model
 
+
+-- more helpers (really for view...)
+listEntities : Model -> List Entity
+listEntities model =
+  let
+    walls =
+      List.map (\pt -> Entity.wall pt) model.walls
+
+    coins =
+      List.map (\pt -> Entity.coin pt) model.coins
+
+    creatures =
+      List.map (\c -> Entity.monster c) model.creatures
+
+    player =
+      Entity.player model.player
+  in
+    coins ++ walls ++ creatures ++ [player]
+
 -- VIEW
 view : Model -> List (Svg.Svg a)
 view model =
   let
-    walls =
-      List.map wallView model.walls
+    entities =
+      listEntities model
 
-    coins =
-      List.map coinView model.coins
-
-    creatures =
-      List.map Creature.view model.creatures
-
-    player =
-      Warrior.view model.player
+    entityViews =
+      List.map (Entity.view) entities
 
     log =
       Log.view model.events
 
     info =
       infoView model
+
+    highlight = 
+      highlightCells model.debugPath
   in
-    walls ++ coins ++ creatures ++ log ++ [player, info]
-
-wallView : Point -> Svg.Svg a
-wallView pos =
-  text' [ x (toString pos.x), y (toString pos.y), fontSize "1", fontFamily "Courier" ] [ Html.text "#" ]
-
-coinView : Point -> Svg.Svg a
-coinView pos =
-  text' [ x (toString pos.x), y (toString pos.y), fontSize "1", fontFamily "Courier" ] [ Html.text "." ]
+    entityViews ++ log ++ [info] ++ highlight
 
 infoView : Model -> Svg.Svg a
 infoView model =
@@ -365,4 +507,11 @@ infoView model =
     message =
       gold ++ "  |  " ++ hp
   in
-    text' [ x "0", y "1", fontSize "1", fontFamily "Courier" ] [ Html.text message ]
+     Graphics.render message {x=0,y=1} "green"
+
+--highlightCells : List Point -> Svg.Svg a
+highlightCells cells =
+  List.map highlightCell cells
+
+highlightCell {x,y} =
+  Graphics.render "*" {x=x,y=y} "white"
