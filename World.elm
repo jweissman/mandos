@@ -26,6 +26,7 @@ import Random
 
 type alias Model =
   { walls : List Point
+  , floors : List Point
   , coins : List Point
   , creatures : List Creature.Model
   , player : Warrior.Model
@@ -36,24 +37,37 @@ type alias Model =
 -- INIT
 init : Model
 init =
-  { walls = assembleWalls {x=2,y=3} 20 20
-  , coins = [{x=4,y=10}, {x=9,y=8}, {x=5,y=7}, {x=8,y=8}, {x=9,y=7}]
-  , creatures =
-      [ Creature.createRat 1 {x=10,y=8}
-      , Creature.createMonkey 2 {x=16,y=9}
-      , Creature.createBandit 3 {x=15,y=6}
-      ]
-  , player = Warrior.init {x=10,y=10}
-  , events = Log.init
-  , debugPath = []
-  }
+  let
+    (walls,floors) = layoutRoom {x=2,y=3} 30 20
+  in
+    { walls = walls --assembleWalls {x=2,y=3} 20 20
+    , floors = floors
+    , coins = [{x=4,y=10}, {x=9,y=8}, {x=5,y=7}, {x=8,y=8}, {x=9,y=7}]
+    , creatures =
+        [ Creature.createRat 1 {x=10,y=8}
+        , Creature.createMonkey 2 {x=16,y=9}
+        , Creature.createBandit 3 {x=15,y=6}
+        ]
+    , player = Warrior.init {x=10,y=10}
+    , events = Log.init
+    , debugPath = []
+    }
 
 -- just a little four walled room for now...
-assembleWalls {x,y} width height =
-  List.map (\x' -> {x=x+x',y=y}) [0..width] ++
-  List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
-  List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
-  List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
+layoutRoom {x,y} width height =
+  let
+    walls =
+      List.map (\x' -> {x=x+x',y=y}) [0..width] ++
+      List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
+      List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
+      List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
+
+    floors =
+      List.concatMap (\y' -> (List.map (\x' -> {x=x+x',y=y+y'}) [1..(width-1)])) [1..(height-1)]
+      --List.map2 (\x' y' -> {x=x+x', y=y+y'}) [1..(width-1)] [1..(height-1)]
+  in
+    (walls,floors)
+
 
 -- HELPER
 
@@ -97,51 +111,34 @@ bfs' visited frontier source predicate moves depth model =
               bfs' visited availableToVisit source predicate moves (depth-1) model
           else
             let
+              pointCode =
+                (\({x,y},_) -> (x*100) + y)
+
+              visitedPositions =
+                List.map fst newVisited
+
               newFrontier =
                 frontier
                 |> List.concatMap (\(pt,_) -> moves pt)
+                |> List.filter (\(pt,_) -> not (List.member pt visitedPositions)) --moves pt)
+                |> uniqueBy pointCode
 
               newVisited =
+                --uniqueBy pointCode 
                 (visited ++ frontier)
             in
               if List.length frontier > 0 then
                 --Debug.log ("bfs at depth: " ++ (toString (100-depth)))
                 --Debug.log ("visited "++ (toString (List.length newVisited)) ++ ": " ++ (toString (List.map fst newVisited)))
-                bfs' newVisited (uniqueBy (\({x,y},_) -> (x*1000) + y) newFrontier) source predicate moves (depth-1) model
+                bfs' newVisited (newFrontier) source predicate moves (depth-1) model
               else
                 Nothing
 
-
 -- from list extras
-
-{-| Remove all duplicates from a list and return a list of distinct elements.
- -- hacky very slow thing that works on our weird data type :(
--}
---unique : List a -> List a
---unique list =
---  uniqueHelp [] list
---
---uniqueHelp : List a -> List a -> List a
---uniqueHelp existing remaining =
---  case remaining of
---    [] ->
---      []
---
---    first :: rest ->
---      if List.member first existing then
---        uniqueHelp existing rest
---      else
---        first :: uniqueHelp (first :: existing) rest
-
-
---unique : List (Point,Direction) -> List (Point,Direction)
---unique list =
---  uniqueHelp identity Set.empty list
-
 uniqueBy f list =
   uniqueHelp f Set.empty list
 
-uniqueHelp : ((Point,Direction) -> Int) -> Set Int -> List (Point,Direction) -> List (Point,Direction)
+uniqueHelp : (a -> comparable) -> Set comparable -> List a -> List a 
 uniqueHelp f existing remaining =
   case remaining of
     [] ->
@@ -196,6 +193,10 @@ isPlayer : Point -> Model -> Bool
 isPlayer position model =
   model.player.position == position
 
+isFloor : Point -> Model -> Bool
+isFloor position model =
+  List.any (\p -> p == position) model.floors
+
 isBlocked : Point -> Model -> Bool
 isBlocked position model =
   isWall position model ||
@@ -225,7 +226,10 @@ entityAt point world =
             Just creature ->
               Just (Entity.monster creature)
             Nothing ->
-              Nothing
+              if isFloor point world then
+                Just (Entity.floor point)
+              else
+                Nothing
 
 -- UPDATE
 type Msg = TurnCreature Int Direction
@@ -506,9 +510,8 @@ playerTakesDamage creature amount model =
     defenseEvent =
       Event.defend creature amount
   in
-    { model |
-      player = player
-    , events = model.events ++ [defenseEvent]
+    { model | player = player
+            , events = model.events ++ [defenseEvent]
     }
 
 checkPlayerLife : Model -> Model
@@ -526,6 +529,9 @@ listEntities model =
     walls =
       List.map (\pt -> Entity.wall pt) model.walls
 
+    floors =
+      List.map (\pt -> Entity.floor pt) model.floors
+
     coins =
       List.map (\pt -> Entity.coin pt) model.coins
 
@@ -535,7 +541,7 @@ listEntities model =
     player =
       Entity.player model.player
   in
-    coins ++ walls ++ creatures ++ [player]
+    walls ++ floors ++ coins ++ creatures ++ [player]
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
@@ -576,4 +582,4 @@ highlightCells cells =
   List.map highlightCell cells
 
 highlightCell {x,y} =
-  Graphics.render "*" {x=x,y=y} "rgba(255,255,255,0.2)"
+  Graphics.render "*" {x=x,y=y} "rgba(192,192,192,0.8)"

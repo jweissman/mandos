@@ -1,4 +1,4 @@
-module Entity exposing (Entity, view, describe, position, wall, coin, player, monster)
+module Entity exposing (Entity, view, describe, position, wall, floor, coin, player, monster)
 
 
 import Point
@@ -15,6 +15,7 @@ type Entity = Monster Creature.Model
             | Player Warrior.Model
             | Wall Point.Point
             | Coin Point.Point
+            | Floor Point.Point
 
 -- constructors
 
@@ -23,6 +24,9 @@ wall point =
 
 coin point =
   Coin point
+
+floor point =
+  Floor point
 
 player warrior =
   Player warrior
@@ -47,6 +51,8 @@ describe entity =
     Coin point ->
       "a golden coin"
 
+    Floor point ->
+      "a cobblestone floor"
 
 -- view
 view : Entity -> Svg.Svg a
@@ -68,6 +74,9 @@ color entity =
     Coin _ ->
       "gold"
 
+    Floor _ ->
+      "gray"
+
 position : Entity -> Point.Point
 position entity =
   case entity of
@@ -83,6 +92,9 @@ position entity =
     Coin point ->
       point
 
+    Floor point ->
+      point
+
 glyph : Entity -> String
 glyph entity =
   case entity of
@@ -96,4 +108,7 @@ glyph entity =
       "#"
 
     Coin _ ->
+      "o"
+
+    Floor _ ->
       "."

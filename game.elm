@@ -23,6 +23,7 @@ import Svg exposing (svg, rect, text')
 import Svg.Attributes exposing (viewBox, width, height, x, y, fontSize, fontFamily)
 import Svg.Events
 
+-- MAIN
 main =
   App.program
   { init = init
@@ -32,7 +33,6 @@ main =
   }
 
 -- MODEL
-
 type alias Model =
   { world : World.Model
   , hover : Maybe Entity
@@ -40,19 +40,18 @@ type alias Model =
   }
 
 -- INIT
-
 init : (Model, Cmd Msg)
 init =
   ({world = World.init, hover = Nothing, hoverPath = []}, Cmd.none)
 
--- UPDATE
+-- TYPES
 type Msg
   = KeyMsg Keyboard.KeyCode
   | HoverMsg Mouse.Position
   --| ClickMsg Mouse.Position
   | WorldMsg World.Msg
 
-
+-- UPDATE
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
@@ -97,12 +96,9 @@ update message model =
                    if alreadyHovering then
                       model.hoverPath
                    else
-                  --if (not (model.hover == entity)) then
                      model.world
                      |> World.bfs playerPos (\pos -> (entityPos == pos))
                      |> Maybe.withDefault []
-                  --else
-                  --  model.hoverPath
                 else
                   []
       in
