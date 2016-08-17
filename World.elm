@@ -10,7 +10,11 @@ import Entity exposing (Entity)
 import Log
 import Event exposing (..)
 
-import Graph
+import Util
+
+--import Graph
+
+import Set exposing (Set)
 
 import Html
 import Graphics
@@ -71,11 +75,11 @@ bfs' visited frontier source predicate depth model =
       maybeGoal =
         frontier
         |> List.filter matches
-        |> List.head 
+        |> List.head
     in
       case maybeGoal of
-        Just (goal,_) -> 
-          Debug.log "found path"
+        Just (goal,_) ->
+          --Debug.log "found path"
           Just (List.reverse (constructPath (visited ++ frontier) source goal))
 
         Nothing -> --Nothing
@@ -83,33 +87,56 @@ bfs' visited frontier source predicate depth model =
             let
               availableToVisit =
                 Direction.directions
-                |> List.map (\direction -> (slide source direction, direction))
+                |> List.map (\direction -> (slide direction source, direction))
                 |> List.filter (\(p,_) -> (not (isBlocked p model)))
             in
               bfs' visited availableToVisit source predicate (depth-1) model
           else
             let
-              extendVisited =
-                \pt -> Direction.directions 
-                    |> List.map (\dir -> (slide pt dir, dir))
+              extendFrontier =
+                \pt -> Direction.directions
+                    |> List.map (\dir -> (slide dir pt, dir))
+                    |> List.filter (\(p,_) -> (not (List.member p visitedPositions)) && (not (isBlocked p model)))
+                    --|> List.filter (\(p,_) -> (not (isBlocked p model)))
 
               visitedPositions =
-                List.map (fst) newVisited --(visited ++ frontier)
+                List.map (fst) newVisited
 
               newFrontier =
-                frontier
-                |> List.concatMap (\(p,_) -> extendVisited p)
-                |> List.filter (\(p,_) -> (not (List.member p visitedPositions)))
-                |> List.filter (\(p,_) -> (not (isBlocked p model)))
+                unique (frontier
+                        |> List.concatMap (\(p,_) -> extendFrontier p))
 
               newVisited =
                 visited ++ frontier
-            in 
+            in
               if List.length frontier > 0 then
+                --Debug.log ("bfs at depth: " ++ (toString (100-depth)))
+                --Debug.log ("visited "++ (toString (List.length newVisited)) ++ ": " ++ (toString (List.map fst newVisited)))
                 bfs' newVisited newFrontier source predicate (depth-1) model
               else
                 Nothing
 
+
+-- from list extras
+
+{-| Remove all duplicates from a list and return a list of distinct elements.
+ -- hacky very slow thing that works on our weird data type :(
+-}
+unique : List a -> List a
+unique list =
+  uniqueHelp [] list
+
+uniqueHelp : List a -> List a -> List a
+uniqueHelp existing remaining =
+  case remaining of
+    [] ->
+      []
+
+    first :: rest ->
+      if List.member first existing then
+        uniqueHelp existing rest
+      else
+        first :: uniqueHelp (first :: existing) rest
 
 constructPath : List (Point, Direction) -> Point -> Point -> Path
 constructPath visited source destination =
@@ -123,12 +150,16 @@ constructPath visited source destination =
         []
      else
        case maybeDestination of
-         Nothing -> []
+         Nothing ->
+           []
+
          Just (point, direction) ->
            let
              newDest =
-               slide point (Direction.invert direction)
+               point
+               |> slide (Direction.invert direction)
            in
+             --Debug.log "constructPath"
              [destination] ++ (constructPath visited source newDest)
 
 ---
@@ -227,7 +258,8 @@ canPlayerStep : Direction -> Model -> Bool
 canPlayerStep direction model =
   let
     nextPosition =
-      slide model.player.position direction
+      model.player.position
+      |> slide direction
   in
     not (isBlocked nextPosition model)
 
@@ -253,7 +285,8 @@ playerAttacks : Direction -> Model -> Model
 playerAttacks direction model =
   let
     attackedPosition =
-      slide model.player.position direction
+      model.player.position
+      |> slide direction
 
     maybeCreature =
       creatureAt attackedPosition model
@@ -342,20 +375,32 @@ creatureTurns id direction model =
   let
     creatures =
       model.creatures
-      |> List.map (turnIndicatedCreature id direction)
+      |> List.map (turnIndicatedCreature id direction model)
   in
     { model | creatures = creatures }
 
-turnIndicatedCreature : Int -> Direction -> Creature.Model -> Creature.Model
-turnIndicatedCreature id direction creature =
+-- Creature/Util.elm (have ctx on both creature and collabs)
+turnIndicatedCreature : Int -> Direction -> Model -> Creature.Model -> Creature.Model
+turnIndicatedCreature id direction model creature =
   let
     isIndicated =
       creature.id == id
   in
-    if isIndicated && not (creature.engaged) then
-      Creature.turn direction creature
+    if isIndicated then
+      if creature.engaged then
+        -- need direction to first step of path to target
+        -- k&& not (creature.engaged) then
+        creature
+        |> followPlayer model
+      else
+        Creature.turn direction creature
     else
       creature
+
+followPlayer : Model -> Creature.Model -> Creature.Model
+followPlayer model creature =
+  creature
+  |> Creature.turn (Util.directionBetween model.player.position creature.position)
 
 creatureBecomesEngaged : Creature.Model -> Model -> Model
 creatureBecomesEngaged creature model =
@@ -414,7 +459,8 @@ canCreatureStep : Creature.Model -> Direction -> Model -> Bool
 canCreatureStep creature direction model =
   let
     nextPosition =
-      slide creature.position direction
+      creature.position
+      |> slide direction
   in
     not (isBlocked nextPosition model)
 
@@ -422,7 +468,8 @@ creatureAttacksPlayer : Creature.Model -> Model -> Model
 creatureAttacksPlayer creature model =
   let
     attackedPosition =
-      slide creature.position creature.direction
+      creature.position
+      |> slide creature.direction
 
     damage =
       creature.attack - model.player.defense
@@ -490,7 +537,7 @@ view model =
     info =
       infoView model
 
-    highlight = 
+    highlight =
       highlightCells model.debugPath
   in
     entityViews ++ log ++ [info] ++ highlight
@@ -509,9 +556,8 @@ infoView model =
   in
      Graphics.render message {x=0,y=1} "green"
 
---highlightCells : List Point -> Svg.Svg a
 highlightCells cells =
   List.map highlightCell cells
 
 highlightCell {x,y} =
-  Graphics.render "*" {x=x,y=y} "white"
+  Graphics.render "*" {x=x,y=y} "rgba(255,255,255,0.2)"

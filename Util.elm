@@ -1,14 +1,33 @@
-module Util -- exposing (detectEntity)
+module Util exposing (directionBetween)
 
---import World
---import Entity
+import Point exposing (Point)
+import Direction exposing (Direction(..))
 
--- minimumBy impl from https://github.com/circuithub/elm-list-extra/blob/master/src/List/Extra.elm
-minimumBy : (a -> comparable) -> List a -> Maybe a
-minimumBy f ls =
-  let minBy x (y, fy) = let fx = f x in if fx < fy then (x, fx) else (y, fy)
-  in case ls of
-        [l']    -> Just l'
-        l'::ls' -> Just <| fst <| List.foldl minBy (l', f l') ls'
-        _       -> Nothing
+directionBetween : Point -> Point -> Direction
+directionBetween a b =
+  if (a.x > b.x) && (a.y > b.y) then
+     Southeast
+  else
+    if (a.x < b.x) && (a.y > b.y) then
+      Southwest
+    else
+      if (a.x > b.x) && (a.y < b.y) then
+        Northeast
+      else
+        if (a.x < b.x) && (a.y > b.y) then
+          Northwest
+        else
+          simpleDirectionBetween a b
 
+simpleDirectionBetween : Point -> Point -> Direction
+simpleDirectionBetween a b =
+  if (a.x > b.x) then
+    East
+  else
+    if (a.x < b.x) then
+      West
+    else
+      if (a.y > b.y) then
+        South
+      else
+        North

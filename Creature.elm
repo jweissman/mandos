@@ -25,6 +25,7 @@ type alias Model =
   , subtype : String
   , direction : Direction
   , engaged : Bool
+  --, target : Maybe Point
   }
 
 -- INIT
@@ -58,7 +59,8 @@ step : Model -> Model
 step model =
   let
     position =
-      slide model.position model.direction
+      model.position
+      |> slide model.direction
   in
     { model | position = position }
 

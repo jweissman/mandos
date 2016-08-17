@@ -43,7 +43,7 @@ init point =
 
 step : Direction -> Model -> Model
 step direction model =
-  { model | position = slide model.position direction
+  { model | position = model.position |> slide direction
           , steps = model.steps + 1
           }
 

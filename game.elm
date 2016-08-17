@@ -133,7 +133,7 @@ screenToCoordinate {x,y} =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-    [ Mouse.clicks MouseMsg
+    [ Mouse.moves MouseMsg
     , Keyboard.presses KeyMsg
     ]
 
@@ -154,25 +154,6 @@ view model =
 
         Just entity ->
           "You see " ++ (Entity.describe entity) ++ "."
-
-    --worldGraph =
-    --  (World.toGraph world.player.position world)
-
-    --debugPath = --[{x=4,y=4},{x=5,y=4}]
-    --  case model.hover of
-    --    Nothing ->
-    --      []
-    --    Just entity ->
-    --      let
-    --        entityPos =
-    --          Entity.position entity
-    --      in
-    --        if (not (World.isBlocked entityPos world)) then
-    --          world
-    --          |> World.bfs world.player.position (\pos -> (entityPos == pos))
-    --          |> Maybe.withDefault [] --{x=0,y=0}]
-    --        else
-    --          []
 
     note =
       Graphics.render debugMsg {x=10,y=1} "white"
