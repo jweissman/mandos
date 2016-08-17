@@ -61,10 +61,16 @@ type alias Path = List Point
 
 bfs : Point -> (Point -> Bool) -> Model -> Maybe Path
 bfs source predicate model =
-  bfs' [] [] source predicate 100 model
+  bfs' [] [] source predicate (movesFrom model) 100 model
 
-bfs' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> Int -> Model -> Maybe Path
-bfs' visited frontier source predicate depth model =
+movesFrom : Model -> Point -> List (Point, Direction)
+movesFrom model point =
+  Direction.directions
+  |> List.map (\direction -> (slide direction point, direction))
+  |> List.filter (\(p,_) -> not (isBlocked p model))
+
+bfs' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Model -> Maybe Path
+bfs' visited frontier source predicate moves depth model =
   if depth < 0 then
     Nothing
   else
@@ -79,40 +85,29 @@ bfs' visited frontier source predicate depth model =
     in
       case maybeGoal of
         Just (goal,_) ->
-          --Debug.log "found path"
+          --Debug.log "FOUND PATH!"
           Just (List.reverse (constructPath (visited ++ frontier) source goal))
 
-        Nothing -> --Nothing
+        Nothing ->
           if List.length frontier == 0 then
             let
               availableToVisit =
-                Direction.directions
-                |> List.map (\direction -> (slide direction source, direction))
-                |> List.filter (\(p,_) -> (not (isBlocked p model)))
+                moves source
             in
-              bfs' visited availableToVisit source predicate (depth-1) model
+              bfs' visited availableToVisit source predicate moves (depth-1) model
           else
             let
-              extendFrontier =
-                \pt -> Direction.directions
-                    |> List.map (\dir -> (slide dir pt, dir))
-                    |> List.filter (\(p,_) -> (not (List.member p visitedPositions)) && (not (isBlocked p model)))
-                    --|> List.filter (\(p,_) -> (not (isBlocked p model)))
-
-              visitedPositions =
-                List.map (fst) newVisited
-
               newFrontier =
-                unique (frontier
-                        |> List.concatMap (\(p,_) -> extendFrontier p))
+                frontier
+                |> List.concatMap (\(pt,_) -> moves pt)
 
               newVisited =
-                visited ++ frontier
+                (visited ++ frontier)
             in
               if List.length frontier > 0 then
                 --Debug.log ("bfs at depth: " ++ (toString (100-depth)))
                 --Debug.log ("visited "++ (toString (List.length newVisited)) ++ ": " ++ (toString (List.map fst newVisited)))
-                bfs' newVisited newFrontier source predicate (depth-1) model
+                bfs' newVisited (uniqueBy (\({x,y},_) -> (x*1000) + y) newFrontier) source predicate moves (depth-1) model
               else
                 Nothing
 
@@ -122,21 +117,42 @@ bfs' visited frontier source predicate depth model =
 {-| Remove all duplicates from a list and return a list of distinct elements.
  -- hacky very slow thing that works on our weird data type :(
 -}
-unique : List a -> List a
-unique list =
-  uniqueHelp [] list
+--unique : List a -> List a
+--unique list =
+--  uniqueHelp [] list
+--
+--uniqueHelp : List a -> List a -> List a
+--uniqueHelp existing remaining =
+--  case remaining of
+--    [] ->
+--      []
+--
+--    first :: rest ->
+--      if List.member first existing then
+--        uniqueHelp existing rest
+--      else
+--        first :: uniqueHelp (first :: existing) rest
 
-uniqueHelp : List a -> List a -> List a
-uniqueHelp existing remaining =
+
+--unique : List (Point,Direction) -> List (Point,Direction)
+--unique list =
+--  uniqueHelp identity Set.empty list
+
+uniqueBy f list =
+  uniqueHelp f Set.empty list
+
+uniqueHelp : ((Point,Direction) -> Int) -> Set Int -> List (Point,Direction) -> List (Point,Direction)
+uniqueHelp f existing remaining =
   case remaining of
     [] ->
       []
 
     first :: rest ->
-      if List.member first existing then
-        uniqueHelp existing rest
+      let computedFirst = f first in
+      if Set.member computedFirst existing then
+        uniqueHelp f existing rest
       else
-        first :: uniqueHelp (first :: existing) rest
+        first :: uniqueHelp f (Set.insert computedFirst existing) rest
 
 constructPath : List (Point, Direction) -> Point -> Point -> Path
 constructPath visited source destination =

@@ -8,8 +8,6 @@ import Log
 import Graphics
 
 import Entity exposing (Entity)
---import Path
-import Graph
 
 import Task
 import Char
@@ -50,7 +48,8 @@ init =
 -- UPDATE
 type Msg
   = KeyMsg Keyboard.KeyCode
-  | MouseMsg Mouse.Position
+  | HoverMsg Mouse.Position
+  --| ClickMsg Mouse.Position
   | WorldMsg World.Msg
 
 
@@ -63,7 +62,10 @@ update message model =
       in
         ({ model | world = world }, Cmd.none)
 
-    MouseMsg position ->
+    --ClickMsg position ->
+    --  (model, Cmd.none)
+
+    HoverMsg position ->
       let
         point =
           (screenToCoordinate position)
@@ -79,11 +81,28 @@ update message model =
               let
                 entityPos =
                   Entity.position entity
+
+                playerPos =
+                  model.world.player.position
+
+                accessible = 
+                  (not (World.isBlocked entityPos model.world))
+
+                alreadyHovering =
+                  case model.hover of
+                    Just entity' -> entity' == entity
+                    Nothing -> False
               in
-                if (not (World.isBlocked entityPos model.world)) then
-                  model.world
-                  |> World.bfs (model.world.player.position) (\pos -> (entityPos == pos))
-                  |> Maybe.withDefault []
+                if accessible then
+                   if alreadyHovering then
+                      model.hoverPath
+                   else
+                  --if (not (model.hover == entity)) then
+                     model.world
+                     |> World.bfs playerPos (\pos -> (entityPos == pos))
+                     |> Maybe.withDefault []
+                  --else
+                  --  model.hoverPath
                 else
                   []
       in
@@ -133,7 +152,8 @@ screenToCoordinate {x,y} =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-    [ Mouse.moves MouseMsg
+    [ Mouse.moves HoverMsg
+    --, Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
     ]
 
@@ -159,11 +179,11 @@ view model =
       Graphics.render debugMsg {x=10,y=1} "white"
 
     viewBoxStyle = [
-      ( "background-color", "#280828" ) --, ("color", "white")
+      ( "background-color", "#280828" )
       ]
 
   in
     Html.div [ style viewBoxStyle ] [
       Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=Source+Code+Pro:300|VT323'"]
-      , svg [ viewBox "0 0 60 45", width "1200px", height "896px" ] (worldView ++ [note])
+      , svg [ viewBox "0 0 60 45", width "1200px", height "900px" ] (worldView ++ [note])
     ]
