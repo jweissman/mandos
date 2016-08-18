@@ -108,7 +108,7 @@ glyph entity =
       "#"
 
     Coin _ ->
-      "o"
+      "."
 
     Floor _ ->
-      "."
+      " "

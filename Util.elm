@@ -31,3 +31,4 @@ simpleDirectionBetween a b =
         South
       else
         North
+

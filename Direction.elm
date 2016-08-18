@@ -30,8 +30,12 @@ random =
       0 -> South
       1 -> North
       2 -> East
-      _ -> West
-    ) (Random.int 0 3)
+      3 -> West
+      4 -> Northwest
+      5 -> Northeast
+      6 -> Southwest
+      _ -> Southeast
+    ) (Random.int 0 7)
 
 describe : Direction -> String
 describe direction =

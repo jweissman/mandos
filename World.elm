@@ -1,20 +1,16 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, turnCreaturesCommand, moveCreatures, isWall, isCoin, isPlayer, isBlocked, entityAt, bfs) --, toGraph)
+module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, turnCreaturesCommand, moveCreatures, isWall, isCoin, isPlayer, isBlocked, entityAt)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 
-import Warrior --exposing (Model)
-import Creature --exposing (Model, createRat)
+import Warrior
+import Creature
 import Entity exposing (Entity)
 
 import Log
 import Event exposing (..)
 
 import Util
-
---import Graph
-
-import Set exposing (Set)
 
 import Html
 import Graphics
@@ -40,7 +36,7 @@ init =
   let
     (walls,floors) = layoutRoom {x=2,y=3} 30 20
   in
-    { walls = walls --assembleWalls {x=2,y=3} 20 20
+    { walls = walls
     , floors = floors
     , coins = [{x=4,y=10}, {x=9,y=8}, {x=5,y=7}, {x=8,y=8}, {x=9,y=7}]
     , creatures =
@@ -64,118 +60,11 @@ layoutRoom {x,y} width height =
 
     floors =
       List.concatMap (\y' -> (List.map (\x' -> {x=x+x',y=y+y'}) [1..(width-1)])) [1..(height-1)]
-      --List.map2 (\x' y' -> {x=x+x', y=y+y'}) [1..(width-1)] [1..(height-1)]
   in
     (walls,floors)
 
 
 -- HELPER
-
-type alias Path = List Point
-
-bfs : Point -> (Point -> Bool) -> Model -> Maybe Path
-bfs source predicate model =
-  bfs' [] [] source predicate (movesFrom model) 100 model
-
-movesFrom : Model -> Point -> List (Point, Direction)
-movesFrom model point =
-  Direction.directions
-  |> List.map (\direction -> (slide direction point, direction))
-  |> List.filter (\(p,_) -> not (isBlocked p model))
-
-bfs' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Model -> Maybe Path
-bfs' visited frontier source predicate moves depth model =
-  if depth < 0 then
-    Nothing
-  else
-    let
-      matches =
-        \(v,_) -> predicate v
-
-      maybeGoal =
-        frontier
-        |> List.filter matches
-        |> List.head
-    in
-      case maybeGoal of
-        Just (goal,_) ->
-          --Debug.log "FOUND PATH!"
-          Just (List.reverse (constructPath (visited ++ frontier) source goal))
-
-        Nothing ->
-          if List.length frontier == 0 then
-            let
-              availableToVisit =
-                moves source
-            in
-              bfs' visited availableToVisit source predicate moves (depth-1) model
-          else
-            let
-              pointCode =
-                (\({x,y},_) -> (x*100) + y)
-
-              visitedPositions =
-                List.map fst newVisited
-
-              newFrontier =
-                frontier
-                |> List.concatMap (\(pt,_) -> moves pt)
-                |> List.filter (\(pt,_) -> not (List.member pt visitedPositions)) --moves pt)
-                |> uniqueBy pointCode
-
-              newVisited =
-                --uniqueBy pointCode 
-                (visited ++ frontier)
-            in
-              if List.length frontier > 0 then
-                --Debug.log ("bfs at depth: " ++ (toString (100-depth)))
-                --Debug.log ("visited "++ (toString (List.length newVisited)) ++ ": " ++ (toString (List.map fst newVisited)))
-                bfs' newVisited (newFrontier) source predicate moves (depth-1) model
-              else
-                Nothing
-
--- from list extras
-uniqueBy f list =
-  uniqueHelp f Set.empty list
-
-uniqueHelp : (a -> comparable) -> Set comparable -> List a -> List a 
-uniqueHelp f existing remaining =
-  case remaining of
-    [] ->
-      []
-
-    first :: rest ->
-      let computedFirst = f first in
-      if Set.member computedFirst existing then
-        uniqueHelp f existing rest
-      else
-        first :: uniqueHelp f (Set.insert computedFirst existing) rest
-
-constructPath : List (Point, Direction) -> Point -> Point -> Path
-constructPath visited source destination =
-  let
-    maybeDestination =
-      visited
-      |> List.filter (\(pt,_) -> pt == destination)
-      |> List.head
-  in
-     if source == destination then
-        []
-     else
-       case maybeDestination of
-         Nothing ->
-           []
-
-         Just (point, direction) ->
-           let
-             newDest =
-               point
-               |> slide (Direction.invert direction)
-           in
-             --Debug.log "constructPath"
-             [destination] ++ (constructPath visited source newDest)
-
----
 
 isWall : Point -> Model -> Bool
 isWall position model =
@@ -221,7 +110,6 @@ entityAt point world =
           creature =
             creatureAt point world
         in
-          -- seems like the 'right' place to use Maybe.withDefault?
           case creature of
             Just creature ->
               Just (Entity.monster creature)
@@ -240,7 +128,6 @@ update message model =
     TurnCreature id direction ->
       model
       |> creatureTurns id direction
-      --creatureSteps id direction model
 
 -- command ctors
 turnCreaturesCommand : Model -> (Msg -> a) -> Cmd a
@@ -407,20 +294,17 @@ turnIndicatedCreature id direction model creature =
       creature.id == id
   in
     if isIndicated then
-      if creature.engaged then
-        -- need direction to first step of path to target
-        -- k&& not (creature.engaged) then
-        creature
-        |> followPlayer model
+      if creature.engaged then -- ignore given direction, always follow target
+        let
+          followDirection =
+            (Util.directionBetween model.player.position creature.position)
+        in
+          creature
+          |> Creature.turn followDirection
       else
         Creature.turn direction creature
     else
       creature
-
-followPlayer : Model -> Creature.Model -> Creature.Model
-followPlayer model creature =
-  creature
-  |> Creature.turn (Util.directionBetween model.player.position creature.position)
 
 creatureBecomesEngaged : Creature.Model -> Model -> Model
 creatureBecomesEngaged creature model =
@@ -561,6 +445,7 @@ view model =
 
     highlight =
       highlightCells model.debugPath
+
   in
     entityViews ++ log ++ [info] ++ highlight
 
@@ -578,8 +463,26 @@ infoView model =
   in
      Graphics.render message {x=0,y=1} "green"
 
+highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
-  List.map highlightCell cells
+  let
+    pathColor =
+      "rgba(128,128,192,0.85)"
+    targetColor =
+      "rgba(128,128,192,0.3)"
+  in
 
-highlightCell {x,y} =
-  Graphics.render "*" {x=x,y=y} "rgba(192,192,192,0.8)"
+    case cells of
+      [] -> []
+      [x] -> [highlightCell x pathColor]
+      a :: b :: _ -> 
+        let
+          tail =
+            case (List.tail cells) of
+              Nothing -> []
+              Just rest -> highlightCells rest
+        in
+          (highlightCell a targetColor) :: tail
+
+highlightCell {x,y} color =
+  Graphics.render "@" {x=x,y=y} color

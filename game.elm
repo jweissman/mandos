@@ -3,6 +3,7 @@ import Point exposing (Point, slide)
 
 import Warrior
 import World
+import Bfs
 import Creature
 import Log
 import Graphics
@@ -48,7 +49,7 @@ init =
 type Msg
   = KeyMsg Keyboard.KeyCode
   | HoverMsg Mouse.Position
-  --| ClickMsg Mouse.Position
+  | ClickMsg Mouse.Position
   | WorldMsg World.Msg
 
 -- UPDATE
@@ -57,91 +58,110 @@ update message model =
   case message of
     WorldMsg subMsg ->
       let
-        world = World.update (subMsg) model.world
+        world = 
+          model.world
+          |> World.update subMsg
       in
         ({ model | world = world }, Cmd.none)
 
-    --ClickMsg position ->
-    --  (model, Cmd.none)
+    ClickMsg position ->
+      (model |> clickAt position, Cmd.none)
 
     HoverMsg position ->
-      let
-        point =
-          (screenToCoordinate position)
-
-        maybeEntity =
-          World.entityAt point model.world
-
-        pathToEntity = 
-          case maybeEntity of
-            Nothing ->
-              []
-            Just entity ->
-              let
-                entityPos =
-                  Entity.position entity
-
-                playerPos =
-                  model.world.player.position
-
-                accessible = 
-                  (not (World.isBlocked entityPos model.world))
-
-                alreadyHovering =
-                  case model.hover of
-                    Just entity' -> entity' == entity
-                    Nothing -> False
-              in
-                if accessible then
-                   if alreadyHovering then
-                      model.hoverPath
-                   else
-                     model.world
-                     |> World.bfs playerPos (\pos -> (entityPos == pos))
-                     |> Maybe.withDefault []
-                else
-                  []
-      in
-        ({ model | hover = maybeEntity
-                 , hoverPath = pathToEntity
-         }, Cmd.none)
+      (model |> hoverAt position, Cmd.none)
 
     KeyMsg keyCode ->
       let
         keyChar =
           (Char.fromCode keyCode)
 
-        world =
-          case keyChar of
-            'k' -> World.playerSteps North model.world
-            'l' -> World.playerSteps East  model.world
-            'j' -> World.playerSteps South model.world
-            'h' -> World.playerSteps West  model.world
-            --'x' -> World.playerExplores model.world
-            _ -> model.world
-
         turnCreatureCommands =
           World.turnCreaturesCommand model.world WorldMsg
       in
-        ({model | world = world} 
+        (model
+         |> handleKeypress keyChar
          |> moveCreatures 
          |> resetHover
         , turnCreatureCommands)
+
+handleKeypress : Char -> Model -> Model
+handleKeypress keyChar model =
+  let
+    updatedWorld =
+      case keyChar of
+        'k' -> World.playerSteps North model.world
+        'l' -> World.playerSteps East  model.world
+        'j' -> World.playerSteps South model.world
+        'h' -> World.playerSteps West  model.world
+        --'x' -> World.playerExplores model.world
+        _ -> model.world
+
+  in { model | world = updatedWorld }
 
 moveCreatures : Model -> Model
 moveCreatures model =
   { model | world = (World.moveCreatures model.world) }
 
-resetHover : Model -> Model
-resetHover model =
-  { model | hoverPath = []
-          , hover = Nothing }
 
 screenToCoordinate : Mouse.Position -> Point
 screenToCoordinate {x,y} =
   { x = x//20
   , y = (y//20)+1
   }
+
+hoverAt : Point -> Model -> Model
+hoverAt position model =
+  let
+    point =
+      (screenToCoordinate position)
+
+    maybeEntity =
+      World.entityAt point model.world
+
+    pathToEntity = 
+      case maybeEntity of
+        Nothing ->
+          []
+        Just entity ->
+          let
+            entityPos =
+              Entity.position entity
+
+            playerPos =
+              model.world.player.position
+
+            accessible = 
+              (not (World.isBlocked entityPos model.world))
+
+            alreadyHovering =
+              case model.hover of
+                Just entity' -> entity' == entity
+                Nothing -> False
+          in
+            if accessible then
+               if alreadyHovering then
+                 model.hoverPath 
+               else
+                 model.world
+                 |> Bfs.bfs playerPos (\pos -> (entityPos == pos))
+                 |> Maybe.withDefault []
+            else
+              []
+    in
+      { model | hover = maybeEntity
+              , hoverPath = pathToEntity
+         }
+
+
+resetHover : Model -> Model
+resetHover model =
+  { model | hoverPath = []
+          , hover = Nothing }
+
+
+clickAt : Point -> Model -> Model
+clickAt point model =
+  model
 
 
 -- SUBS
