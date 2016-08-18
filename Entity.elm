@@ -63,7 +63,7 @@ color : Entity -> String
 color entity =
   case entity of
     Monster _ ->
-      "lightgray"
+      "darkgrey"
 
     Player _ ->
       "white"
@@ -112,3 +112,4 @@ glyph entity =
 
     Floor _ ->
       " "
+

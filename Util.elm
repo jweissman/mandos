@@ -14,7 +14,7 @@ directionBetween a b =
       if (a.x > b.x) && (a.y < b.y) then
         Northeast
       else
-        if (a.x < b.x) && (a.y > b.y) then
+        if (a.x < b.x) && (a.y < b.y) then
           Northwest
         else
           simpleDirectionBetween a b

@@ -16,7 +16,7 @@ type alias Model = List Event
 init : Model
 init = [ Event.awaken ]
 
-origin = {x = 1, y = 30}
+origin = {x = 1, y = 25}
 
 -- VIEW
 view : Model -> List (Svg.Svg a)

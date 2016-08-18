@@ -9,12 +9,14 @@ import Log
 import Graphics
 
 import Entity exposing (Entity)
+import Util
 
-import Task
 import Char
+import Task
 import Keyboard
 import Mouse
 import Random
+import Time exposing (Time, millisecond)
 
 import Html exposing (Html)
 import Html.App as App
@@ -38,12 +40,13 @@ type alias Model =
   { world : World.Model
   , hover : Maybe Entity
   , hoverPath : List Point
+  , followPath : Maybe (List Point)
   }
 
 -- INIT
 init : (Model, Cmd Msg)
 init =
-  ({world = World.init, hover = Nothing, hoverPath = []}, Cmd.none)
+  ({world = World.init, hover = Nothing, hoverPath = [], followPath = Nothing}, Cmd.none)
 
 -- TYPES
 type Msg
@@ -51,6 +54,7 @@ type Msg
   | HoverMsg Mouse.Position
   | ClickMsg Mouse.Position
   | WorldMsg World.Msg
+  | TickMsg Time.Time
 
 -- UPDATE
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -69,6 +73,11 @@ update message model =
 
     HoverMsg position ->
       (model |> hoverAt position, Cmd.none)
+
+    TickMsg time ->
+      (model |> playerFollowsPath,
+      --, Cmd.none)
+          World.turnCreaturesCommand model.world WorldMsg)
 
     KeyMsg keyCode ->
       let
@@ -101,13 +110,6 @@ handleKeypress keyChar model =
 moveCreatures : Model -> Model
 moveCreatures model =
   { model | world = (World.moveCreatures model.world) }
-
-
-screenToCoordinate : Mouse.Position -> Point
-screenToCoordinate {x,y} =
-  { x = x//20
-  , y = (y//20)+1
-  }
 
 hoverAt : Point -> Model -> Model
 hoverAt position model =
@@ -161,16 +163,32 @@ resetHover model =
 
 clickAt : Point -> Model -> Model
 clickAt point model =
-  model
+  case model.followPath of
+    Nothing ->
+      { model | followPath = Just model.hoverPath }
+    Just path ->
+      model
 
+playerFollowsPath : Model -> Model
+playerFollowsPath model =
+  case model.followPath of
+    Nothing -> model
+    Just path ->
+      case (List.head path) of
+        Nothing -> { model | followPath = Nothing }
+        Just nextStep ->
+          ({model | followPath = List.tail path
+                  , world = World.playerSteps (Util.directionBetween nextStep model.world.player.position) model.world
+          }) |> moveCreatures 
 
 -- SUBS
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
     [ Mouse.moves HoverMsg
-    --, Mouse.clicks ClickMsg
+    , Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
+    , Time.every (200*millisecond) TickMsg
     ]
 
 -- VIEW
@@ -180,8 +198,13 @@ view model =
     world =
       model.world
 
+    path =
+      case model.followPath of
+        Nothing -> model.hoverPath
+        Just path -> path
+
     worldView =
-      World.view { world | debugPath = model.hoverPath }
+      World.view { world | debugPath = path }
 
     debugMsg =
       case model.hover of
@@ -194,12 +217,23 @@ view model =
     note =
       Graphics.render debugMsg {x=10,y=1} "white"
 
-    viewBoxStyle = [
-      ( "background-color", "#280828" )
-      ]
+    bgStyle = [
+      ( "background-color", "#280828" 
+      )
+    ]
 
   in
-    Html.div [ style viewBoxStyle ] [
-      Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=Source+Code+Pro:300|VT323'"]
-      , svg [ viewBox "0 0 60 45", width "1200px", height "900px" ] (worldView ++ [note])
+    Html.body [ style bgStyle ] [
+      Html.div [ style bgStyle ] [
+        Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
+
+        , svg [ viewBox "0 0 60 45", width "1200px", height "900px" ] (worldView ++ [note])
+      ]
     ]
+
+
+screenToCoordinate : Mouse.Position -> Point
+screenToCoordinate {x,y} =
+  { x = x//20
+  , y = (y//20)+1
+  }

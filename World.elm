@@ -381,7 +381,7 @@ creatureAttacksPlayer creature model =
     if attackedPosition == model.player.position then
       model
       |> playerTakesDamage creature damage
-      |> checkPlayerLife
+      |> playerDies
     else
       model
 
@@ -398,8 +398,8 @@ playerTakesDamage creature amount model =
             , events = model.events ++ [defenseEvent]
     }
 
-checkPlayerLife : Model -> Model
-checkPlayerLife model =
+playerDies : Model -> Model
+playerDies model =
   if not (isAlive model.player) then
     init
   else
