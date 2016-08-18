@@ -144,9 +144,6 @@ turnCreatureRandomly superMsg creature =
   Random.generate (\dir -> superMsg (TurnCreature creature.id dir)) Direction.random
 
 -- PLAYER STEP
---playerExplores : Model -> Model
---playerExplores model =
-
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
   if not (canPlayerStep direction model) then
@@ -475,7 +472,7 @@ highlightCells cells =
     case cells of
       [] -> []
       [x] -> [highlightCell x pathColor]
-      a :: b :: _ -> 
+      a :: b :: _ ->
         let
           tail =
             case (List.tail cells) of

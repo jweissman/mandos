@@ -62,7 +62,7 @@ update message model =
   case message of
     WorldMsg subMsg ->
       let
-        world = 
+        world =
           model.world
           |> World.update subMsg
       in
@@ -75,9 +75,13 @@ update message model =
       (model |> hoverAt position, Cmd.none)
 
     TickMsg time ->
-      (model |> playerFollowsPath,
-      --, Cmd.none)
-          World.turnCreaturesCommand model.world WorldMsg)
+      let
+        cmds =
+          case model.followPath of
+            Nothing -> Cmd.none
+            Just path -> World.turnCreaturesCommand model.world WorldMsg
+      in
+        (model |> playerFollowsPath, cmds)
 
     KeyMsg keyCode ->
       let
@@ -89,8 +93,9 @@ update message model =
       in
         (model
          |> handleKeypress keyChar
-         |> moveCreatures 
+         |> moveCreatures
          |> resetHover
+         |> resetFollow
         , turnCreatureCommands)
 
 handleKeypress : Char -> Model -> Model
@@ -120,10 +125,11 @@ hoverAt position model =
     maybeEntity =
       World.entityAt point model.world
 
-    pathToEntity = 
+    pathToEntity =
       case maybeEntity of
         Nothing ->
           []
+
         Just entity ->
           let
             entityPos =
@@ -132,17 +138,18 @@ hoverAt position model =
             playerPos =
               model.world.player.position
 
-            accessible = 
+            accessible =
               (not (World.isBlocked entityPos model.world))
 
             alreadyHovering =
               case model.hover of
-                Just entity' -> entity' == entity
+                Just entity' ->
+                  entity' == entity
                 Nothing -> False
           in
             if accessible then
-               if alreadyHovering then
-                 model.hoverPath 
+               if alreadyHovering || not (model.followPath == Nothing) then
+                 model.hoverPath
                else
                  model.world
                  |> Bfs.bfs playerPos (\pos -> (entityPos == pos))
@@ -160,6 +167,9 @@ resetHover model =
   { model | hoverPath = []
           , hover = Nothing }
 
+resetFollow : Model -> Model
+resetFollow model =
+  { model | followPath = Nothing }
 
 clickAt : Point -> Model -> Model
 clickAt point model =
@@ -175,11 +185,12 @@ playerFollowsPath model =
     Nothing -> model
     Just path ->
       case (List.head path) of
-        Nothing -> { model | followPath = Nothing }
+        Nothing -> { model | followPath = Nothing } |> resetHover
         Just nextStep ->
           ({model | followPath = List.tail path
                   , world = World.playerSteps (Util.directionBetween nextStep model.world.player.position) model.world
-          }) |> moveCreatures 
+          })
+          |> moveCreatures
 
 -- SUBS
 subscriptions : Model -> Sub Msg
@@ -188,7 +199,7 @@ subscriptions model =
     [ Mouse.moves HoverMsg
     , Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
-    , Time.every (200*millisecond) TickMsg
+    , Time.every (50*millisecond) TickMsg
     ]
 
 -- VIEW
@@ -218,7 +229,7 @@ view model =
       Graphics.render debugMsg {x=10,y=1} "white"
 
     bgStyle = [
-      ( "background-color", "#280828" 
+      ( "background-color", "#280828"
       )
     ]
 
