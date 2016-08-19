@@ -55,4 +55,4 @@ distance a b =
     dy =
       toFloat (a.y - b.y)
   in
-    sqrt( (dx*dx) - (dy*dy) )
+    sqrt( (dx*dx) + (dy*dy) )

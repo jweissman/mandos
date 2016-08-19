@@ -293,7 +293,6 @@ view model =
     Html.body [ style bgStyle ] [
       Html.div [ style bgStyle ] [
         Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-
         , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
       ]
     ]
