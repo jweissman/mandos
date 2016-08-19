@@ -34,11 +34,23 @@ type alias Model =
 init : Model
 init =
   let
-    (walls,floors) = layoutRoom {x=2,y=3} 30 20
+    (walls,floors) = 
+      layoutRoom {x=2,y=3} 30 20
+      
+    coins = 
+      [ {x=4,y=10}
+      , {x=9,y=8}
+      , {x=5,y=7}
+      , {x=8,y=8}
+      , {x=9,y=7}
+      , {x=29,y=17}
+      , {x=15,y=8}
+      , {x=23,y=13}
+      ]
   in
     { walls = walls
     , floors = floors
-    , coins = [{x=4,y=10}, {x=9,y=8}, {x=5,y=7}, {x=8,y=8}, {x=9,y=7}]
+    , coins = coins 
     , creatures =
         [ Creature.createRat 1 {x=10,y=8}
         , Creature.createMonkey 2 {x=16,y=9}
@@ -64,7 +76,7 @@ layoutRoom {x,y} width height =
     (walls,floors)
 
 
--- HELPER
+-- PREDICATES
 
 isWall : Point -> Model -> Bool
 isWall position model =
@@ -95,6 +107,8 @@ isBlocked position model =
 isAlive livingThing =
   livingThing.hp > 0
 
+-- query
+
 entityAt : Point -> Model -> Maybe Entity
 entityAt point world =
   if isWall point world then
@@ -118,6 +132,22 @@ entityAt point world =
                 Just (Entity.floor point)
               else
                 Nothing
+
+creatureAt : Point -> Model -> Maybe Creature.Model
+creatureAt position {creatures} =
+  let
+    creaturesAtPosition =
+      List.filter (\c -> c.position == position) creatures
+  in
+    List.head creaturesAtPosition
+
+creatureById : List Creature.Model -> Int -> Maybe Creature.Model
+creatureById creatures id =
+  let
+    creaturesWithId =
+      List.filter (\c -> c.id == id) creatures
+  in
+    List.head creaturesWithId
 
 -- UPDATE
 type Msg = TurnCreature Int Direction
@@ -204,34 +234,14 @@ playerAttacks direction model =
         |> playerAttacksCreature creature
         |> removeDeceasedCreatures
 
-creatureAt : Point -> Model -> Maybe Creature.Model
-creatureAt position {creatures} =
-  let
-    creaturesAtPosition =
-      List.filter (\c -> c.position == position) creatures
-  in
-    List.head creaturesAtPosition
-
-creatureById : List Creature.Model -> Int -> Maybe Creature.Model
-creatureById creatures id =
-  let
-    creaturesWithId =
-      List.filter (\c -> c.id == id) creatures
-  in
-    List.head creaturesWithId
-
 playerAttacksCreature : Creature.Model -> Model -> Model
 playerAttacksCreature creature model =
   let
     damage =
       model.player.attack - creature.defense
-
-    --inverseDirection =
-    --  Direction.invert model.player.direction
   in
     model
     |> creatureTakesDamage creature damage
-    --|> creatureTurns creature.id inverseDirection
     |> creatureBecomesEngaged creature
 
 creatureTakesDamage : Creature.Model -> Int -> Model -> Model
@@ -283,7 +293,6 @@ creatureTurns id direction model =
   in
     { model | creatures = creatures }
 
--- Creature/Util.elm (have ctx on both creature and collabs)
 turnIndicatedCreature : Int -> Direction -> Model -> Creature.Model -> Creature.Model
 turnIndicatedCreature id direction model creature =
   let
@@ -291,13 +300,12 @@ turnIndicatedCreature id direction model creature =
       creature.id == id
   in
     if isIndicated then
-      if creature.engaged then -- ignore given direction, always follow target
+      if creature.engaged then
         let
           followDirection =
             (Util.directionBetween model.player.position creature.position)
         in
-          creature
-          |> Creature.turn followDirection
+          Creature.turn followDirection creature
       else
         Creature.turn direction creature
     else
@@ -402,28 +410,6 @@ playerDies model =
   else
     model
 
-
--- more helpers (really for view...)
-listEntities : Model -> List Entity
-listEntities model =
-  let
-    walls =
-      List.map (\pt -> Entity.wall pt) model.walls
-
-    floors =
-      List.map (\pt -> Entity.floor pt) model.floors
-
-    coins =
-      List.map (\pt -> Entity.coin pt) model.coins
-
-    creatures =
-      List.map (\c -> Entity.monster c) model.creatures
-
-    player =
-      Entity.player model.player
-  in
-    walls ++ floors ++ coins ++ creatures ++ [player]
-
 -- VIEW
 view : Model -> List (Svg.Svg a)
 view model =
@@ -483,3 +469,24 @@ highlightCells cells =
 
 highlightCell {x,y} color =
   Graphics.render "@" {x=x,y=y} color
+
+
+listEntities : Model -> List Entity
+listEntities model =
+  let
+    walls =
+      List.map (\pt -> Entity.wall pt) model.walls
+
+    floors =
+      List.map (\pt -> Entity.floor pt) model.floors
+
+    coins =
+      List.map (\pt -> Entity.coin pt) model.coins
+
+    creatures =
+      List.map (\c -> Entity.monster c) model.creatures
+
+    player =
+      Entity.player model.player
+  in
+    walls ++ floors ++ coins ++ creatures ++ [player]

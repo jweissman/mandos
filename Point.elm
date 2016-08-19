@@ -1,4 +1,4 @@
-module Point exposing (Point, slide, describe) --, orbit)
+module Point exposing (Point, slide, describe, distance) --, orbit)
 
 import Direction exposing (Direction(..), directions)
 
@@ -45,3 +45,14 @@ slide direction point =
 describe : Point -> String
 describe point =
   "(" ++ (toString point.x) ++ ", " ++ (toString point.y) ++ ")"
+
+distance : Point -> Point -> Float
+distance a b =
+  let
+    dx = 
+      toFloat (a.x - b.x)
+
+    dy =
+      toFloat (a.y - b.y)
+  in
+    sqrt( (dx*dx) - (dy*dy) )

@@ -1,4 +1,4 @@
-import Direction exposing (Direction(..)) --, slide, random, describe)
+import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
 
 import Warrior
@@ -41,12 +41,19 @@ type alias Model =
   , hover : Maybe Entity
   , hoverPath : List Point
   , followPath : Maybe (List Point)
+  , auto : Bool
   }
 
 -- INIT
 init : (Model, Cmd Msg)
 init =
-  ({world = World.init, hover = Nothing, hoverPath = [], followPath = Nothing}, Cmd.none)
+  ({world = World.init
+  , hover = Nothing
+  , hoverPath = []
+  , followPath = Nothing
+  , auto = False
+  }
+  , Cmd.none)
 
 -- TYPES
 type Msg
@@ -75,13 +82,16 @@ update message model =
       (model |> hoverAt position, Cmd.none)
 
     TickMsg time ->
-      let
-        cmds =
-          case model.followPath of
-            Nothing -> Cmd.none
-            Just path -> World.turnCreaturesCommand model.world WorldMsg
-      in
-        (model |> playerFollowsPath, cmds)
+      case model.followPath of
+        Nothing ->
+          if model.auto then
+            (model |> playerExplores, Cmd.none)
+          else
+            (model, Cmd.none)
+
+        Just path ->
+          let cmds = World.turnCreaturesCommand model.world WorldMsg in
+          (model |> playerFollowsPath, cmds)
 
     KeyMsg keyCode ->
       let
@@ -95,26 +105,47 @@ update message model =
          |> handleKeypress keyChar
          |> moveCreatures
          |> resetHover
-         |> resetFollow
         , turnCreatureCommands)
 
 handleKeypress : Char -> Model -> Model
 handleKeypress keyChar model =
-  let
-    updatedWorld =
-      case keyChar of
-        'k' -> World.playerSteps North model.world
-        'l' -> World.playerSteps East  model.world
-        'j' -> World.playerSteps South model.world
-        'h' -> World.playerSteps West  model.world
-        --'x' -> World.playerExplores model.world
-        _ -> model.world
+  model |> case keyChar of
+    'k' -> playerSteps North
+    'l' -> playerSteps East
+    'j' -> playerSteps South
+    'h' -> playerSteps West
+    'x' -> playerExplores
+    'a' -> autorogue
+    _ -> (resetFollow << resetAuto)
 
-  in { model | world = updatedWorld }
+autorogue model = 
+  { model | auto = True }
+
+playerSteps direction model =
+  let 
+    world = 
+      (World.playerSteps direction model.world) 
+  in
+    { model | world = world } 
+    |> resetFollow 
+    |> resetAuto
 
 moveCreatures : Model -> Model
 moveCreatures model =
   { model | world = (World.moveCreatures model.world) }
+
+resetHover : Model -> Model
+resetHover model =
+  { model | hoverPath = []
+          , hover = Nothing }
+
+resetFollow : Model -> Model
+resetFollow model =
+  { model | followPath = Nothing }
+
+resetAuto : Model -> Model
+resetAuto model =
+  { model | auto = False }
 
 hoverAt : Point -> Model -> Model
 hoverAt position model =
@@ -146,6 +177,7 @@ hoverAt position model =
                 Just entity' ->
                   entity' == entity
                 Nothing -> False
+
           in
             if accessible then
                if alreadyHovering || not (model.followPath == Nothing) then
@@ -162,14 +194,6 @@ hoverAt position model =
          }
 
 
-resetHover : Model -> Model
-resetHover model =
-  { model | hoverPath = []
-          , hover = Nothing }
-
-resetFollow : Model -> Model
-resetFollow model =
-  { model | followPath = Nothing }
 
 clickAt : Point -> Model -> Model
 clickAt point model =
@@ -185,12 +209,44 @@ playerFollowsPath model =
     Nothing -> model
     Just path ->
       case (List.head path) of
-        Nothing -> { model | followPath = Nothing } |> resetHover
+        Nothing ->
+          { model | followPath = Nothing }
+          |> resetHover
+
         Just nextStep ->
-          ({model | followPath = List.tail path
-                  , world = World.playerSteps (Util.directionBetween nextStep model.world.player.position) model.world
-          })
-          |> moveCreatures
+          let
+            world = World.playerSteps (Util.directionBetween nextStep model.world.player.position) model.world
+          in
+            ({model | followPath = List.tail path
+                    , world = world
+            })
+            |> moveCreatures
+
+-- auto-assign follow path
+playerExplores : Model -> Model
+playerExplores model =
+  let
+    playerPos =
+      model.world.player.position
+
+    byDistanceFromPlayer =
+      (\c -> Point.distance playerPos c)
+
+    maybeCoin =
+      model.world.coins
+      |> List.sortBy byDistanceFromPlayer
+      |> List.head
+
+    path =
+      case maybeCoin of
+        Nothing ->
+          Nothing
+
+        Just coin ->
+          Bfs.bfs playerPos (\p -> p == coin) model.world
+
+  in
+    { model | followPath = path } -- |> playerFollowsPath
 
 -- SUBS
 subscriptions : Model -> Sub Msg
@@ -199,7 +255,7 @@ subscriptions model =
     [ Mouse.moves HoverMsg
     , Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
-    , Time.every (50*millisecond) TickMsg
+    , Time.every (150*millisecond) TickMsg
     ]
 
 -- VIEW
@@ -238,7 +294,7 @@ view model =
       Html.div [ style bgStyle ] [
         Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
 
-        , svg [ viewBox "0 0 60 45", width "1200px", height "900px" ] (worldView ++ [note])
+        , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
       ]
     ]
 
