@@ -9,6 +9,7 @@ import Log
 import Graphics
 
 import Entity exposing (Entity)
+import Mapmaking
 import Util
 
 import Char
@@ -53,7 +54,8 @@ init =
   , followPath = Nothing
   , auto = False
   }
-  , Cmd.none)
+  , Random.generate MapMsg Mapmaking.generateDungeon
+  ) 
 
 -- TYPES
 type Msg
@@ -62,11 +64,15 @@ type Msg
   | ClickMsg Mouse.Position
   | WorldMsg World.Msg
   | TickMsg Time.Time
+  | MapMsg World.Model
 
 -- UPDATE
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
+    MapMsg world ->
+      ({ model | world = world }, Cmd.none)
+
     WorldMsg subMsg ->
       let
         world =
