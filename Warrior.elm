@@ -1,13 +1,12 @@
-module Warrior exposing (Model, init, view, step, takeDamage, enrich)
-
---import Geometry exposing (Direction, Point, slide, aDirection)
+module Warrior exposing (Model, init, step, takeDamage, enrich)
 
 import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
 
-import Svg exposing (text')
-import Svg.Attributes exposing (x, y, fontSize, fontFamily)
+--import Entity
 
+import Graphics
+import Svg
 import Html exposing (Html)
 
 -- MODEL
@@ -26,12 +25,12 @@ type alias Model =
 
 -- INIT
 
-init : Model
-init =
+init : Point -> Model
+init point =
   { hp = 10
   , maxHp = 10
   , direction = North
-  , position = {x=5, y=5}
+  , position = point -- {x=5, y=5}
   , gold = 0
   , attack = 3
   , defense = 1
@@ -44,7 +43,7 @@ init =
 
 step : Direction -> Model -> Model
 step direction model =
-  { model | position = slide model.position direction
+  { model | position = model.position |> slide direction
           , steps = model.steps + 1
           }
 
@@ -57,10 +56,7 @@ enrich amount model =
   { model | gold = model.gold + amount }
 
 -- VIEW
-view : Model -> Svg.Svg a
-view model =
-  let
-    x' = toString model.position.x
-    y' = toString model.position.y
-  in
-    text' [ x x', y y', fontSize "1", fontFamily "Courier" ] [ Html.text "@" ]
+--view : Model -> Svg.Svg a
+--view model =
+  --Entity.render model
+  --Graphics.render "@" model.position

@@ -1,17 +1,20 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, turnCreaturesCommand, moveCreatures)
-
-import Warrior exposing (Model)
-import Creature exposing (Model, view, createRat)
+module World exposing (Model, Msg, init, update, view, playerSteps, creatureSteps, turnCreaturesCommand, moveCreatures, isWall, isCoin, isPlayer, isBlocked, entityAt)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 
+import Warrior
+import Creature
+import Entity exposing (Entity)
+
 import Log
 import Event exposing (..)
 
+import Util
+
 import Html
-import Svg exposing (text')
-import Svg.Attributes exposing (x,y,fontSize,fontFamily)
+import Graphics
+import Svg
 
 import Random
 
@@ -19,60 +22,132 @@ import Random
 
 type alias Model =
   { walls : List Point
+  , floors : List Point
   , coins : List Point
   , creatures : List Creature.Model
   , player : Warrior.Model
   , events : Log.Model
+  , debugPath : List Point
   }
 
 -- INIT
 init : Model
 init =
-  { walls = assembleWalls
-  , coins = [{x=4,y=3}, {x=9,y=8}, {x=3,y=7}, {x=8,y=3}, {x=9,y=7}]
-  , creatures =
-      [ Creature.createRat 1 {x=3,y=3}
-      , Creature.createMonkey 2 {x=6,y=9}
-      , Creature.createBandit 3 {x=5,y=6}
+  let
+    (walls,floors) = 
+      layoutRoom {x=2,y=3} 30 20
+      
+    coins = 
+      [ {x=4,y=10}
+      , {x=9,y=8}
+      , {x=5,y=7}
+      , {x=8,y=8}
+      , {x=9,y=7}
+      , {x=29,y=17}
+      , {x=15,y=8}
+      , {x=23,y=13}
       ]
-  , player = Warrior.init
-  , events = Log.init
-  }
+  in
+    { walls = walls
+    , floors = floors
+    , coins = coins 
+    , creatures =
+        [ Creature.createRat 1 {x=10,y=8}
+        , Creature.createMonkey 2 {x=16,y=9}
+        , Creature.createBandit 3 {x=15,y=6}
+        ]
+    , player = Warrior.init {x=10,y=10}
+    , events = Log.init
+    , debugPath = []
+    }
 
 -- just a little four walled room for now...
-assembleWalls =
-  List.map (\x -> {x=x,y=2}) [0..10] ++
-  List.map (\x -> {x=x,y=20}) [0..10] ++
-  List.map (\y -> {x=0,y=y}) [2..20] ++
-  List.map (\y -> {x=10,y=y}) [2..20]
+layoutRoom {x,y} width height =
+  let
+    walls =
+      List.map (\x' -> {x=x+x',y=y}) [0..width] ++
+      List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
+      List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
+      List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
 
--- HELPER
+    floors =
+      List.concatMap (\y' -> (List.map (\x' -> {x=x+x',y=y+y'}) [1..(width-1)])) [1..(height-1)]
+  in
+    (walls,floors)
 
-isWall : Model -> Point -> Bool
-isWall model position =
+
+-- PREDICATES
+
+isWall : Point -> Model -> Bool
+isWall position model =
   List.any (\pos -> pos == position) model.walls
 
-isCoin : Model -> Point -> Bool
-isCoin model position =
+isCoin : Point -> Model -> Bool
+isCoin position model =
   List.any (\pos -> pos == position) model.coins
 
-isCreature : Model -> Point -> Bool
-isCreature model position =
+isCreature : Point -> Model -> Bool
+isCreature position model =
   List.any (\pos -> pos == position) (List.map .position model.creatures)
 
-isPlayer : Model -> Point -> Bool
-isPlayer model position =
+isPlayer : Point -> Model -> Bool
+isPlayer position model =
   model.player.position == position
 
-isBlocked : Model -> Point -> Bool
-isBlocked model position =
-  isWall model position ||
-  isCreature model position ||
-  isPlayer model position
+isFloor : Point -> Model -> Bool
+isFloor position model =
+  List.any (\p -> p == position) model.floors
 
---isAlive : { hp : Int } -> Bool
+isBlocked : Point -> Model -> Bool
+isBlocked position model =
+  isWall position model ||
+  isCreature position model ||
+  isPlayer position model
+
 isAlive livingThing =
   livingThing.hp > 0
+
+-- query
+
+entityAt : Point -> Model -> Maybe Entity
+entityAt point world =
+  if isWall point world then
+    Just (Entity.wall point)
+  else
+    if isCoin point world then
+      Just (Entity.coin point)
+    else
+      if isPlayer point world then
+        Just (Entity.player world.player)
+      else
+        let
+          creature =
+            creatureAt point world
+        in
+          case creature of
+            Just creature ->
+              Just (Entity.monster creature)
+            Nothing ->
+              if isFloor point world then
+                Just (Entity.floor point)
+              else
+                Nothing
+
+creatureAt : Point -> Model -> Maybe Creature.Model
+creatureAt position {creatures} =
+  let
+    creaturesAtPosition =
+      List.filter (\c -> c.position == position) creatures
+  in
+    List.head creaturesAtPosition
+
+creatureById : List Creature.Model -> Int -> Maybe Creature.Model
+creatureById creatures id =
+  let
+    creaturesWithId =
+      List.filter (\c -> c.id == id) creatures
+  in
+    List.head creaturesWithId
 
 -- UPDATE
 type Msg = TurnCreature Int Direction
@@ -83,7 +158,6 @@ update message model =
     TurnCreature id direction ->
       model
       |> creatureTurns id direction
-      --creatureSteps id direction model
 
 -- command ctors
 turnCreaturesCommand : Model -> (Msg -> a) -> Cmd a
@@ -118,13 +192,14 @@ canPlayerStep : Direction -> Model -> Bool
 canPlayerStep direction model =
   let
     nextPosition =
-      slide model.player.position direction
+      model.player.position
+      |> slide direction
   in
-    not (isBlocked model nextPosition)
+    not (isBlocked nextPosition model)
 
 playerCollectsCoins : Model -> Model
 playerCollectsCoins model =
-  if (not (isCoin model model.player.position)) then
+  if (not (isCoin model.player.position model)) then
     model
   else
     let
@@ -144,10 +219,11 @@ playerAttacks : Direction -> Model -> Model
 playerAttacks direction model =
   let
     attackedPosition =
-      slide model.player.position direction
+      model.player.position
+      |> slide direction
 
     maybeCreature =
-      creatureAt model.creatures attackedPosition
+      creatureAt attackedPosition model
   in
     case maybeCreature of
       Nothing ->
@@ -158,22 +234,6 @@ playerAttacks direction model =
         |> playerAttacksCreature creature
         |> removeDeceasedCreatures
 
-creatureAt : List Creature.Model -> Point -> Maybe Creature.Model
-creatureAt creatures position =
-  let
-    creaturesAtPosition =
-      List.filter (\c -> c.position == position) creatures
-  in
-    List.head creaturesAtPosition
-
-creatureById : List Creature.Model -> Int -> Maybe Creature.Model
-creatureById creatures id =
-  let
-    creaturesWithId =
-      List.filter (\c -> c.id == id) creatures
-  in
-    List.head creaturesWithId
-
 playerAttacksCreature : Creature.Model -> Model -> Model
 playerAttacksCreature creature model =
   let
@@ -182,6 +242,7 @@ playerAttacksCreature creature model =
   in
     model
     |> creatureTakesDamage creature damage
+    |> creatureBecomesEngaged creature
 
 creatureTakesDamage : Creature.Model -> Int -> Model -> Model
 creatureTakesDamage creature amount model =
@@ -223,27 +284,54 @@ removeDeceasedCreatures model =
             , events = model.events ++ deathEvents
     }
 
--- CREATURE MOVE
 creatureTurns : Int -> Direction -> Model -> Model
 creatureTurns id direction model =
   let
     creatures =
       model.creatures
-      |> List.map (turnIndicatedCreature id direction)
+      |> List.map (turnIndicatedCreature id direction model)
   in
     { model | creatures = creatures }
 
-turnIndicatedCreature : Int -> Direction -> Creature.Model -> Creature.Model
-turnIndicatedCreature id direction creature =
+turnIndicatedCreature : Int -> Direction -> Model -> Creature.Model -> Creature.Model
+turnIndicatedCreature id direction model creature =
   let
     isIndicated =
       creature.id == id
   in
     if isIndicated then
-      Creature.turn direction creature
+      if creature.engaged then
+        let
+          followDirection =
+            (Util.directionBetween model.player.position creature.position)
+        in
+          Creature.turn followDirection creature
+      else
+        Creature.turn direction creature
     else
       creature
 
+creatureBecomesEngaged : Creature.Model -> Model -> Model
+creatureBecomesEngaged creature model =
+  let
+    creatures =
+      model.creatures
+      |> List.map (engageIndicatedCreature creature.id)
+  in
+    { model | creatures = creatures }
+
+engageIndicatedCreature : Int -> Creature.Model -> Creature.Model
+engageIndicatedCreature id creature =
+  let
+    isIndicated =
+      creature.id == id
+  in
+    if isIndicated then
+      Creature.engage creature
+    else
+      creature
+
+-- CREATURE MOVE
 moveCreatures : Model -> Model
 moveCreatures model =
   List.foldl (creatureSteps) model model.creatures
@@ -280,15 +368,17 @@ canCreatureStep : Creature.Model -> Direction -> Model -> Bool
 canCreatureStep creature direction model =
   let
     nextPosition =
-      slide creature.position direction
+      creature.position
+      |> slide direction
   in
-    not (isBlocked model nextPosition)
+    not (isBlocked nextPosition model)
 
 creatureAttacksPlayer : Creature.Model -> Model -> Model
 creatureAttacksPlayer creature model =
   let
     attackedPosition =
-      slide creature.position creature.direction
+      creature.position
+      |> slide creature.direction
 
     damage =
       creature.attack - model.player.defense
@@ -296,7 +386,7 @@ creatureAttacksPlayer creature model =
     if attackedPosition == model.player.position then
       model
       |> playerTakesDamage creature damage
-      |> checkPlayerLife
+      |> playerDies
     else
       model
 
@@ -309,13 +399,12 @@ playerTakesDamage creature amount model =
     defenseEvent =
       Event.defend creature amount
   in
-    { model |
-      player = player
-    , events = model.events ++ [defenseEvent]
+    { model | player = player
+            , events = model.events ++ [defenseEvent]
     }
 
-checkPlayerLife : Model -> Model
-checkPlayerLife model =
+playerDies : Model -> Model
+playerDies model =
   if not (isAlive model.player) then
     init
   else
@@ -325,33 +414,23 @@ checkPlayerLife model =
 view : Model -> List (Svg.Svg a)
 view model =
   let
-    walls =
-      List.map wallView model.walls
+    entities =
+      listEntities model
 
-    coins =
-      List.map coinView model.coins
-
-    creatures =
-      List.map Creature.view model.creatures
-
-    player =
-      Warrior.view model.player
+    entityViews =
+      List.map (Entity.view) entities
 
     log =
       Log.view model.events
 
     info =
       infoView model
+
+    highlight =
+      highlightCells model.debugPath
+
   in
-    walls ++ coins ++ creatures ++ log ++ [player, info]
-
-wallView : Point -> Svg.Svg a
-wallView pos =
-  text' [ x (toString pos.x), y (toString pos.y), fontSize "1", fontFamily "Courier" ] [ Html.text "#" ]
-
-coinView : Point -> Svg.Svg a
-coinView pos =
-  text' [ x (toString pos.x), y (toString pos.y), fontSize "1", fontFamily "Courier" ] [ Html.text "." ]
+    entityViews ++ log ++ [info] ++ highlight
 
 infoView : Model -> Svg.Svg a
 infoView model =
@@ -365,4 +444,49 @@ infoView model =
     message =
       gold ++ "  |  " ++ hp
   in
-    text' [ x "0", y "1", fontSize "1", fontFamily "Courier" ] [ Html.text message ]
+     Graphics.render message {x=0,y=1} "green"
+
+highlightCells : List Point -> List (Svg.Svg a)
+highlightCells cells =
+  let
+    pathColor =
+      "rgba(128,128,192,0.85)"
+    targetColor =
+      "rgba(128,128,192,0.3)"
+  in
+
+    case cells of
+      [] -> []
+      [x] -> [highlightCell x pathColor]
+      a :: b :: _ ->
+        let
+          tail =
+            case (List.tail cells) of
+              Nothing -> []
+              Just rest -> highlightCells rest
+        in
+          (highlightCell a targetColor) :: tail
+
+highlightCell {x,y} color =
+  Graphics.render "@" {x=x,y=y} color
+
+
+listEntities : Model -> List Entity
+listEntities model =
+  let
+    walls =
+      List.map (\pt -> Entity.wall pt) model.walls
+
+    floors =
+      List.map (\pt -> Entity.floor pt) model.floors
+
+    coins =
+      List.map (\pt -> Entity.coin pt) model.coins
+
+    creatures =
+      List.map (\c -> Entity.monster c) model.creatures
+
+    player =
+      Entity.player model.player
+  in
+    walls ++ floors ++ coins ++ creatures ++ [player]

@@ -1,14 +1,12 @@
-module Creature exposing (Model, view, step, turn, describe, createRat, createMonkey, createBandit)
-
---import Geometry exposing (Point, Direction, slide)
+module Creature exposing (Model, step, turn, describe, engage, disengage, createRat, createMonkey, createBandit)
 
 import Species exposing (Species)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction(..))
 
-import Svg exposing (text')
-import Svg.Attributes exposing (x,y,fontSize,fontFamily)
+import Svg
+import Graphics
 
 import Html
 import String
@@ -24,7 +22,10 @@ type alias Model =
   , species : Species
   , glyph : Char
   , name : String
+  , subtype : String
   , direction : Direction
+  , engaged : Bool
+  --, target : Maybe Point
   }
 
 -- INIT
@@ -41,6 +42,8 @@ init species id point =
   , defense = 1
   , attack = 2
   , direction = North
+  , engaged = False
+  , subtype = Species.adjective species
   }
 
 createRat id point =
@@ -52,21 +55,47 @@ createMonkey id point =
 createBandit id point =
   init Species.bandit id point
 
+step : Model -> Model
 step model =
   let
     position =
-      slide model.position model.direction
+      model.position
+      |> slide model.direction
   in
     { model | position = position }
 
+turn : Direction -> Model -> Model
 turn direction model =
   { model | direction = direction }
 
 describe : Model -> String
 describe model =
-  model.name ++ " (" ++ toString model.hp ++ "/" ++ toString model.maxHp ++ ")"
+  let
+    parts =
+      [ "the", describeHealth model, model.subtype, model.name ]
+  in
+    parts
+    |> String.join " "
+
+describeHealth : Model -> String
+describeHealth model =
+  if model.hp == model.maxHp then
+    "healthy"
+  else
+    if model.hp > (model.maxHp // 2) then
+      "hurt"
+    else
+      "injured"
+
+engage : Model -> Model
+engage model =
+  { model | engaged = True }
+
+disengage : Model -> Model
+disengage model =
+  { model | engaged = False }
 
 -- VIEW
-view : Model -> Svg.Svg a
-view model =
-  text' [ x (toString model.position.x), y (toString model.position.y), fontSize "1", fontFamily "Courier" ] [ Html.text (String.fromChar model.glyph) ]
+--view : Model -> Svg.Svg a
+--view model =
+--  Graphics.render (String.fromChar model.glyph) model.position

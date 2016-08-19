@@ -1,4 +1,4 @@
-module Species exposing (Species, name, glyph, hp, rat, monkey, bandit)
+module Species exposing (Species, name, adjective, glyph, hp, rat, monkey, bandit)
 
 -- TYPE
 type Species = Bandit | Rat | Snake | Tiger | Dragon | Monkey
@@ -30,6 +30,16 @@ name species =
     Tiger  -> "tiger"
     Dragon -> "drake"
     Monkey -> "monkey"
+
+adjective : Species -> String
+adjective species =
+  case species of
+    Bandit -> "ruthless"
+    Rat    -> "dirty"
+    Snake  -> "wild"
+    Tiger  -> "savage"
+    Dragon -> "cruel"
+    Monkey -> "vicious"
 
 hp : Species -> Int
 hp species =
