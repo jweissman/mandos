@@ -9,12 +9,12 @@ import Log
 import Graphics
 
 import Entity exposing (Entity)
-import Mapmaking
+import Dungeon exposing (Dungeon)
 import Util
 
 import Char
 import Task
-import Keyboard
+import Keyboard exposing (KeyCode)
 import Mouse
 import Random
 import Time exposing (Time, millisecond)
@@ -54,24 +54,55 @@ init =
   , followPath = Nothing
   , auto = False
   }
-  , Random.generate MapMsg Mapmaking.generateDungeon
+  , Random.generate MapMsg Dungeon.generate
   ) 
 
 -- TYPES
 type Msg
-  = KeyMsg Keyboard.KeyCode
+  = KeyMsg KeyCode
   | HoverMsg Mouse.Position
   | ClickMsg Mouse.Position
   | WorldMsg World.Msg
-  | TickMsg Time.Time
-  | MapMsg World.Model
+  | TickMsg Time
+  | MapMsg Dungeon
 
 -- UPDATE
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
-    MapMsg world ->
-      ({ model | world = world }, Cmd.none)
+    MapMsg dungeon ->
+      let
+        level =
+          List.head dungeon
+
+        world =
+          model.world
+
+        player =
+          world.player
+
+
+        world' = 
+          case level of
+            Nothing -> world
+            Just dungeonLevel ->
+              let
+                firstFloorPos =
+                  dungeonLevel.floors
+                  |> List.head
+                  |> Maybe.withDefault {x=0,y=0}
+
+                player' =
+                  { player | position = firstFloorPos 
+                  }
+              in
+                { world | walls = dungeonLevel.walls
+                        , floors = dungeonLevel.floors
+                        , player = player'
+                }
+
+      in
+      ({ model | world = world' }, Cmd.none)
 
     WorldMsg subMsg ->
       let

@@ -6,6 +6,7 @@ import Direction exposing (Direction)
 import Warrior
 import Creature
 import Entity exposing (Entity)
+import Room exposing (Room)
 
 import Log
 import Event exposing (..)
@@ -24,6 +25,7 @@ type alias Model =
   { walls : List Point
   , floors : List Point
   , coins : List Point
+  --, rooms : List Room
   , creatures : List Creature.Model
   , player : Warrior.Model
   , events : Log.Model
@@ -34,10 +36,10 @@ type alias Model =
 init : Model
 init =
   let
-    (walls,floors) = 
+    (walls,floors) =
       layoutRoom {x=2,y=3} 30 20
-      
-    coins = 
+
+    coins =
       [ {x=4,y=10}
       , {x=9,y=8}
       , {x=5,y=7}
@@ -50,15 +52,17 @@ init =
   in
     { walls = walls
     , floors = floors
-    , coins = coins 
+    , coins = coins
     , creatures =
-        [ Creature.createRat 1 {x=10,y=8}
-        , Creature.createMonkey 2 {x=16,y=9}
-        , Creature.createBandit 3 {x=15,y=6}
+        [ 
+          Creature.createRat 1 {x=10,y=8}
+        --, Creature.createMonkey 2 {x=16,y=9}
+        --, Creature.createBandit 3 {x=15,y=6}
         ]
     , player = Warrior.init {x=10,y=10}
     , events = Log.init
     , debugPath = []
+    --, rooms = []
     }
 
 -- just a little four walled room for now...
