@@ -3,14 +3,11 @@ module Room exposing (Room, generate, overlaps, layout, filterOverlaps)
 import Point exposing (Point)
 import Random
 
-type Id = Id Int
+import Graph
 
-type Room = Room { origin : Point
+type alias Room = { origin : Point
                   , width : Int
                   , height: Int
-                  , connections : List Room
-                  --, id : Id
-                  --, connections : List Id
                   }
 
 generate : Int -> Random.Generator (List Room)
@@ -19,7 +16,7 @@ generate n =
 
 generate' : Random.Generator Room
 generate' =
-  Random.map3 (create) (Point.randomWithOffset {x=3,y=4} 26 12) (Random.int 4 8) (Random.int 4 5)
+  Random.map3 create (Point.randomWithOffset {x=3,y=4} 20 12) (Random.int 4 8) (Random.int 4 5)
 
 create : Point -> Int -> Int -> Room
 create point width height =
@@ -27,21 +24,17 @@ create point width height =
   , width = width
   , height = height
   , connections = []
-  --, id = (Id id)
   }
 
 overlaps : Room -> Room -> Bool
-overlaps room_a (Room {origin,width,height}) =
-  overlaps' room_a origin width height
+overlaps room_a ({origin,width,height}) =
+  overlaps' origin width height room_a
 
-overlaps' : Room -> Point -> Int -> Int -> Bool
-overlaps' (Room {origin,width,height}) b b_width b_height =
+overlaps' : Point -> Int -> Int -> Room -> Bool
+overlaps' b b_width b_height ({origin,width,height}) =
   let
     a =
       origin
-
-    --b =
-    --  room_b.origin
 
     a' =
       { a | x = a.x + width
@@ -62,7 +55,8 @@ overlaps' (Room {origin,width,height}) b b_width b_height =
     not (disjointX && disjointY)
 
 -- return a tuple of two lists of points -- (walls, list of points in floors)
-layout (Room {origin,width,height}) =
+layout : Room -> (List Point, List Point)
+layout {origin,width,height} =
   layout' origin width height
 
 layout' {x,y} width height =
@@ -74,7 +68,9 @@ layout' {x,y} width height =
       List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
 
     floors =
-      List.concatMap (\y' -> (List.map (\x' -> {x=x+x',y=y+y'}) [1..(width-1)])) [1..(height-1)]
+      List.concatMap (\y' ->
+        List.map (\x' -> {x=x+x',y=y+y'}) [1..(width-1)]
+      ) [1..(height-1)]
   in
     (walls,floors)
 
@@ -95,3 +91,25 @@ filterOverlaps rooms =
       in
          Debug.log (toString (List.length rooms))
          [room] ++ rest
+
+distance : Room -> Room -> Float
+distance {origin,width,height} room =
+  let
+    cx = 
+      origin.x + width
+
+    cx' =
+      room.origin.x + room.width
+
+    cy =
+      origin.y + height
+
+    cy' =
+      room.origin.y + room.height
+
+  in
+    Point.distance {x=cx,y=cy} {x=cx',y=cy'}
+
+network : List Room -> Graph Room
+network rooms =
+  Graph.network Room.distance rooms

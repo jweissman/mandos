@@ -53,10 +53,40 @@ extrudeRoom room model =
 --  until we're entirely connected...?
 connectRooms : List Room -> DungeonLevel -> DungeonLevel
 connectRooms rooms model =
-  rooms
-  |> List.foldr (connectRoom rooms) model
+  let
+    graph =
+      Room.network rooms
 
-connectRoom : List Room -> Room -> DungeonLevel -> DungeonLevel
-connectRoom rooms room model =
+    model' =
+      model
+      |> extrudeCorridors graph
+
+  in
+    Debug.log (toString graph)
+    connectRooms' [] rooms model
+
+extrudeCorridors graph model =
   model
+
+--connectRooms' : List Room -> List Room -> DungeonLevel -> DungeonLevel
+--connectRooms' connected disconnected model =
+--  let
+--    room =
+--      disconnected
+--      |> List.head
+--  in
+--    case room of
+--      Nothing -> 
+--        model -- we're done!
+--
+--      Just room ->
+--        if List.length connected == 0 then
+--          -- find closest room
+--        else
+--          -- find the closest *connected* room
+--
+--        -- either way recurse
+
+
+--closestRoom : Room -> List Rooms -> Room
 

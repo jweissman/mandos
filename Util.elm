@@ -1,4 +1,4 @@
-module Util exposing (directionBetween)
+module Util exposing (directionBetween, minBy)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -32,3 +32,14 @@ simpleDirectionBetween a b =
       else
         North
 
+
+-- from list extras
+{-| Find the first minimum element in a list using a comparable transformation
+-}
+minBy : (a -> comparable) -> List a -> Maybe a
+minBy f ls =
+  let minBy x (y, fy) = let fx = f x in if fx < fy then (x, fx) else (y, fy)
+  in case ls of
+        [l']    -> Just l'
+        l'::ls' -> Just <| fst <| List.foldl minBy (l', f l') ls'
+        _       -> Nothing
