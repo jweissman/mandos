@@ -34,7 +34,6 @@ edges (Node n ns) =
 
 edge : a -> a -> Graph a -> Graph a
 edge n n' graph =
-  --Debug.log ("Edge from " ++ (toString n) ++ " -> " ++ (toString n'))
   mapNodes (joinMatching n n') graph
 
 joinMatching : a -> a -> Graph a -> Graph a
@@ -149,14 +148,14 @@ tree f predicate ls =
 tree' : (a -> a -> comparable) -> (a -> a -> Bool) -> Graph a -> List a -> Graph a
 tree' f pred graph ls =
   let
-    dist = \x -> -- least f to a node in the graph
+    weight = \x -> -- least f to a node in the graph
       graph
       |> minimumBy (f x)
       |> nodeValue
       |> f x 
       
     rest =
-      ls |> List.sortBy dist -- |> List.filter predicate
+      ls |> List.sortBy weight
 
   in
     case (List.head rest) of
