@@ -344,27 +344,27 @@ extrudeCorridor depth pt dir model =
 extrudeCorridor' pt dir depth model =
   let
     model' =
-      { model | floors = pt :: model.floors 
-              , walls = model.walls ++ newWalls }
+      { model | floors = pt :: model.floors  }
+              |> addWallsAround pt
               |> removeWall pt
 
-    slideDir =
-      \dir' -> Point.slide dir' pt
+    --slideDir =
+    --  \dir' -> Point.slide dir' pt
 
-    newWalls =
-      List.map slideDir newWallDirs
-      |> List.filter (\wall ->
-        model.floors
-        |> not << List.any (\floor' -> wall == floor')
-      )
+    --newWalls =
+    --  List.map slideDir newWallDirs
+    --  |> List.filter (\wall ->
+    --    model.floors
+    --    |> not << List.any (\floor' -> wall == floor')
+    --  )
 
-    newWallDirs =
-      case dir of
-        North -> [East,West]
-        South -> [East,West]
-        East -> [North,South]
-        West -> [North,South]
-        _ -> []
+    --newWallDirs =
+    --  case dir of
+    --    North -> [East,West]
+    --    South -> [East,West]
+    --    East -> [North,South]
+    --    West -> [North,South]
+    --    _ -> []
 
     next =
       Point.slide dir pt
@@ -373,7 +373,7 @@ extrudeCorridor' pt dir depth model =
       (List.any (\pt' -> pt' == pt) model.floors)
   in
     if foundFloor || depth < 0 then
-      model
+      model'
       |> emplaceDoor (pt |> Point.slide (Direction.invert dir))
     else
       model'
@@ -385,7 +385,6 @@ emplaceDoor : Point -> Level -> Level
 emplaceDoor pt model =
   { model | doors = pt :: model.doors }
           |> removeWall pt
-          |> removeFloor pt
 
 -- stairs
 
@@ -440,11 +439,13 @@ extrudeStairwells model =
 emplaceUpstairs : Point -> Level -> Level
 emplaceUpstairs point model =
   { model | upstairs = point }
+          |> addWallsAround point
           |> removeWall point
 
 emplaceDownstairs : Point -> Level -> Level
 emplaceDownstairs point model =
   { model | downstairs = point }
+          |> addWallsAround point
           |> removeWall point
 
 removeWall pt model =
@@ -463,3 +464,24 @@ removeFloor pt model =
         if not (pt == pt') then Just pt' else Nothing)
   in
   { model | floors = floors' }
+
+addWallsAround pt model = 
+  let
+    newWalls =
+      Direction.directions
+      |> List.map (\d -> Point.slide d pt)
+      |> List.filter (\wall ->
+        not
+          (model.floors
+          |> List.any (\floor' -> wall == floor')) ||
+          (model.walls
+          |> List.any (\wall' -> wall == wall'))
+      )
+  in 
+     { model | walls = newWalls ++ model.walls }
+  
+  --List.map slideDir newWallDirs
+  --    |> List.filter (\wall ->
+  --      model.floors
+  --      |> not << List.any (\floor' -> wall == floor')
+  --    )

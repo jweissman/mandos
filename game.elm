@@ -79,12 +79,12 @@ update message model =
         player =
           world.player
 
-        floors =
-          (Dungeon.levelAt 0 dungeon).floors
+        --floors =
+        --  (Dungeon.levelAt 0 dungeon).floors
           --World.floors world'
 
         player' =
-          { player | position = (List.head floors |> Maybe.withDefault {x=5,y=5}) }
+          { player | position = (Dungeon.levelAt 0 dungeon).upstairs } --(List.head floors |> Maybe.withDefault {x=5,y=5}) }
 
         world' =
           { world | dungeon = dungeon

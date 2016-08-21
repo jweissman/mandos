@@ -53,7 +53,8 @@ apply' f depth model =
 
 collectCoin : Point -> Int -> Dungeon -> Dungeon
 collectCoin pt depth model =
-  model |> apply (Level.collectCoin pt) depth
+  model 
+  |> apply (Level.collectCoin pt) depth
 
 moveCreatures : Warrior.Model -> Int -> Dungeon -> (Dungeon, List Event, Warrior.Model)
 moveCreatures player depth model =

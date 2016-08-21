@@ -124,6 +124,7 @@ playerSteps direction model =
     model
     |> playerAttacks direction
     |> playerDescends direction
+    |> playerAscends direction
   else
     model
     |> playerMoves direction
@@ -236,13 +237,29 @@ playerDescends direction model =
           { player | position = (upstairs model') } 
        in
          { model' | player = player' }
-      -- descend!
-    --  { model | depth = depth + 1,
-    --            player = (Dungeon.level 
-    --}
     else
       model
 
+playerAscends : Direction -> Model -> Model
+playerAscends direction model =
+  let 
+    playerPos = 
+      model.player.position |> (Point.slide direction) 
+  in
+    if playerPos == (upstairs model) && model.depth > 0 then
+      let
+        player =
+          model.player
+
+        model' =
+          { model | depth = model.depth - 1 }
+
+        player' =
+          { player | position = (downstairs model') } 
+       in
+         { model' | player = player' }
+    else
+      model
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
