@@ -48,14 +48,15 @@ type alias Model =
 -- INIT
 init : (Model, Cmd Msg)
 init =
-  ({world = World.init
-  , hover = Nothing
-  , hoverPath = []
-  , followPath = Nothing
-  , auto = False
-  }
-  , Random.generate MapMsg Dungeon.generate
-  ) 
+  (
+    { world = World.init
+    , hover = Nothing
+    , hoverPath = []
+    , followPath = Nothing
+    , auto = False
+    }
+    , Random.generate MapMsg (Dungeon.generate 10)
+  )
 
 -- TYPES
 type Msg
@@ -72,35 +73,24 @@ update message model =
   case message of
     MapMsg dungeon ->
       let
-        level =
-          List.head dungeon
-
         world =
           model.world
 
         player =
           world.player
 
+        floors =
+          (Dungeon.levelAt 0 dungeon).floors
+          --World.floors world'
 
-        world' = 
-          case level of
-            Nothing -> world
-            Just dungeonLevel ->
-              let
-                firstFloorPos =
-                  dungeonLevel.floors
-                  |> List.head
-                  |> Maybe.withDefault {x=0,y=0}
+        player' =
+          { player | position = (List.head floors |> Maybe.withDefault {x=5,y=5}) }
 
-                player' =
-                  { player | position = firstFloorPos 
-                  }
-              in
-                { world | walls = dungeonLevel.walls
-                        , floors = dungeonLevel.floors
-                        , player = player'
-                }
-
+        world' =
+          { world | dungeon = dungeon
+                  , depth = 0
+                  , player = player'
+          }
       in
       ({ model | world = world' }, Cmd.none)
 
@@ -127,22 +117,24 @@ update message model =
             (model, Cmd.none)
 
         Just path ->
-          let cmds = World.turnCreaturesCommand model.world WorldMsg in
-          (model |> playerFollowsPath, cmds)
+          --let 
+          --  cmds = World.turnCreaturesCommand model.world WorldMsg 
+          --in
+          (model |> playerFollowsPath, Cmd.none) -- cmds)
 
     KeyMsg keyCode ->
       let
         keyChar =
           (Char.fromCode keyCode)
 
-        turnCreatureCommands =
-          World.turnCreaturesCommand model.world WorldMsg
+        --turnCreatureCommands =
+        --  World.turnCreaturesCommand model.world WorldMsg
       in
         (model
          |> handleKeypress keyChar
-         |> moveCreatures
+         --|> moveCreatures
          |> resetHover
-        , turnCreatureCommands)
+        , Cmd.none) -- turnCreatureCommands)
 
 handleKeypress : Char -> Model -> Model
 handleKeypress keyChar model =
@@ -166,10 +158,6 @@ playerSteps direction model =
     { model | world = world } 
     |> resetFollow 
     |> resetAuto
-
-moveCreatures : Model -> Model
-moveCreatures model =
-  { model | world = (World.moveCreatures model.world) }
 
 resetHover : Model -> Model
 resetHover model =
@@ -260,15 +248,28 @@ playerFollowsPath model =
               (Util.directionBetween nextStep model.world.player.position) 
 
             world = 
-              model.world |> World.playerSteps direction
+              model.world 
+              |> World.playerSteps direction
+
+            (dungeon', events, player') =
+              world.dungeon 
+              |> Dungeon.moveCreatures world.player world.depth
+
+            world' =
+              { world | dungeon = dungeon'
+                      , events = world.events ++ events
+                      , player = player'
+              }
           in
             if (nextStep == (playerPos |> slide direction)) then
               ({model | followPath = List.tail path
                       , world = world
               })
-              |> moveCreatures
+              --|> Dungeon.moveCreatures
             else
-              model |> resetFollow |> resetHover
+              model
+              |> resetFollow
+              |> resetHover
 
 -- auto-assign follow path
 playerExplores : Model -> Model
@@ -281,7 +282,7 @@ playerExplores model =
       (\c -> Point.distance playerPos c)
 
     maybeCoin =
-      model.world.coins
+      World.coins model.world --0.coins
       |> List.sortBy byDistanceFromPlayer
       |> List.head
 
@@ -327,7 +328,7 @@ view model =
           "You aren't looking at anything in particular."
 
         Just entity ->
-          (toString (Entity.position entity)) ++ " You see " ++ (Entity.describe entity) ++ "." 
+          (toString (Entity.position entity)) ++ " You see " ++ (Entity.describe entity) ++ "."
 
     note =
       Graphics.render debugMsg {x=15,y=1} "white"
@@ -344,7 +345,6 @@ view model =
         , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
       ]
     ]
-
 
 screenToCoordinate : Mouse.Position -> Point
 screenToCoordinate {x,y} =

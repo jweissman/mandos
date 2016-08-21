@@ -1,178 +1,87 @@
-module Dungeon exposing (Dungeon, generate) --, createLevel)
+module Dungeon exposing (Dungeon, generate, moveCreatures, turnCreature, injureCreature, collectCoin, purge, levelAt)
 
-import World
+import Warrior
+import Creature
 import Point exposing (Point)
 
-import Room exposing (Room) --(..))
+import Room exposing (Room)
 import Graph
 
 import Direction exposing (Direction(..))
 
+import Level exposing (Level)
+import Event exposing (Event)
+
 import Random
 import Util
 
-type alias Dungeon = List DungeonLevel
+-- TYPE
 
-type alias DungeonLevel = { walls : List Point
-                          , floors : List Point
-                          --, doors : List Point,
-                          --, upstairs : Point
-                          --, downstars : Point
-                          --, coins : List Point
-                          }
+type alias Dungeon = List Level
 
-generate : Random.Generator Dungeon
-generate =
-  Random.list 50 (Random.map createLevel (Room.generate 50))
+-- GENERATOR
 
--- create the walls and floors for a level
-createLevel : List Room -> DungeonLevel
-createLevel roomCandidates =
+generate : Int -> Random.Generator Dungeon
+generate depth =
+  Random.list depth (Random.map Level.fromRooms (Room.generate 1000))
+
+-- HELPERS
+
+levelAt : Int -> Dungeon -> Level
+levelAt depth model =
+  Util.getAt model depth
+  |> Maybe.withDefault Level.init
+
+apply : (Level -> Level) -> Int -> Dungeon -> Dungeon
+apply f depth model =
   let
-    rooms =
-      roomCandidates
-      |> Room.filterOverlaps
-      --|> Room.filterConnectable
-
-    emptyLevel =
-      { walls = []
-      , floors = []
-      }
-  in
-    emptyLevel
-    |> extrudeRooms rooms
-    |> connectRooms rooms
-    --|> dropCoins rooms
-
-extrudeRooms : List Room -> DungeonLevel -> DungeonLevel
-extrudeRooms rooms model =
-  rooms
-  |> List.foldr extrudeRoom model
-
-extrudeRoom : Room -> DungeonLevel -> DungeonLevel
-extrudeRoom room model =
-  let
-      (walls,floors) =
-        Room.layout room
-  in
-     { model | walls  = model.walls ++ walls
-             , floors = model.floors ++ floors }
-
-connectRooms : List Room -> DungeonLevel -> DungeonLevel
-connectRooms rooms model =
-  let
-    maybeNetwork =
-      Room.network rooms
+    level =
+      model |> apply' f depth
 
     model' =
-      model
-
+      model |> List.indexedMap (\n level' ->
+        if n == depth then level else level')
   in
-    case maybeNetwork of
-      Just graph ->
-        graph
-        |> Graph.fold connectRooms' model
+    model'
 
-      Nothing ->
-        model
+apply' : (Level -> a) -> Int -> Dungeon -> a
+apply' f depth model =
+  --model
+  --|> levelAt depth
+  --|> f
+  f (levelAt depth model) -- |> f
 
-connectRooms' : (Room,Room) -> DungeonLevel -> DungeonLevel
-connectRooms' (a, b) model =
+collectCoin : Point -> Int -> Dungeon -> Dungeon
+collectCoin pt depth model =
+  model |> apply (Level.collectCoin pt) depth
+
+moveCreatures : Warrior.Model -> Int -> Dungeon -> (Dungeon, List Event, Warrior.Model)
+moveCreatures player depth model =
   let
-    direction =
-      Direction.invert (Room.directionBetween a b)
+    (level, events, player') =
+      model |> apply' (Level.moveCreatures player) depth
 
-    xOverlapStart =
-      (max a.origin.x b.origin.x) + 1
-
-    xOverlapEnd =
-      (min (a.origin.x+a.width) (b.origin.x+b.width)) - 1
-
-    xOverlapRange =
-      [(xOverlapStart)..(xOverlapEnd)]
-
-    -- deterministic but pseudorand sample of the range
-    sampleOverlap = \overlap ->
-       Util.getAt overlap ((a.height ^ 31 + b.origin.x) % (List.length overlap))
-       |> Maybe.withDefault -1
-
-    yOverlapStart =
-      (max a.origin.y b.origin.y) + 1
-
-    yOverlapEnd =
-      (min (a.origin.y+a.height) (b.origin.y+b.height)) - 1
-
-    yOverlapRange =
-      [(yOverlapStart)..(yOverlapEnd)]
-    
-    startPosition =
-      case direction of
-        North -> -- a's north wall where it intersects with b's width...
-          Just {x=(sampleOverlap xOverlapRange), y=a.origin.y}
-
-        South ->
-          Just {x=(sampleOverlap xOverlapRange), y=a.origin.y+a.height}
-
-        East -> 
-          Just {x=a.origin.x+a.width, y=(sampleOverlap yOverlapRange)}
-
-        West ->
-          Just {x=a.origin.x, y=(sampleOverlap yOverlapRange)}
-
-        _ -> 
-          Nothing
-  in
-    case startPosition of
-      Just pos -> 
-        --Debug.log ((toString xOverlapRange) ++ ", y overlap: " ++ (toString yOverlapRange))
-        --Debug.log ("Connecting rooms " ++ (toString a) ++ " and " ++ (toString b) ++ " -> " ++ (toString pos)  ++ (toString direction))
-        model 
-        |> extrudeCorridor (round (Room.distance a b)) pos direction
-
-      Nothing ->
-        model
-
-extrudeCorridor : Int -> Point -> Direction -> DungeonLevel -> DungeonLevel
-extrudeCorridor depth pt dir model =
-  extrudeCorridor' pt dir depth model
-
-extrudeCorridor' pt dir depth model =
-  let 
     model' =
-      { model | 
-        floors = pt :: model.floors
-      , walls  = newWalls ++ wallsWithoutPoint 
-      }
-
-    wallsWithoutPoint =
-      model.walls
-      |> List.filterMap (\pt' -> if not (pt == pt') then Just pt' else Nothing)
-
-    wallInDir = 
-      \dir' -> Point.slide dir' pt 
-
-    newWalls = 
-      List.map wallInDir newWallDirs
-      |> List.filter (\wall -> not (List.any (\pt' -> wall == pt') model.floors))
-
-    newWallDirs =
-      case dir of
-        North -> [East,West] 
-        South -> [East,West]
-        East -> [North,South]
-        West -> [North,South]
-        _ -> []
-
-    next =
-      Point.slide dir pt
-
-    foundFloor =
-      (List.any (\pt' -> pt' == pt) model.floors)
+      model |> List.indexedMap (\n level' ->
+        if n == depth then level else level')
   in
-    if foundFloor || depth < 0 then
-      model
-    else -- keep going
-      --Debug.log ("extrude again! " ++ (toString pt))
-      model'
-      |> extrudeCorridor' (pt |> Point.slide dir) dir (depth-1)
+    (model', events, player')
 
+turnCreature : Creature.Model -> Direction -> Int -> Dungeon -> Dungeon
+turnCreature creature direction depth model =
+  model |> apply (Level.turnCreature creature direction) depth
+
+injureCreature : Creature.Model -> Int -> Int -> Dungeon -> Dungeon
+injureCreature creature amount depth model =
+  model |> apply (Level.injureCreature creature amount) depth
+
+purge : Int -> Dungeon -> (Dungeon, List Event)
+purge depth model =
+  let
+    (level, events) =
+      model |> apply' Level.purge depth
+    model' =
+      model |> List.indexedMap (\n level' ->
+        if n == depth then level else level')
+  in
+    (model', events)

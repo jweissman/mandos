@@ -20,13 +20,13 @@ generate' : Random.Generator Room
 generate' =
   let
     width =
-      Random.int 4 6
+      Random.int 3 12 
 
     height =
-      Random.int 4 9
+      Random.int 4 6
 
     origin =
-      Point.randomWithOffset {x=3,y=4} 24 12
+      Point.randomWithOffset {x=3,y=4} 26 14
   in
     Random.map3 create origin width height
 

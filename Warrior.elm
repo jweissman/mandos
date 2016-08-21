@@ -20,6 +20,7 @@ type alias Model =
   , attack : Int
   , defense : Int
   , steps : Int
+  --, dead : Bool
   }
 
 

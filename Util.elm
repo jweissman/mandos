@@ -69,6 +69,3 @@ uniqueHelp f existing remaining =
 
 getAt : List a -> Int -> Maybe a
 getAt xs idx = List.head <| List.drop idx xs
-
-
-

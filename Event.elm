@@ -1,4 +1,4 @@
-module Event exposing (Event, awaken, pickupCoin, attack, killEnemy, defend, describe)
+module Event exposing (Event, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, describe)
 
 import Creature
 
@@ -7,9 +7,11 @@ import Creature
 type Event
   = Awaken
   | PickupCoin
+  | EnemyEngaged Creature.Model
   | AttackEnemy Creature.Model Int
   | KillEnemy Creature.Model
   | DefendEnemy Creature.Model Int
+  | Death
 
 -- ctors
 awaken =
@@ -17,6 +19,9 @@ awaken =
 
 pickupCoin =
   PickupCoin
+
+enemyEngaged enemy =
+  EnemyEngaged enemy
 
 attack target damage =
   AttackEnemy target damage
@@ -26,6 +31,9 @@ killEnemy target =
 
 defend target damage =
   DefendEnemy target damage
+
+death =
+  Death
 
 -- helpers
 describe : Event -> String
@@ -37,6 +45,9 @@ describe event =
     PickupCoin -> 
       "You find a glittering golden coin."
 
+    EnemyEngaged enemy ->
+      (Creature.describe enemy) ++ " engages you!"
+
     AttackEnemy enemy dmg -> 
       "You attack " ++ (Creature.describe enemy) ++ " for " ++ (toString dmg) ++ " damage."
 
@@ -44,4 +55,9 @@ describe event =
       "You slay " ++ (Creature.describe enemy) ++ "!"
 
     DefendEnemy enemy dmg -> 
-      "You were attacked by " ++ (Creature.describe enemy) ++ " for " ++ (toString dmg) ++ " damage."
+      "You are attacked by " ++ (Creature.describe enemy) ++ " for " ++ (toString dmg) ++ " damage."
+
+    Death ->
+      "You were slain..."
+
+
