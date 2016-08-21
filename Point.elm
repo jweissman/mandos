@@ -71,4 +71,3 @@ randomWithOffset {x,y} width height =
 code : Point -> Int
 code {x,y} =
   (x * 10000) + y
-  

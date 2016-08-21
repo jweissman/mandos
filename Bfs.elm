@@ -65,13 +65,16 @@ bfs' visited frontier source predicate moves depth model =
 constructPath : List (Point, Direction) -> Point -> Point -> Path
 constructPath visited source destination =
   let
+    isDestination = \pt -> 
+      pt == destination
+
     maybeDestination =
       visited
-      |> List.filter (\(pt,_) -> pt == destination)
+      |> List.filter (isDestination << fst)
       |> List.head
   in
-     if source == destination then
-        []
+     if isDestination source then
+       []
      else
        case maybeDestination of
          Nothing ->

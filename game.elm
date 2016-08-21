@@ -247,17 +247,28 @@ playerFollowsPath model =
     Just path ->
       case (List.head path) of
         Nothing ->
-          { model | followPath = Nothing }
+          model
           |> resetHover
+          |> resetFollow
 
         Just nextStep ->
           let
-            world = World.playerSteps (Util.directionBetween nextStep model.world.player.position) model.world
+            playerPos =
+              model.world.player.position
+
+            direction =
+              (Util.directionBetween nextStep model.world.player.position) 
+
+            world = 
+              model.world |> World.playerSteps direction
           in
-            ({model | followPath = List.tail path
-                    , world = world
-            })
-            |> moveCreatures
+            if (nextStep == (playerPos |> slide direction)) then
+              ({model | followPath = List.tail path
+                      , world = world
+              })
+              |> moveCreatures
+            else
+              model |> resetFollow |> resetHover
 
 -- auto-assign follow path
 playerExplores : Model -> Model

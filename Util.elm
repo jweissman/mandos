@@ -1,4 +1,4 @@
-module Util exposing (directionBetween, simpleDirectionBetween, minBy, uniqueBy)
+module Util exposing (directionBetween, simpleDirectionBetween, minBy, uniqueBy, getAt)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -66,6 +66,9 @@ uniqueHelp f existing remaining =
         uniqueHelp f existing rest
       else
         first :: uniqueHelp f (Set.insert computedFirst existing) rest
+
+getAt : List a -> Int -> Maybe a
+getAt xs idx = List.head <| List.drop idx xs
 
 
 

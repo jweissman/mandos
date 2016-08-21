@@ -9,6 +9,7 @@ import Graph
 import Direction exposing (Direction(..))
 
 import Random
+import Util
 
 type alias Dungeon = List DungeonLevel
 
@@ -22,7 +23,7 @@ type alias DungeonLevel = { walls : List Point
 
 generate : Random.Generator Dungeon
 generate =
-  Random.list 1 (Random.map createLevel (Room.generate 5000))
+  Random.list 50 (Random.map createLevel (Room.generate 50))
 
 -- create the walls and floors for a level
 createLevel : List Room -> DungeonLevel
@@ -81,30 +82,49 @@ connectRooms' (a, b) model =
     direction =
       Direction.invert (Room.directionBetween a b)
 
-    overlapX =
-      (max a.origin.x b.origin.x) + 1 --..(min (a.origin.x+a.width) (b.origin.x+b.width))]
+    xOverlapStart =
+      (max a.origin.x b.origin.x) + 1
 
-    overlapY =
-      (max a.origin.y b.origin.y) + 1 --..(min (a.origin.y+a.height) (b.origin.y+b.height))]
+    xOverlapEnd =
+      (min (a.origin.x+a.width) (b.origin.x+b.width)) - 1
 
+    xOverlapRange =
+      [(xOverlapStart)..(xOverlapEnd)]
+
+    -- deterministic but pseudorand sample of the range
+    sampleOverlap = \overlap ->
+       Util.getAt overlap ((a.height ^ 31 + b.origin.x) % (List.length overlap))
+       |> Maybe.withDefault -1
+
+    yOverlapStart =
+      (max a.origin.y b.origin.y) + 1
+
+    yOverlapEnd =
+      (min (a.origin.y+a.height) (b.origin.y+b.height)) - 1
+
+    yOverlapRange =
+      [(yOverlapStart)..(yOverlapEnd)]
+    
     startPosition =
       case direction of
         North -> -- a's north wall where it intersects with b's width...
-          Just {x=overlapX, y=a.origin.y}
+          Just {x=(sampleOverlap xOverlapRange), y=a.origin.y}
 
         South ->
-          Just {x=overlapX, y=a.origin.y+a.height}
+          Just {x=(sampleOverlap xOverlapRange), y=a.origin.y+a.height}
 
         East -> 
-          Just {x=a.origin.x+a.width, y=overlapY}
+          Just {x=a.origin.x+a.width, y=(sampleOverlap yOverlapRange)}
+
         West ->
-          Just {x=a.origin.x, y=overlapY}
+          Just {x=a.origin.x, y=(sampleOverlap yOverlapRange)}
 
         _ -> 
           Nothing
   in
     case startPosition of
       Just pos -> 
+        --Debug.log ((toString xOverlapRange) ++ ", y overlap: " ++ (toString yOverlapRange))
         --Debug.log ("Connecting rooms " ++ (toString a) ++ " and " ++ (toString b) ++ " -> " ++ (toString pos)  ++ (toString direction))
         model 
         |> extrudeCorridor (round (Room.distance a b)) pos direction
