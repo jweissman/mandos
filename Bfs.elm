@@ -18,7 +18,7 @@ movesFrom : Model -> Point -> List (Point, Direction)
 movesFrom model point =
   Direction.directions
   |> List.map (\direction -> (slide direction point, direction))
-  |> List.filter (\(p,_) -> not (World.isBlocked p model))
+  |> List.filter ((\p -> not (World.isBlocked p model)) << fst)
 
 bfs' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Model -> Maybe Path
 bfs' visited frontier source predicate moves depth model =
@@ -26,19 +26,16 @@ bfs' visited frontier source predicate moves depth model =
     Nothing
   else
     let
-      matches =
-        \(v,_) -> predicate v
-
       maybeGoal =
         frontier
-        |> List.filter matches
+        |> List.filter (predicate << fst)
         |> List.head
     in
       case maybeGoal of
         Just (goal,_) ->
-          let 
-            path = 
-              (constructPath (visited ++ frontier) source goal) 
+          let
+            path =
+              (constructPath (visited ++ frontier) source goal)
           in
             Just (List.reverse path)
 
@@ -48,17 +45,14 @@ bfs' visited frontier source predicate moves depth model =
               bfs' visited frontier' source predicate moves (depth-1) model
           else
             let
-              pointCode =
-                (\({x,y},_) -> (x*10000) + y)
-
               visitedPositions =
                 List.map fst newVisited
 
               newFrontier =
                 frontier
-                |> List.concatMap (\(pt,_) -> moves pt)
+                |> List.concatMap (moves << fst)
                 |> List.filter (\(pt,_) -> not (List.member pt visitedPositions))
-                |> Util.uniqueBy pointCode
+                |> Util.uniqueBy (Point.code << fst)
 
               newVisited =
                 (visited ++ frontier)
@@ -90,5 +84,3 @@ constructPath visited source destination =
                |> slide (Direction.invert direction)
            in
              [destination] ++ (constructPath visited source newDest)
-
-

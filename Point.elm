@@ -1,4 +1,4 @@
-module Point exposing (Point, slide, describe, distance, random, randomWithOffset) --, orbit)
+module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code)
 
 import Direction exposing (Direction(..), directions)
 
@@ -67,3 +67,8 @@ random width height =
 randomWithOffset : Point -> Int -> Int -> Random.Generator Point
 randomWithOffset {x,y} width height =
   Random.map2 (\x' y' -> {x=x+x',y=y+y'}) (Random.int 0 width) (Random.int 0 height)
+
+code : Point -> Int
+code {x,y} =
+  (x * 10000) + y
+  
