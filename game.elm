@@ -316,10 +316,10 @@ view model =
           "You aren't looking at anything in particular."
 
         Just entity ->
-          "You see " ++ (Entity.describe entity) ++ "."
+          (toString (Entity.position entity)) ++ " You see " ++ (Entity.describe entity) ++ "." 
 
     note =
-      Graphics.render debugMsg {x=10,y=1} "white"
+      Graphics.render debugMsg {x=15,y=1} "white"
 
     bgStyle = [
       ( "background-color", "#280828"

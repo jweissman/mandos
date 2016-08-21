@@ -1,9 +1,11 @@
-module Room exposing (Room, generate, overlaps, layout, filterOverlaps)
+module Room exposing (Room, generate, overlaps, layout, filterOverlaps, network, directionBetween, distance)
 
 import Point exposing (Point)
-import Random
+import Direction exposing (Direction(..))
+import Graph exposing (Graph)
+import Util
 
-import Graph
+import Random
 
 type alias Room = { origin : Point
                   , width : Int
@@ -16,43 +18,59 @@ generate n =
 
 generate' : Random.Generator Room
 generate' =
-  Random.map3 create (Point.randomWithOffset {x=3,y=4} 20 12) (Random.int 4 8) (Random.int 4 5)
+  let
+    width =
+      Random.int 4 6
+
+    height =
+      Random.int 4 9
+
+    origin =
+      Point.randomWithOffset {x=3,y=4} 24 12
+  in
+    Random.map3 create origin width height
 
 create : Point -> Int -> Int -> Room
 create point width height =
-  Room { origin = point
+  { origin = point
   , width = width
   , height = height
-  , connections = []
   }
 
 overlaps : Room -> Room -> Bool
-overlaps room_a ({origin,width,height}) =
-  overlaps' origin width height room_a
+overlaps a b =
+  overlapsY 0 a b && overlapsX 0 a b
+ 
+overlapsRelevantDirection : Int -> Room -> Room -> Bool
+overlapsRelevantDirection n a b =
+  case directionBetween a b of
+    North -> overlapsX n a b
+    South -> overlapsX n a b
+    East  -> overlapsY n a b
+    West  -> overlapsY n a b
+    _ -> False
 
-overlaps' : Point -> Int -> Int -> Room -> Bool
-overlaps' b b_width b_height ({origin,width,height}) =
-  let
-    a =
-      origin
+overlapsY n a b =
+  not (isAbove n a b || isBelow n a b)
 
-    a' =
-      { a | x = a.x + width
-          , y = a.y + height
-      }
+overlapsX n a b =
+  not (isLeft n a b || isRight n a b)
 
-    b' =
-      { b | x = b.x + b_width
-          , y = b.y + b_height
-          }
+isAbove : Int -> Room -> Room -> Bool
+isAbove n a b =
+  a.origin.y + a.height < b.origin.y - n
 
-    disjointX =
-      a.x < b'.x && a'.x > b.x
+isBelow : Int -> Room -> Room -> Bool
+isBelow n a b =
+  b.origin.y + b.height < a.origin.y - n
 
-    disjointY =
-      a.y < b'.y && a'.y > b.y
-  in
-    not (disjointX && disjointY)
+isLeft  : Int -> Room -> Room -> Bool
+isLeft n a b =
+  a.origin.x + a.width < b.origin.x - n
+
+isRight : Int -> Room -> Room -> Bool
+isRight n a b =
+  b.origin.x + b.width < a.origin.x - n
 
 -- return a tuple of two lists of points -- (walls, list of points in floors)
 layout : Room -> (List Point, List Point)
@@ -74,42 +92,45 @@ layout' {x,y} width height =
   in
     (walls,floors)
 
+size : Room -> Int
+size r = r.width * r.height
+
 filterOverlaps : List Room -> List Room
 filterOverlaps rooms =
-  case (List.head rooms) of
+  let rooms' = rooms |> List.sortBy size |> List.reverse in
+  case (List.head rooms') of
     Nothing ->
       []
 
     Just room ->
       let
         rest =
-          rooms
+          rooms'
           |> List.tail
           |> Maybe.withDefault []
-          |> List.filter (overlaps room)
+          |> List.filter (\room' -> (not (overlaps room room')))
           |> filterOverlaps
       in
-         Debug.log (toString (List.length rooms))
          [room] ++ rest
 
+center : Room -> Point
+center {origin,width,height} =
+  { x = origin.x + width
+  , y = origin.y + height
+  }
+
 distance : Room -> Room -> Float
-distance {origin,width,height} room =
-  let
-    cx = 
-      origin.x + width
+distance a b =
+  Point.distance (center a) (center b)
 
-    cx' =
-      room.origin.x + room.width
+canConnect : Room -> Room -> Bool
+canConnect a b =
+  overlapsRelevantDirection -2 a b
 
-    cy =
-      origin.y + height
-
-    cy' =
-      room.origin.y + room.height
-
-  in
-    Point.distance {x=cx,y=cy} {x=cx',y=cy'}
-
-network : List Room -> Graph Room
+network : List Room -> Maybe (Graph Room)
 network rooms =
-  Graph.network Room.distance rooms
+  Graph.tree distance canConnect rooms
+
+directionBetween : Room -> Room -> Direction
+directionBetween a b =
+  Util.simpleDirectionBetween (center a) (center b)

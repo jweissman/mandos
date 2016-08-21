@@ -5,7 +5,8 @@ import Direction exposing (Direction)
 
 import World exposing (Model)
 
-import Set exposing (Set)
+import Util
+
 -- bfs impl
 type alias Path = List Point
 
@@ -57,34 +58,15 @@ bfs' visited frontier source predicate moves depth model =
                 frontier
                 |> List.concatMap (\(pt,_) -> moves pt)
                 |> List.filter (\(pt,_) -> not (List.member pt visitedPositions))
-                |> uniqueBy pointCode
+                |> Util.uniqueBy pointCode
 
               newVisited =
                 (visited ++ frontier)
             in
               if List.length frontier > 0 then
-                --Debug.log ("bfs at depth: " ++ (toString (100-depth)))
-                --Debug.log ("visited "++ (toString (List.length newVisited)) ++ ": " ++ (toString (List.map fst newVisited)))
                 bfs' newVisited (newFrontier) source predicate moves (depth-1) model
               else
                 Nothing
-
--- from list extras
-uniqueBy f list =
-  uniqueHelp f Set.empty list
-
-uniqueHelp : (a -> comparable) -> Set comparable -> List a -> List a
-uniqueHelp f existing remaining =
-  case remaining of
-    [] ->
-      []
-
-    first :: rest ->
-      let computedFirst = f first in
-      if Set.member computedFirst existing then
-        uniqueHelp f existing rest
-      else
-        first :: uniqueHelp f (Set.insert computedFirst existing) rest
 
 constructPath : List (Point, Direction) -> Point -> Point -> Path
 constructPath visited source destination =
