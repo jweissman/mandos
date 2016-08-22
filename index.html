@@ -9481,204 +9481,6 @@ var _elm_lang$svg$Svg_Events$onMouseMove = _elm_lang$svg$Svg_Events$simpleOn('mo
 var _elm_lang$svg$Svg_Events$onMouseOut = _elm_lang$svg$Svg_Events$simpleOn('mouseout');
 var _elm_lang$svg$Svg_Events$onMouseOver = _elm_lang$svg$Svg_Events$simpleOn('mouseover');
 var _elm_lang$svg$Svg_Events$onMouseUp = _elm_lang$svg$Svg_Events$simpleOn('mouseup');
-var _jweissman$rogue$Direction$describe = function (direction) {
-	var _p0 = direction;
-	switch (_p0.ctor) {
-		case 'North':
-			return 'north';
-		case 'South':
-			return 'south';
-		case 'East':
-			return 'east';
-		case 'West':
-			return 'west';
-		case 'Northeast':
-			return 'northeast';
-		case 'Northwest':
-			return 'northwest';
-		case 'Southeast':
-			return 'southeast';
-		default:
-			return 'southwest';
-	}
-};
-var _jweissman$rogue$Direction$Southwest = {ctor: 'Southwest'};
-var _jweissman$rogue$Direction$Southeast = {ctor: 'Southeast'};
-var _jweissman$rogue$Direction$Northwest = {ctor: 'Northwest'};
-var _jweissman$rogue$Direction$Northeast = {ctor: 'Northeast'};
-var _jweissman$rogue$Direction$West = {ctor: 'West'};
-var _jweissman$rogue$Direction$East = {ctor: 'East'};
-var _jweissman$rogue$Direction$South = {ctor: 'South'};
-var _jweissman$rogue$Direction$North = {ctor: 'North'};
-var _jweissman$rogue$Direction$directions = _elm_lang$core$Native_List.fromArray(
-	[_jweissman$rogue$Direction$North, _jweissman$rogue$Direction$South, _jweissman$rogue$Direction$East, _jweissman$rogue$Direction$West, _jweissman$rogue$Direction$Northeast, _jweissman$rogue$Direction$Northwest, _jweissman$rogue$Direction$Southeast, _jweissman$rogue$Direction$Southwest]);
-var _jweissman$rogue$Direction$random = A2(
-	_elm_lang$core$Random$map,
-	function (i) {
-		var _p1 = i;
-		switch (_p1) {
-			case 0:
-				return _jweissman$rogue$Direction$South;
-			case 1:
-				return _jweissman$rogue$Direction$North;
-			case 2:
-				return _jweissman$rogue$Direction$East;
-			case 3:
-				return _jweissman$rogue$Direction$West;
-			case 4:
-				return _jweissman$rogue$Direction$Northwest;
-			case 5:
-				return _jweissman$rogue$Direction$Northeast;
-			case 6:
-				return _jweissman$rogue$Direction$Southwest;
-			default:
-				return _jweissman$rogue$Direction$Southeast;
-		}
-	},
-	A2(_elm_lang$core$Random$int, 0, 7));
-var _jweissman$rogue$Direction$invert = function (direction) {
-	var _p2 = direction;
-	switch (_p2.ctor) {
-		case 'North':
-			return _jweissman$rogue$Direction$South;
-		case 'South':
-			return _jweissman$rogue$Direction$North;
-		case 'East':
-			return _jweissman$rogue$Direction$West;
-		case 'West':
-			return _jweissman$rogue$Direction$East;
-		case 'Northeast':
-			return _jweissman$rogue$Direction$Southwest;
-		case 'Northwest':
-			return _jweissman$rogue$Direction$Southeast;
-		case 'Southwest':
-			return _jweissman$rogue$Direction$Northeast;
-		default:
-			return _jweissman$rogue$Direction$Northwest;
-	}
-};
-var _jweissman$rogue$Point$distance = F2(
-	function (a, b) {
-		var dy = _elm_lang$core$Basics$toFloat(a.y - b.y);
-		var dx = _elm_lang$core$Basics$toFloat(a.x - b.x);
-		return _elm_lang$core$Basics$sqrt((dx * dx) + (dy * dy));
-	});
-var _jweissman$rogue$Point$describe = function (point) {
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		'(',
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			_elm_lang$core$Basics$toString(point.x),
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				', ',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(point.y),
-					')'))));
-};
-var _jweissman$rogue$Point$slide = F2(
-	function (direction, point) {
-		slide:
-		while (true) {
-			var _p0 = direction;
-			switch (_p0.ctor) {
-				case 'North':
-					return _elm_lang$core$Native_Utils.update(
-						point,
-						{y: point.y - 1});
-				case 'South':
-					return _elm_lang$core$Native_Utils.update(
-						point,
-						{y: point.y + 1});
-				case 'West':
-					return _elm_lang$core$Native_Utils.update(
-						point,
-						{x: point.x - 1});
-				case 'East':
-					return _elm_lang$core$Native_Utils.update(
-						point,
-						{x: point.x + 1});
-				case 'Northeast':
-					var _v1 = _jweissman$rogue$Direction$East,
-						_v2 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$North, point);
-					direction = _v1;
-					point = _v2;
-					continue slide;
-				case 'Northwest':
-					var _v3 = _jweissman$rogue$Direction$West,
-						_v4 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$North, point);
-					direction = _v3;
-					point = _v4;
-					continue slide;
-				case 'Southeast':
-					var _v5 = _jweissman$rogue$Direction$East,
-						_v6 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$South, point);
-					direction = _v5;
-					point = _v6;
-					continue slide;
-				default:
-					var _v7 = _jweissman$rogue$Direction$West,
-						_v8 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$South, point);
-					direction = _v7;
-					point = _v8;
-					continue slide;
-			}
-		}
-	});
-var _jweissman$rogue$Point$Point = F2(
-	function (a, b) {
-		return {x: a, y: b};
-	});
-var _jweissman$rogue$Graphics$font = 'VT323';
-var _jweissman$rogue$Graphics$render = F3(
-	function (string, point, color) {
-		return A2(
-			_elm_lang$svg$Svg$text$,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$svg$Svg_Attributes$x(
-					_elm_lang$core$Basics$toString(point.x)),
-					_elm_lang$svg$Svg_Attributes$y(
-					_elm_lang$core$Basics$toString(point.y)),
-					_elm_lang$svg$Svg_Attributes$fontSize('1'),
-					_elm_lang$svg$Svg_Attributes$fontFamily(_jweissman$rogue$Graphics$font),
-					_elm_lang$svg$Svg_Attributes$fill(color)
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html$text(string)
-				]));
-	});
-var _jweissman$rogue$Warrior$enrich = F2(
-	function (amount, model) {
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{gold: model.gold + amount});
-	});
-var _jweissman$rogue$Warrior$takeDamage = F2(
-	function (amount, model) {
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{hp: model.hp - amount});
-	});
-var _jweissman$rogue$Warrior$step = F2(
-	function (direction, model) {
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{
-				position: A2(_jweissman$rogue$Point$slide, direction, model.position),
-				steps: model.steps + 1
-			});
-	});
-var _jweissman$rogue$Warrior$init = function (point) {
-	return {hp: 10, maxHp: 10, direction: _jweissman$rogue$Direction$North, position: point, gold: 0, attack: 3, defense: 1, steps: 0};
-};
-var _jweissman$rogue$Warrior$Model = F8(
-	function (a, b, c, d, e, f, g, h) {
-		return {hp: a, maxHp: b, direction: c, position: d, gold: e, attack: f, defense: g, steps: h};
-	});
 var _jweissman$rogue$Species$hp = function (species) {
 	var _p0 = species;
 	switch (_p0.ctor) {
@@ -9756,6 +9558,208 @@ var _jweissman$rogue$Species$Rat = {ctor: 'Rat'};
 var _jweissman$rogue$Species$rat = _jweissman$rogue$Species$Rat;
 var _jweissman$rogue$Species$Bandit = {ctor: 'Bandit'};
 var _jweissman$rogue$Species$bandit = _jweissman$rogue$Species$Bandit;
+var _jweissman$rogue$Direction$describe = function (direction) {
+	var _p0 = direction;
+	switch (_p0.ctor) {
+		case 'North':
+			return 'north';
+		case 'South':
+			return 'south';
+		case 'East':
+			return 'east';
+		case 'West':
+			return 'west';
+		case 'Northeast':
+			return 'northeast';
+		case 'Northwest':
+			return 'northwest';
+		case 'Southeast':
+			return 'southeast';
+		default:
+			return 'southwest';
+	}
+};
+var _jweissman$rogue$Direction$Southwest = {ctor: 'Southwest'};
+var _jweissman$rogue$Direction$Southeast = {ctor: 'Southeast'};
+var _jweissman$rogue$Direction$Northwest = {ctor: 'Northwest'};
+var _jweissman$rogue$Direction$Northeast = {ctor: 'Northeast'};
+var _jweissman$rogue$Direction$West = {ctor: 'West'};
+var _jweissman$rogue$Direction$East = {ctor: 'East'};
+var _jweissman$rogue$Direction$South = {ctor: 'South'};
+var _jweissman$rogue$Direction$North = {ctor: 'North'};
+var _jweissman$rogue$Direction$cardinalDirections = _elm_lang$core$Native_List.fromArray(
+	[_jweissman$rogue$Direction$North, _jweissman$rogue$Direction$South, _jweissman$rogue$Direction$East, _jweissman$rogue$Direction$West]);
+var _jweissman$rogue$Direction$directions = A2(
+	_elm_lang$core$Basics_ops['++'],
+	_jweissman$rogue$Direction$cardinalDirections,
+	_elm_lang$core$Native_List.fromArray(
+		[_jweissman$rogue$Direction$Northeast, _jweissman$rogue$Direction$Northwest, _jweissman$rogue$Direction$Southeast, _jweissman$rogue$Direction$Southwest]));
+var _jweissman$rogue$Direction$random = A2(
+	_elm_lang$core$Random$map,
+	function (i) {
+		var _p1 = i;
+		switch (_p1) {
+			case 0:
+				return _jweissman$rogue$Direction$South;
+			case 1:
+				return _jweissman$rogue$Direction$North;
+			case 2:
+				return _jweissman$rogue$Direction$East;
+			case 3:
+				return _jweissman$rogue$Direction$West;
+			case 4:
+				return _jweissman$rogue$Direction$Northwest;
+			case 5:
+				return _jweissman$rogue$Direction$Northeast;
+			case 6:
+				return _jweissman$rogue$Direction$Southwest;
+			default:
+				return _jweissman$rogue$Direction$Southeast;
+		}
+	},
+	A2(_elm_lang$core$Random$int, 0, 7));
+var _jweissman$rogue$Direction$invert = function (direction) {
+	var _p2 = direction;
+	switch (_p2.ctor) {
+		case 'North':
+			return _jweissman$rogue$Direction$South;
+		case 'South':
+			return _jweissman$rogue$Direction$North;
+		case 'East':
+			return _jweissman$rogue$Direction$West;
+		case 'West':
+			return _jweissman$rogue$Direction$East;
+		case 'Northeast':
+			return _jweissman$rogue$Direction$Southwest;
+		case 'Northwest':
+			return _jweissman$rogue$Direction$Southeast;
+		case 'Southwest':
+			return _jweissman$rogue$Direction$Northeast;
+		default:
+			return _jweissman$rogue$Direction$Northwest;
+	}
+};
+var _jweissman$rogue$Point$code = function (_p0) {
+	var _p1 = _p0;
+	return (_p1.x * 10000) + _p1.y;
+};
+var _jweissman$rogue$Point$randomWithOffset = F3(
+	function (_p2, width, height) {
+		var _p3 = _p2;
+		return A3(
+			_elm_lang$core$Random$map2,
+			F2(
+				function (x$, y$) {
+					return {x: _p3.x + x$, y: _p3.y + y$};
+				}),
+			A2(_elm_lang$core$Random$int, 0, width),
+			A2(_elm_lang$core$Random$int, 0, height));
+	});
+var _jweissman$rogue$Point$random = F2(
+	function (width, height) {
+		return A3(
+			_elm_lang$core$Random$map2,
+			F2(
+				function (x, y) {
+					return {x: x, y: y};
+				}),
+			A2(_elm_lang$core$Random$int, 0, width),
+			A2(_elm_lang$core$Random$int, 0, height));
+	});
+var _jweissman$rogue$Point$distance = F2(
+	function (a, b) {
+		var dy = _elm_lang$core$Basics$toFloat(a.y - b.y);
+		var dx = _elm_lang$core$Basics$toFloat(a.x - b.x);
+		return _elm_lang$core$Basics$sqrt((dx * dx) + (dy * dy));
+	});
+var _jweissman$rogue$Point$describe = function (point) {
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		'(',
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			_elm_lang$core$Basics$toString(point.x),
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				', ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(point.y),
+					')'))));
+};
+var _jweissman$rogue$Point$slide = F2(
+	function (direction, point) {
+		slide:
+		while (true) {
+			var _p4 = direction;
+			switch (_p4.ctor) {
+				case 'North':
+					return _elm_lang$core$Native_Utils.update(
+						point,
+						{y: point.y - 1});
+				case 'South':
+					return _elm_lang$core$Native_Utils.update(
+						point,
+						{y: point.y + 1});
+				case 'West':
+					return _elm_lang$core$Native_Utils.update(
+						point,
+						{x: point.x - 1});
+				case 'East':
+					return _elm_lang$core$Native_Utils.update(
+						point,
+						{x: point.x + 1});
+				case 'Northeast':
+					var _v3 = _jweissman$rogue$Direction$East,
+						_v4 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$North, point);
+					direction = _v3;
+					point = _v4;
+					continue slide;
+				case 'Northwest':
+					var _v5 = _jweissman$rogue$Direction$West,
+						_v6 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$North, point);
+					direction = _v5;
+					point = _v6;
+					continue slide;
+				case 'Southeast':
+					var _v7 = _jweissman$rogue$Direction$East,
+						_v8 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$South, point);
+					direction = _v7;
+					point = _v8;
+					continue slide;
+				default:
+					var _v9 = _jweissman$rogue$Direction$West,
+						_v10 = A2(_jweissman$rogue$Point$slide, _jweissman$rogue$Direction$South, point);
+					direction = _v9;
+					point = _v10;
+					continue slide;
+			}
+		}
+	});
+var _jweissman$rogue$Point$Point = F2(
+	function (a, b) {
+		return {x: a, y: b};
+	});
+var _jweissman$rogue$Graphics$font = 'VT323';
+var _jweissman$rogue$Graphics$render = F3(
+	function (string, point, color) {
+		return A2(
+			_elm_lang$svg$Svg$text$,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$svg$Svg_Attributes$x(
+					_elm_lang$core$Basics$toString(point.x)),
+					_elm_lang$svg$Svg_Attributes$y(
+					_elm_lang$core$Basics$toString(point.y)),
+					_elm_lang$svg$Svg_Attributes$fontSize('1'),
+					_elm_lang$svg$Svg_Attributes$fontFamily(_jweissman$rogue$Graphics$font),
+					_elm_lang$svg$Svg_Attributes$fill(color)
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text(string)
+				]));
+	});
 var _jweissman$rogue$Creature$disengage = function (model) {
 	return _elm_lang$core$Native_Utils.update(
 		model,
@@ -9779,6 +9783,15 @@ var _jweissman$rogue$Creature$describe = function (model) {
 		]);
 	return A2(_elm_lang$core$String$join, ' ', parts);
 };
+var _jweissman$rogue$Creature$injure = F2(
+	function (amount, model) {
+		var hp$ = model.hp - amount;
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				hp: A2(_elm_lang$core$Basics$max, 0, hp$)
+			});
+	});
 var _jweissman$rogue$Creature$turn = F2(
 	function (direction, model) {
 		return _elm_lang$core$Native_Utils.update(
@@ -9845,6 +9858,761 @@ var _jweissman$rogue$Creature$Model = function (a) {
 		};
 	};
 };
+var _jweissman$rogue$Warrior$enrich = F2(
+	function (amount, model) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{gold: model.gold + amount});
+	});
+var _jweissman$rogue$Warrior$takeDamage = F2(
+	function (amount, model) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{hp: model.hp - amount});
+	});
+var _jweissman$rogue$Warrior$step = F2(
+	function (direction, model) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				position: A2(_jweissman$rogue$Point$slide, direction, model.position),
+				steps: model.steps + 1
+			});
+	});
+var _jweissman$rogue$Warrior$init = function (point) {
+	return {hp: 10, maxHp: 10, direction: _jweissman$rogue$Direction$North, position: point, gold: 0, attack: 3, defense: 1, steps: 0};
+};
+var _jweissman$rogue$Warrior$Model = F8(
+	function (a, b, c, d, e, f, g, h) {
+		return {hp: a, maxHp: b, direction: c, position: d, gold: e, attack: f, defense: g, steps: h};
+	});
+var _jweissman$rogue$Util$getAt = F2(
+	function (xs, idx) {
+		return _elm_lang$core$List$head(
+			A2(_elm_lang$core$List$drop, idx, xs));
+	});
+var _jweissman$rogue$Util$uniqueHelp = F3(
+	function (f, existing, remaining) {
+		uniqueHelp:
+		while (true) {
+			var _p0 = remaining;
+			if (_p0.ctor === '[]') {
+				return _elm_lang$core$Native_List.fromArray(
+					[]);
+			} else {
+				var _p2 = _p0._1;
+				var _p1 = _p0._0;
+				var computedFirst = f(_p1);
+				if (A2(_elm_lang$core$Set$member, computedFirst, existing)) {
+					var _v1 = f,
+						_v2 = existing,
+						_v3 = _p2;
+					f = _v1;
+					existing = _v2;
+					remaining = _v3;
+					continue uniqueHelp;
+				} else {
+					return A2(
+						_elm_lang$core$List_ops['::'],
+						_p1,
+						A3(
+							_jweissman$rogue$Util$uniqueHelp,
+							f,
+							A2(_elm_lang$core$Set$insert, computedFirst, existing),
+							_p2));
+				}
+			}
+		}
+	});
+var _jweissman$rogue$Util$uniqueBy = F2(
+	function (f, list) {
+		return A3(_jweissman$rogue$Util$uniqueHelp, f, _elm_lang$core$Set$empty, list);
+	});
+var _jweissman$rogue$Util$minBy = F2(
+	function (f, ls) {
+		var minBy = F2(
+			function (x, _p3) {
+				var _p4 = _p3;
+				var _p5 = _p4._1;
+				var fx = f(x);
+				return (_elm_lang$core$Native_Utils.cmp(fx, _p5) < 0) ? {ctor: '_Tuple2', _0: x, _1: fx} : {ctor: '_Tuple2', _0: _p4._0, _1: _p5};
+			});
+		var _p6 = ls;
+		if (_p6.ctor === '::') {
+			if (_p6._1.ctor === '[]') {
+				return _elm_lang$core$Maybe$Just(_p6._0);
+			} else {
+				var _p7 = _p6._0;
+				return _elm_lang$core$Maybe$Just(
+					_elm_lang$core$Basics$fst(
+						A3(
+							_elm_lang$core$List$foldl,
+							minBy,
+							{
+								ctor: '_Tuple2',
+								_0: _p7,
+								_1: f(_p7)
+							},
+							_p6._1)));
+			}
+		} else {
+			return _elm_lang$core$Maybe$Nothing;
+		}
+	});
+var _jweissman$rogue$Util$simpleDirectionBetween = F2(
+	function (a, b) {
+		var dy = _elm_lang$core$Basics$abs(a.y - b.y);
+		var dx = _elm_lang$core$Basics$abs(a.x - b.x);
+		return (_elm_lang$core$Native_Utils.cmp(dx, dy) > 0) ? ((_elm_lang$core$Native_Utils.cmp(a.x, b.x) > 0) ? _jweissman$rogue$Direction$East : _jweissman$rogue$Direction$West) : ((_elm_lang$core$Native_Utils.cmp(a.y, b.y) > 0) ? _jweissman$rogue$Direction$South : _jweissman$rogue$Direction$North);
+	});
+var _jweissman$rogue$Util$directionBetween = F2(
+	function (a, b) {
+		return ((_elm_lang$core$Native_Utils.cmp(a.x, b.x) > 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) > 0)) ? _jweissman$rogue$Direction$Southeast : (((_elm_lang$core$Native_Utils.cmp(a.x, b.x) < 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) > 0)) ? _jweissman$rogue$Direction$Southwest : (((_elm_lang$core$Native_Utils.cmp(a.x, b.x) > 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) < 0)) ? _jweissman$rogue$Direction$Northeast : (((_elm_lang$core$Native_Utils.cmp(a.x, b.x) < 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) < 0)) ? _jweissman$rogue$Direction$Northwest : A2(_jweissman$rogue$Util$simpleDirectionBetween, a, b))));
+	});
+var _jweissman$rogue$Graph$match = F2(
+	function (n, graph) {
+		var _p0 = graph;
+		var rest = _p0._1;
+		return _elm_lang$core$Native_Utils.eq(n, graph) ? true : (_elm_lang$core$Native_Utils.eq(
+			_elm_lang$core$List$length(rest),
+			0) ? false : A2(
+			_elm_lang$core$List$any,
+			_jweissman$rogue$Graph$match(n),
+			rest));
+	});
+var _jweissman$rogue$Graph$nodeValue = function (_p1) {
+	var _p2 = _p1;
+	return _p2._0;
+};
+var _jweissman$rogue$Graph$minimumBy = F2(
+	function (f, graph) {
+		var _p3 = graph;
+		var n = _p3._0;
+		var edges = _p3._1;
+		var minEdges = A2(
+			_elm_lang$core$List$map,
+			_jweissman$rogue$Graph$minimumBy(f),
+			edges);
+		var minRest = A2(
+			_elm_lang$core$Maybe$withDefault,
+			graph,
+			A2(
+				_jweissman$rogue$Util$minBy,
+				function (n$) {
+					return f(
+						_jweissman$rogue$Graph$nodeValue(n$));
+				},
+				minEdges));
+		var restMinDist = f(
+			_jweissman$rogue$Graph$nodeValue(minRest));
+		return (_elm_lang$core$Native_Utils.cmp(
+			f(n),
+			restMinDist) < 0) ? graph : minRest;
+	});
+var _jweissman$rogue$Graph$minimumWhere = F3(
+	function (f, pred, graph) {
+		var _p4 = graph;
+		var n = _p4._0;
+		var edges = _p4._1;
+		var minEdges = A2(
+			_elm_lang$core$List$filterMap,
+			A2(_jweissman$rogue$Graph$minimumWhere, f, pred),
+			edges);
+		var minRest = A2(
+			_jweissman$rogue$Util$minBy,
+			function (n$) {
+				return f(
+					_jweissman$rogue$Graph$nodeValue(n$));
+			},
+			minEdges);
+		var _p5 = minRest;
+		if (_p5.ctor === 'Just') {
+			var restMinDist = f(
+				_jweissman$rogue$Graph$nodeValue(_p5._0));
+			return ((_elm_lang$core$Native_Utils.cmp(
+				f(n),
+				restMinDist) < 0) && pred(n)) ? _elm_lang$core$Maybe$Just(graph) : minRest;
+		} else {
+			return pred(n) ? _elm_lang$core$Maybe$Just(graph) : _elm_lang$core$Maybe$Nothing;
+		}
+	});
+var _jweissman$rogue$Graph$edges = function (_p6) {
+	var _p7 = _p6;
+	var _p8 = _p7._1;
+	var edges$ = A2(
+		_elm_lang$core$List$map,
+		function (n$) {
+			return {
+				ctor: '_Tuple2',
+				_0: _p7._0,
+				_1: _jweissman$rogue$Graph$nodeValue(n$)
+			};
+		},
+		_p8);
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		edges$,
+		A2(_elm_lang$core$List$concatMap, _jweissman$rogue$Graph$edges, _p8));
+};
+var _jweissman$rogue$Graph$fold = F3(
+	function (f, initial, graph) {
+		return A3(
+			_elm_lang$core$List$foldr,
+			f,
+			initial,
+			_jweissman$rogue$Graph$edges(graph));
+	});
+var _jweissman$rogue$Graph$Node = F2(
+	function (a, b) {
+		return {ctor: 'Node', _0: a, _1: b};
+	});
+var _jweissman$rogue$Graph$node = function (x) {
+	return A2(
+		_jweissman$rogue$Graph$Node,
+		x,
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+};
+var _jweissman$rogue$Graph$nodeWithEdges = F2(
+	function (x, edges) {
+		return A2(_jweissman$rogue$Graph$Node, x, edges);
+	});
+var _jweissman$rogue$Graph$map = F2(
+	function (f, _p9) {
+		var _p10 = _p9;
+		return A2(
+			_jweissman$rogue$Graph$Node,
+			f(_p10._0),
+			A2(
+				_elm_lang$core$List$map,
+				_jweissman$rogue$Graph$map(f),
+				_p10._1));
+	});
+var _jweissman$rogue$Graph$mapNodes = F2(
+	function (f, _p11) {
+		var _p12 = _p11;
+		return f(
+			A2(
+				_jweissman$rogue$Graph$Node,
+				_p12._0,
+				A2(
+					_elm_lang$core$List$map,
+					_jweissman$rogue$Graph$mapNodes(f),
+					_p12._1)));
+	});
+var _jweissman$rogue$Graph$connect$ = F2(
+	function (_p13, n$) {
+		var _p14 = _p13;
+		return A2(
+			_jweissman$rogue$Graph$Node,
+			_p14._0,
+			A2(_elm_lang$core$List_ops['::'], n$, _p14._1));
+	});
+var _jweissman$rogue$Graph$joinMatching = F3(
+	function (n, node$, trialNode) {
+		var _p15 = trialNode;
+		var n$ = _p15._0;
+		return _elm_lang$core$Native_Utils.eq(n$, n) ? A2(
+			_jweissman$rogue$Graph$connect$,
+			trialNode,
+			_jweissman$rogue$Graph$node(node$)) : trialNode;
+	});
+var _jweissman$rogue$Graph$edge = F3(
+	function (n, n$, graph) {
+		return A2(
+			_jweissman$rogue$Graph$mapNodes,
+			A2(_jweissman$rogue$Graph$joinMatching, n, n$),
+			graph);
+	});
+var _jweissman$rogue$Graph$tree$ = F4(
+	function (f, pred, graph, ls) {
+		tree$:
+		while (true) {
+			var weight = function (x) {
+				return A2(
+					f,
+					x,
+					_jweissman$rogue$Graph$nodeValue(
+						A2(
+							_jweissman$rogue$Graph$minimumBy,
+							f(x),
+							graph)));
+			};
+			var rest = A2(_elm_lang$core$List$sortBy, weight, ls);
+			var _p16 = _elm_lang$core$List$head(rest);
+			if (_p16.ctor === 'Nothing') {
+				return graph;
+			} else {
+				var _p19 = _p16._0;
+				var closestNode = A3(
+					_jweissman$rogue$Graph$minimumWhere,
+					f(_p19),
+					pred(_p19),
+					graph);
+				var graph$ = function () {
+					var _p17 = closestNode;
+					if (_p17.ctor === 'Just') {
+						return A3(
+							_jweissman$rogue$Graph$edge,
+							_jweissman$rogue$Graph$nodeValue(_p17._0),
+							_p19,
+							graph);
+					} else {
+						return graph;
+					}
+				}();
+				var _p18 = _elm_lang$core$List$tail(rest);
+				if (_p18.ctor === 'Nothing') {
+					return graph$;
+				} else {
+					var _v9 = f,
+						_v10 = pred,
+						_v11 = graph$,
+						_v12 = _p18._0;
+					f = _v9;
+					pred = _v10;
+					graph = _v11;
+					ls = _v12;
+					continue tree$;
+				}
+			}
+		}
+	});
+var _jweissman$rogue$Graph$tree = F3(
+	function (f, predicate, ls) {
+		var _p20 = _elm_lang$core$List$head(ls);
+		if (_p20.ctor === 'Nothing') {
+			return _elm_lang$core$Maybe$Nothing;
+		} else {
+			var firstNode = _jweissman$rogue$Graph$node(_p20._0);
+			var _p21 = _elm_lang$core$List$tail(ls);
+			if (_p21.ctor === 'Nothing') {
+				return _elm_lang$core$Maybe$Just(firstNode);
+			} else {
+				return _elm_lang$core$Maybe$Just(
+					A4(_jweissman$rogue$Graph$tree$, f, predicate, firstNode, _p21._0));
+			}
+		}
+	});
+var _jweissman$rogue$Graph$span = F2(
+	function (f, ls) {
+		return A3(
+			_jweissman$rogue$Graph$tree,
+			f,
+			F2(
+				function (_p23, _p22) {
+					return true;
+				}),
+			ls);
+	});
+var _jweissman$rogue$Room$center = function (_p0) {
+	var _p1 = _p0;
+	var _p2 = _p1.origin;
+	return {x: _p2.x + _p1.width, y: _p2.y + _p1.height};
+};
+var _jweissman$rogue$Room$distance = F2(
+	function (a, b) {
+		return A2(
+			_jweissman$rogue$Point$distance,
+			_jweissman$rogue$Room$center(a),
+			_jweissman$rogue$Room$center(b));
+	});
+var _jweissman$rogue$Room$directionBetween = F2(
+	function (a, b) {
+		return A2(
+			_jweissman$rogue$Util$simpleDirectionBetween,
+			_jweissman$rogue$Room$center(a),
+			_jweissman$rogue$Room$center(b));
+	});
+var _jweissman$rogue$Room$size = function (r) {
+	return r.width * r.height;
+};
+var _jweissman$rogue$Room$layout$ = F3(
+	function (_p3, width, height) {
+		var _p4 = _p3;
+		var _p6 = _p4.y;
+		var _p5 = _p4.x;
+		var floors = A2(
+			_elm_lang$core$List$concatMap,
+			function (y$) {
+				return A2(
+					_elm_lang$core$List$map,
+					function (x$) {
+						return {x: _p5 + x$, y: _p6 + y$};
+					},
+					_elm_lang$core$Native_List.range(1, width - 1));
+			},
+			_elm_lang$core$Native_List.range(1, height - 1));
+		var walls = A2(
+			_elm_lang$core$Basics_ops['++'],
+			A2(
+				_elm_lang$core$List$map,
+				function (x$) {
+					return {x: _p5 + x$, y: _p6};
+				},
+				_elm_lang$core$Native_List.range(0, width)),
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				A2(
+					_elm_lang$core$List$map,
+					function (x$) {
+						return {x: _p5 + x$, y: _p6 + height};
+					},
+					_elm_lang$core$Native_List.range(0, width)),
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					A2(
+						_elm_lang$core$List$map,
+						function (y$) {
+							return {x: _p5, y: _p6 + y$};
+						},
+						_elm_lang$core$Native_List.range(0, height)),
+					A2(
+						_elm_lang$core$List$map,
+						function (y$) {
+							return {x: _p5 + width, y: _p6 + y$};
+						},
+						_elm_lang$core$Native_List.range(0, height)))));
+		return {ctor: '_Tuple2', _0: walls, _1: floors};
+	});
+var _jweissman$rogue$Room$layout = function (_p7) {
+	var _p8 = _p7;
+	return A3(_jweissman$rogue$Room$layout$, _p8.origin, _p8.width, _p8.height);
+};
+var _jweissman$rogue$Room$isRight = F3(
+	function (n, a, b) {
+		return _elm_lang$core$Native_Utils.cmp(b.origin.x + b.width, a.origin.x - n) < 0;
+	});
+var _jweissman$rogue$Room$isLeft = F3(
+	function (n, a, b) {
+		return _elm_lang$core$Native_Utils.cmp(a.origin.x + a.width, b.origin.x - n) < 0;
+	});
+var _jweissman$rogue$Room$isBelow = F3(
+	function (n, a, b) {
+		return _elm_lang$core$Native_Utils.cmp(b.origin.y + b.height, a.origin.y - n) < 0;
+	});
+var _jweissman$rogue$Room$isAbove = F3(
+	function (n, a, b) {
+		return _elm_lang$core$Native_Utils.cmp(a.origin.y + a.height, b.origin.y - n) < 0;
+	});
+var _jweissman$rogue$Room$overlapsX = F3(
+	function (n, a, b) {
+		return _elm_lang$core$Basics$not(
+			A3(_jweissman$rogue$Room$isLeft, n, a, b) || A3(_jweissman$rogue$Room$isRight, n, a, b));
+	});
+var _jweissman$rogue$Room$overlapsY = F3(
+	function (n, a, b) {
+		return _elm_lang$core$Basics$not(
+			A3(_jweissman$rogue$Room$isAbove, n, a, b) || A3(_jweissman$rogue$Room$isBelow, n, a, b));
+	});
+var _jweissman$rogue$Room$overlapsRelevantDirection = F3(
+	function (n, a, b) {
+		var _p9 = A2(_jweissman$rogue$Room$directionBetween, a, b);
+		switch (_p9.ctor) {
+			case 'North':
+				return A3(_jweissman$rogue$Room$overlapsX, n, a, b);
+			case 'South':
+				return A3(_jweissman$rogue$Room$overlapsX, n, a, b);
+			case 'East':
+				return A3(_jweissman$rogue$Room$overlapsY, n, a, b);
+			case 'West':
+				return A3(_jweissman$rogue$Room$overlapsY, n, a, b);
+			default:
+				return false;
+		}
+	});
+var _jweissman$rogue$Room$canConnect = F2(
+	function (a, b) {
+		return A3(_jweissman$rogue$Room$overlapsRelevantDirection, -2, a, b);
+	});
+var _jweissman$rogue$Room$network = function (rooms) {
+	return A3(_jweissman$rogue$Graph$tree, _jweissman$rogue$Room$distance, _jweissman$rogue$Room$canConnect, rooms);
+};
+var _jweissman$rogue$Room$overlaps = F2(
+	function (a, b) {
+		return A3(_jweissman$rogue$Room$overlapsY, 0, a, b) && A3(_jweissman$rogue$Room$overlapsX, 0, a, b);
+	});
+var _jweissman$rogue$Room$filterOverlaps = function (rooms) {
+	var rooms$ = _elm_lang$core$List$reverse(
+		A2(_elm_lang$core$List$sortBy, _jweissman$rogue$Room$size, rooms));
+	var _p10 = _elm_lang$core$List$head(rooms$);
+	if (_p10.ctor === 'Nothing') {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	} else {
+		var _p11 = _p10._0;
+		var rest = _jweissman$rogue$Room$filterOverlaps(
+			A2(
+				_elm_lang$core$List$filter,
+				function (room$) {
+					return _elm_lang$core$Basics$not(
+						A2(_jweissman$rogue$Room$overlaps, _p11, room$));
+				},
+				A2(
+					_elm_lang$core$Maybe$withDefault,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$List$tail(rooms$))));
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			_elm_lang$core$Native_List.fromArray(
+				[_p11]),
+			rest);
+	}
+};
+var _jweissman$rogue$Room$create = F3(
+	function (point, width, height) {
+		return {origin: point, width: width, height: height};
+	});
+var _jweissman$rogue$Room$generate$ = function () {
+	var origin = A3(
+		_jweissman$rogue$Point$randomWithOffset,
+		{x: 3, y: 4},
+		26,
+		14);
+	var height = A2(_elm_lang$core$Random$int, 4, 6);
+	var width = A2(_elm_lang$core$Random$int, 3, 12);
+	return A4(_elm_lang$core$Random$map3, _jweissman$rogue$Room$create, origin, width, height);
+}();
+var _jweissman$rogue$Room$generate = function (n) {
+	return A2(_elm_lang$core$Random$list, n, _jweissman$rogue$Room$generate$);
+};
+var _jweissman$rogue$Room$Room = F3(
+	function (a, b, c) {
+		return {origin: a, width: b, height: c};
+	});
+var _jweissman$rogue$Path$constructPath = F3(
+	function (visited, source, destination) {
+		var isDestination = function (pt) {
+			return _elm_lang$core$Native_Utils.eq(pt, destination);
+		};
+		var maybeDestination = _elm_lang$core$List$head(
+			A2(
+				_elm_lang$core$List$filter,
+				function (_p0) {
+					return isDestination(
+						_elm_lang$core$Basics$fst(_p0));
+				},
+				visited));
+		if (isDestination(source)) {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			var _p1 = maybeDestination;
+			if (_p1.ctor === 'Nothing') {
+				return _elm_lang$core$Native_List.fromArray(
+					[]);
+			} else {
+				var newDest = A2(
+					_jweissman$rogue$Point$slide,
+					_jweissman$rogue$Direction$invert(_p1._0._1),
+					_p1._0._0);
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Native_List.fromArray(
+						[destination]),
+					A3(_jweissman$rogue$Path$constructPath, visited, source, newDest));
+			}
+		}
+	});
+var _jweissman$rogue$Path$find$ = F6(
+	function (visited, frontier, source, predicate, moves, depth) {
+		find$:
+		while (true) {
+			if (_elm_lang$core$Native_Utils.cmp(depth, 0) < 0) {
+				return _elm_lang$core$Maybe$Nothing;
+			} else {
+				var maybeGoal = _elm_lang$core$List$head(
+					A2(
+						_elm_lang$core$List$filter,
+						function (_p2) {
+							return predicate(
+								_elm_lang$core$Basics$fst(_p2));
+						},
+						frontier));
+				var _p3 = maybeGoal;
+				if (_p3.ctor === 'Just') {
+					var path = A3(
+						_jweissman$rogue$Path$constructPath,
+						A2(_elm_lang$core$Basics_ops['++'], visited, frontier),
+						source,
+						_p3._0._0);
+					return _elm_lang$core$Maybe$Just(
+						_elm_lang$core$List$reverse(path));
+				} else {
+					if (_elm_lang$core$Native_Utils.eq(
+						_elm_lang$core$List$length(frontier),
+						0)) {
+						var frontier$ = moves(source);
+						var _v2 = visited,
+							_v3 = frontier$,
+							_v4 = source,
+							_v5 = predicate,
+							_v6 = moves,
+							_v7 = depth - 1;
+						visited = _v2;
+						frontier = _v3;
+						source = _v4;
+						predicate = _v5;
+						moves = _v6;
+						depth = _v7;
+						continue find$;
+					} else {
+						var newVisited = A2(_elm_lang$core$Basics_ops['++'], visited, frontier);
+						var visitedPositions = A2(_elm_lang$core$List$map, _elm_lang$core$Basics$fst, newVisited);
+						var newFrontier = A2(
+							_jweissman$rogue$Util$uniqueBy,
+							function (_p4) {
+								return _jweissman$rogue$Point$code(
+									_elm_lang$core$Basics$fst(_p4));
+							},
+							A2(
+								_elm_lang$core$List$filter,
+								function (_p5) {
+									var _p6 = _p5;
+									return _elm_lang$core$Basics$not(
+										A2(_elm_lang$core$List$member, _p6._0, visitedPositions));
+								},
+								A2(
+									_elm_lang$core$List$concatMap,
+									function (_p7) {
+										return moves(
+											_elm_lang$core$Basics$fst(_p7));
+									},
+									frontier)));
+						if (_elm_lang$core$Native_Utils.cmp(
+							_elm_lang$core$List$length(frontier),
+							0) > 0) {
+							var _v9 = newVisited,
+								_v10 = newFrontier,
+								_v11 = source,
+								_v12 = predicate,
+								_v13 = moves,
+								_v14 = depth - 1;
+							visited = _v9;
+							frontier = _v10;
+							source = _v11;
+							predicate = _v12;
+							moves = _v13;
+							depth = _v14;
+							continue find$;
+						} else {
+							return _elm_lang$core$Maybe$Nothing;
+						}
+					}
+				}
+			}
+		}
+	});
+var _jweissman$rogue$Path$findBy = F3(
+	function (predicate, moves, source) {
+		return A6(
+			_jweissman$rogue$Path$find$,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			source,
+			predicate,
+			moves,
+			100);
+	});
+var _jweissman$rogue$Path$find = F3(
+	function (dst, src, moves) {
+		return A3(
+			_jweissman$rogue$Path$findBy,
+			function (pt) {
+				return _elm_lang$core$Native_Utils.eq(pt, dst);
+			},
+			moves,
+			src);
+	});
+var _jweissman$rogue$Event$describe = function (event) {
+	var _p0 = event;
+	switch (_p0.ctor) {
+		case 'Awaken':
+			return 'You awaken in the Timeless Halls of Mandos...';
+		case 'PickupCoin':
+			return 'You find a glittering golden coin.';
+		case 'EnemyEngaged':
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				_jweissman$rogue$Creature$describe(_p0._0),
+				' engages you!');
+		case 'AttackEnemy':
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				'You attack ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_jweissman$rogue$Creature$describe(_p0._0),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						' for ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Basics$toString(_p0._1),
+							' damage.'))));
+		case 'KillEnemy':
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				'You slay ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_jweissman$rogue$Creature$describe(_p0._0),
+					'!'));
+		case 'DefendEnemy':
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				'You are attacked by ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_jweissman$rogue$Creature$describe(_p0._0),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						' for ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Basics$toString(_p0._1),
+							' damage.'))));
+		default:
+			return 'You were slain...';
+	}
+};
+var _jweissman$rogue$Event$Death = {ctor: 'Death'};
+var _jweissman$rogue$Event$death = _jweissman$rogue$Event$Death;
+var _jweissman$rogue$Event$DefendEnemy = F2(
+	function (a, b) {
+		return {ctor: 'DefendEnemy', _0: a, _1: b};
+	});
+var _jweissman$rogue$Event$defend = F2(
+	function (target, damage) {
+		return A2(_jweissman$rogue$Event$DefendEnemy, target, damage);
+	});
+var _jweissman$rogue$Event$KillEnemy = function (a) {
+	return {ctor: 'KillEnemy', _0: a};
+};
+var _jweissman$rogue$Event$killEnemy = function (target) {
+	return _jweissman$rogue$Event$KillEnemy(target);
+};
+var _jweissman$rogue$Event$AttackEnemy = F2(
+	function (a, b) {
+		return {ctor: 'AttackEnemy', _0: a, _1: b};
+	});
+var _jweissman$rogue$Event$attack = F2(
+	function (target, damage) {
+		return A2(_jweissman$rogue$Event$AttackEnemy, target, damage);
+	});
+var _jweissman$rogue$Event$EnemyEngaged = function (a) {
+	return {ctor: 'EnemyEngaged', _0: a};
+};
+var _jweissman$rogue$Event$enemyEngaged = function (enemy) {
+	return _jweissman$rogue$Event$EnemyEngaged(enemy);
+};
+var _jweissman$rogue$Event$PickupCoin = {ctor: 'PickupCoin'};
+var _jweissman$rogue$Event$pickupCoin = _jweissman$rogue$Event$PickupCoin;
+var _jweissman$rogue$Event$Awaken = {ctor: 'Awaken'};
+var _jweissman$rogue$Event$awaken = _jweissman$rogue$Event$Awaken;
 var _jweissman$rogue$Entity$glyph = function (entity) {
 	var _p0 = entity;
 	switch (_p0.ctor) {
@@ -9856,8 +10624,14 @@ var _jweissman$rogue$Entity$glyph = function (entity) {
 			return '#';
 		case 'Coin':
 			return '.';
-		default:
+		case 'Floor':
 			return ' ';
+		case 'Door':
+			return '+';
+		case 'StairsUp':
+			return '>';
+		default:
+			return '<';
 	}
 };
 var _jweissman$rogue$Entity$position = function (entity) {
@@ -9867,9 +10641,15 @@ var _jweissman$rogue$Entity$position = function (entity) {
 			return _p1._0.position;
 		case 'Player':
 			return _p1._0.position;
+		case 'Door':
+			return _p1._0;
 		case 'Wall':
 			return _p1._0;
 		case 'Coin':
+			return _p1._0;
+		case 'Floor':
+			return _p1._0;
+		case 'StairsUp':
 			return _p1._0;
 		default:
 			return _p1._0;
@@ -9886,8 +10666,14 @@ var _jweissman$rogue$Entity$color = function (entity) {
 			return 'darkgrey';
 		case 'Coin':
 			return 'gold';
-		default:
+		case 'Floor':
 			return 'gray';
+		case 'Door':
+			return 'orange';
+		case 'StairsUp':
+			return 'green';
+		default:
+			return 'yellow';
 	}
 };
 var _jweissman$rogue$Entity$view = function (entity) {
@@ -9908,9 +10694,35 @@ var _jweissman$rogue$Entity$describe = function (entity) {
 			return 'a sturdy wall';
 		case 'Coin':
 			return 'a golden coin';
-		default:
+		case 'Floor':
 			return 'a cobblestone floor';
+		case 'Door':
+			return 'a creaky door';
+		case 'StairsUp':
+			return 'an upward-curving staircase';
+		default:
+			return 'a downward-curving staircase';
 	}
+};
+var _jweissman$rogue$Entity$Down = {ctor: 'Down'};
+var _jweissman$rogue$Entity$Up = {ctor: 'Up'};
+var _jweissman$rogue$Entity$StairsDown = function (a) {
+	return {ctor: 'StairsDown', _0: a};
+};
+var _jweissman$rogue$Entity$downstairs = function (point) {
+	return _jweissman$rogue$Entity$StairsDown(point);
+};
+var _jweissman$rogue$Entity$StairsUp = function (a) {
+	return {ctor: 'StairsUp', _0: a};
+};
+var _jweissman$rogue$Entity$upstairs = function (point) {
+	return _jweissman$rogue$Entity$StairsUp(point);
+};
+var _jweissman$rogue$Entity$Door = function (a) {
+	return {ctor: 'Door', _0: a};
+};
+var _jweissman$rogue$Entity$door = function (point) {
+	return _jweissman$rogue$Entity$Door(point);
 };
 var _jweissman$rogue$Entity$Floor = function (a) {
 	return {ctor: 'Floor', _0: a};
@@ -9942,77 +10754,772 @@ var _jweissman$rogue$Entity$Monster = function (a) {
 var _jweissman$rogue$Entity$monster = function (creature) {
 	return _jweissman$rogue$Entity$Monster(creature);
 };
-var _jweissman$rogue$Event$describe = function (event) {
-	var _p0 = event;
-	switch (_p0.ctor) {
-		case 'Awaken':
-			return 'You awaken in the Timeless Halls of Mandos...';
-		case 'PickupCoin':
-			return 'You find a glittering golden coin.';
-		case 'AttackEnemy':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You attack ',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Creature$describe(_p0._0),
+var _jweissman$rogue$Level$addWallsAround = F2(
+	function (pt, model) {
+		var newWalls = A2(
+			_elm_lang$core$List$filter,
+			function (wall) {
+				return _elm_lang$core$Basics$not(
 					A2(
-						_elm_lang$core$Basics_ops['++'],
-						' for ',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_elm_lang$core$Basics$toString(_p0._1),
-							' damage.'))));
-		case 'KillEnemy':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You slay ',
+						_elm_lang$core$List$any,
+						function (floor$) {
+							return _elm_lang$core$Native_Utils.eq(wall, floor$);
+						},
+						model.floors)) || A2(
+					_elm_lang$core$List$any,
+					function (wall$) {
+						return _elm_lang$core$Native_Utils.eq(wall, wall$);
+					},
+					model.walls);
+			},
+			A2(
+				_elm_lang$core$List$map,
+				function (d) {
+					return A2(_jweissman$rogue$Point$slide, d, pt);
+				},
+				_jweissman$rogue$Direction$directions));
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				walls: A2(_elm_lang$core$Basics_ops['++'], newWalls, model.walls)
+			});
+	});
+var _jweissman$rogue$Level$removeFloor = F2(
+	function (pt, model) {
+		var floors$ = A2(
+			_elm_lang$core$List$filterMap,
+			function (pt$) {
+				return _elm_lang$core$Basics$not(
+					_elm_lang$core$Native_Utils.eq(pt, pt$)) ? _elm_lang$core$Maybe$Just(pt$) : _elm_lang$core$Maybe$Nothing;
+			},
+			model.floors);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{floors: floors$});
+	});
+var _jweissman$rogue$Level$removeWall = F2(
+	function (pt, model) {
+		var walls$ = A2(
+			_elm_lang$core$List$filterMap,
+			function (pt$) {
+				return _elm_lang$core$Basics$not(
+					_elm_lang$core$Native_Utils.eq(pt, pt$)) ? _elm_lang$core$Maybe$Just(pt$) : _elm_lang$core$Maybe$Nothing;
+			},
+			model.walls);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{walls: walls$});
+	});
+var _jweissman$rogue$Level$emplaceDownstairs = F2(
+	function (point, model) {
+		return A2(
+			_jweissman$rogue$Level$removeWall,
+			point,
+			A2(
+				_jweissman$rogue$Level$addWallsAround,
+				point,
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{downstairs: point})));
+	});
+var _jweissman$rogue$Level$emplaceUpstairs = F2(
+	function (point, model) {
+		return A2(
+			_jweissman$rogue$Level$removeWall,
+			point,
+			A2(
+				_jweissman$rogue$Level$addWallsAround,
+				point,
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{upstairs: point})));
+	});
+var _jweissman$rogue$Level$emplaceDoor = F2(
+	function (pt, model) {
+		return A2(
+			_jweissman$rogue$Level$removeWall,
+			pt,
+			_elm_lang$core$Native_Utils.update(
+				model,
+				{
+					doors: A2(_elm_lang$core$List_ops['::'], pt, model.doors)
+				}));
+	});
+var _jweissman$rogue$Level$extrudeCorridor$ = F4(
+	function (pt, dir, depth, model) {
+		extrudeCorridor$:
+		while (true) {
+			var foundFloor = A2(
+				_elm_lang$core$List$any,
+				function (pt$) {
+					return _elm_lang$core$Native_Utils.eq(pt$, pt);
+				},
+				model.floors);
+			var next = A2(_jweissman$rogue$Point$slide, dir, pt);
+			var model$ = A2(
+				_jweissman$rogue$Level$removeWall,
+				pt,
 				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Creature$describe(_p0._0),
-					'!'));
-		default:
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You were attacked by ',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Creature$describe(_p0._0),
+					_jweissman$rogue$Level$addWallsAround,
+					pt,
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							floors: A2(_elm_lang$core$List_ops['::'], pt, model.floors)
+						})));
+			if (foundFloor || (_elm_lang$core$Native_Utils.cmp(depth, 0) < 0)) {
+				return A2(
+					_jweissman$rogue$Level$emplaceDoor,
 					A2(
-						_elm_lang$core$Basics_ops['++'],
-						' for ',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_elm_lang$core$Basics$toString(_p0._1),
-							' damage.'))));
+						_jweissman$rogue$Point$slide,
+						_jweissman$rogue$Direction$invert(dir),
+						pt),
+					model$);
+			} else {
+				var _v0 = A2(_jweissman$rogue$Point$slide, dir, pt),
+					_v1 = dir,
+					_v2 = depth - 1,
+					_v3 = model$;
+				pt = _v0;
+				dir = _v1;
+				depth = _v2;
+				model = _v3;
+				continue extrudeCorridor$;
+			}
+		}
+	});
+var _jweissman$rogue$Level$extrudeCorridor = F4(
+	function (depth, pt, dir, model) {
+		return A4(_jweissman$rogue$Level$extrudeCorridor$, pt, dir, depth, model);
+	});
+var _jweissman$rogue$Level$connectRooms$ = F2(
+	function (_p0, model) {
+		var _p1 = _p0;
+		var _p5 = _p1._1;
+		var _p4 = _p1._0;
+		var yOverlapEnd = A2(_elm_lang$core$Basics$min, _p4.origin.y + _p4.height, _p5.origin.y + _p5.height) - 1;
+		var yOverlapStart = A2(_elm_lang$core$Basics$max, _p4.origin.y, _p5.origin.y) + 1;
+		var yOverlapRange = _elm_lang$core$Native_List.range(yOverlapStart, yOverlapEnd);
+		var sampleOverlap = function (overlap) {
+			return A2(
+				_elm_lang$core$Maybe$withDefault,
+				-1,
+				A2(
+					_jweissman$rogue$Util$getAt,
+					overlap,
+					A2(
+						_elm_lang$core$Basics_ops['%'],
+						Math.pow(_p4.height, 31) + _p5.origin.x,
+						_elm_lang$core$List$length(overlap))));
+		};
+		var xOverlapEnd = A2(_elm_lang$core$Basics$min, _p4.origin.x + _p4.width, _p5.origin.x + _p5.width) - 1;
+		var xOverlapStart = A2(_elm_lang$core$Basics$max, _p4.origin.x, _p5.origin.x) + 1;
+		var xOverlapRange = _elm_lang$core$Native_List.range(xOverlapStart, xOverlapEnd);
+		var direction = _jweissman$rogue$Direction$invert(
+			A2(_jweissman$rogue$Room$directionBetween, _p4, _p5));
+		var startPosition = function () {
+			var _p2 = direction;
+			switch (_p2.ctor) {
+				case 'North':
+					return _elm_lang$core$Maybe$Just(
+						{
+							x: sampleOverlap(xOverlapRange),
+							y: _p4.origin.y
+						});
+				case 'South':
+					return _elm_lang$core$Maybe$Just(
+						{
+							x: sampleOverlap(xOverlapRange),
+							y: _p4.origin.y + _p4.height
+						});
+				case 'East':
+					return _elm_lang$core$Maybe$Just(
+						{
+							x: _p4.origin.x + _p4.width,
+							y: sampleOverlap(yOverlapRange)
+						});
+				case 'West':
+					return _elm_lang$core$Maybe$Just(
+						{
+							x: _p4.origin.x,
+							y: sampleOverlap(yOverlapRange)
+						});
+				default:
+					return _elm_lang$core$Maybe$Nothing;
+			}
+		}();
+		var _p3 = startPosition;
+		if (_p3.ctor === 'Just') {
+			return A4(
+				_jweissman$rogue$Level$extrudeCorridor,
+				_elm_lang$core$Basics$round(
+					A2(_jweissman$rogue$Room$distance, _p4, _p5)),
+				_p3._0,
+				direction,
+				model);
+		} else {
+			return model;
+		}
+	});
+var _jweissman$rogue$Level$connectRooms = F2(
+	function (rooms, model) {
+		var model$ = model;
+		var maybeNetwork = _jweissman$rogue$Room$network(rooms);
+		var _p6 = maybeNetwork;
+		if (_p6.ctor === 'Just') {
+			return A3(_jweissman$rogue$Graph$fold, _jweissman$rogue$Level$connectRooms$, model, _p6._0);
+		} else {
+			return model;
+		}
+	});
+var _jweissman$rogue$Level$extrudeRoom = F2(
+	function (room, model) {
+		var _p7 = _jweissman$rogue$Room$layout(room);
+		var walls = _p7._0;
+		var floors = _p7._1;
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				walls: A2(_elm_lang$core$Basics_ops['++'], model.walls, walls),
+				floors: A2(_elm_lang$core$Basics_ops['++'], model.floors, floors)
+			});
+	});
+var _jweissman$rogue$Level$extrudeRooms = F2(
+	function (rooms, model) {
+		return A3(_elm_lang$core$List$foldr, _jweissman$rogue$Level$extrudeRoom, model, rooms);
+	});
+var _jweissman$rogue$Level$collectCoin = F2(
+	function (pt, model) {
+		var coins$ = A2(
+			_elm_lang$core$List$filter,
+			function (_p8) {
+				return _elm_lang$core$Basics$not(
+					function (c) {
+						return _elm_lang$core$Native_Utils.eq(c, pt);
+					}(_p8));
+			},
+			model.coins);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{coins: coins$});
+	});
+var _jweissman$rogue$Level$injureCreature = F3(
+	function (creature, amount, model) {
+		var creatures$ = A2(
+			_elm_lang$core$List$map,
+			function (c) {
+				return _elm_lang$core$Native_Utils.eq(c, creature) ? _jweissman$rogue$Creature$engage(
+					A2(_jweissman$rogue$Creature$injure, amount, c)) : c;
+			},
+			model.creatures);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{creatures: creatures$});
+	});
+var _jweissman$rogue$Level$playerTakesDamage = F3(
+	function (creature, amount, _p9) {
+		var _p10 = _p9;
+		var event = A2(_jweissman$rogue$Event$defend, creature, amount);
+		var player$ = A2(_jweissman$rogue$Warrior$takeDamage, amount, _p10._2);
+		return {
+			ctor: '_Tuple3',
+			_0: _p10._0,
+			_1: A2(_elm_lang$core$List_ops['::'], event, _p10._1),
+			_2: player$
+		};
+	});
+var _jweissman$rogue$Level$turnCreature = F3(
+	function (creature, direction, model) {
+		var creatures$ = A2(
+			_elm_lang$core$List$map,
+			function (c) {
+				return _elm_lang$core$Native_Utils.eq(c, creature) ? A2(_jweissman$rogue$Creature$turn, direction, c) : c;
+			},
+			model.creatures);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{creatures: creatures$});
+	});
+var _jweissman$rogue$Level$creatureAt = F2(
+	function (pt, model) {
+		var creatures$ = A2(
+			_elm_lang$core$List$filter,
+			function (c) {
+				return _elm_lang$core$Native_Utils.eq(c.position, pt);
+			},
+			model.creatures);
+		return _elm_lang$core$List$head(creatures$);
+	});
+var _jweissman$rogue$Level$isAlive = function (livingThing) {
+	return _elm_lang$core$Native_Utils.cmp(livingThing.hp, 0) > 0;
+};
+var _jweissman$rogue$Level$playerDies = function (_p11) {
+	var _p12 = _p11;
+	var _p15 = _p12._2;
+	var _p14 = _p12._0;
+	var _p13 = _p12._1;
+	if (_elm_lang$core$Basics$not(
+		_jweissman$rogue$Level$isAlive(_p15))) {
+		var event = _jweissman$rogue$Event$death;
+		return {
+			ctor: '_Tuple3',
+			_0: _p14,
+			_1: A2(_elm_lang$core$List_ops['::'], event, _p13),
+			_2: _p15
+		};
+	} else {
+		return {ctor: '_Tuple3', _0: _p14, _1: _p13, _2: _p15};
 	}
 };
-var _jweissman$rogue$Event$DefendEnemy = F2(
-	function (a, b) {
-		return {ctor: 'DefendEnemy', _0: a, _1: b};
+var _jweissman$rogue$Level$creatureAttacks = F2(
+	function (creature, _p16) {
+		var _p17 = _p16;
+		var _p20 = _p17._2;
+		var _p19 = _p17._0;
+		var _p18 = _p17._1;
+		var dmg = creature.attack - _p20.defense;
+		var pos = A2(_jweissman$rogue$Point$slide, creature.direction, creature.position);
+		return _elm_lang$core$Native_Utils.eq(pos, _p20.position) ? _jweissman$rogue$Level$playerDies(
+			A3(
+				_jweissman$rogue$Level$playerTakesDamage,
+				creature,
+				dmg,
+				{ctor: '_Tuple3', _0: _p19, _1: _p18, _2: _p20})) : {ctor: '_Tuple3', _0: _p19, _1: _p18, _2: _p20};
 	});
-var _jweissman$rogue$Event$defend = F2(
-	function (target, damage) {
-		return A2(_jweissman$rogue$Event$DefendEnemy, target, damage);
-	});
-var _jweissman$rogue$Event$KillEnemy = function (a) {
-	return {ctor: 'KillEnemy', _0: a};
+var _jweissman$rogue$Level$purge = function (model) {
+	var killed = A2(
+		_elm_lang$core$List$filter,
+		function (_p21) {
+			return _elm_lang$core$Basics$not(
+				_jweissman$rogue$Level$isAlive(_p21));
+		},
+		model.creatures);
+	var deathEvents = A2(_elm_lang$core$List$map, _jweissman$rogue$Event$killEnemy, killed);
+	var survivors = A2(_elm_lang$core$List$filter, _jweissman$rogue$Level$isAlive, model.creatures);
+	return {
+		ctor: '_Tuple2',
+		_0: _elm_lang$core$Native_Utils.update(
+			model,
+			{creatures: survivors}),
+		_1: deathEvents
+	};
 };
-var _jweissman$rogue$Event$killEnemy = function (target) {
-	return _jweissman$rogue$Event$KillEnemy(target);
+var _jweissman$rogue$Level$isStairsDown = F2(
+	function (position, model) {
+		return _elm_lang$core$Native_Utils.eq(model.downstairs, position);
+	});
+var _jweissman$rogue$Level$isStairsUp = F2(
+	function (position, model) {
+		return _elm_lang$core$Native_Utils.eq(model.upstairs, position);
+	});
+var _jweissman$rogue$Level$isFloor = F2(
+	function (position, model) {
+		return A2(
+			_elm_lang$core$List$any,
+			function (p) {
+				return _elm_lang$core$Native_Utils.eq(p, position);
+			},
+			model.floors);
+	});
+var _jweissman$rogue$Level$isDoor = F2(
+	function (pt, model) {
+		return A2(
+			_elm_lang$core$List$any,
+			function (p) {
+				return _elm_lang$core$Native_Utils.eq(p, pt);
+			},
+			model.doors);
+	});
+var _jweissman$rogue$Level$isCreature = F2(
+	function (pt, model) {
+		return A2(
+			_elm_lang$core$List$any,
+			function (pos) {
+				return _elm_lang$core$Native_Utils.eq(pos, pt);
+			},
+			A2(
+				_elm_lang$core$List$map,
+				function (_) {
+					return _.position;
+				},
+				model.creatures));
+	});
+var _jweissman$rogue$Level$isCoin = F2(
+	function (pt, model) {
+		return A2(
+			_elm_lang$core$List$any,
+			function (pos) {
+				return _elm_lang$core$Native_Utils.eq(pos, pt);
+			},
+			model.coins);
+	});
+var _jweissman$rogue$Level$isWall = F2(
+	function (pt, model) {
+		return A2(
+			_elm_lang$core$List$any,
+			function (pos) {
+				return _elm_lang$core$Native_Utils.eq(pos, pt);
+			},
+			model.walls);
+	});
+var _jweissman$rogue$Level$isBlocked = F2(
+	function (position, model) {
+		return A2(_jweissman$rogue$Level$isWall, position, model) || A2(_jweissman$rogue$Level$isCreature, position, model);
+	});
+var _jweissman$rogue$Level$canCreatureStep = F3(
+	function (creature, player, model) {
+		var next = A2(_jweissman$rogue$Point$slide, creature.direction, creature.position);
+		var isPlayer = _elm_lang$core$Native_Utils.eq(player.position, next);
+		var blocked = function (_p22) {
+			return _elm_lang$core$Basics$not(
+				A2(_jweissman$rogue$Level$isBlocked, next, _p22));
+		}(model);
+		return _elm_lang$core$Basics$not(isPlayer || blocked);
+	});
+var _jweissman$rogue$Level$creatureMoves = F2(
+	function (creature, _p23) {
+		var _p24 = _p23;
+		var _p26 = _p24._2;
+		var _p25 = _p24._0;
+		var creatures$ = A2(
+			_elm_lang$core$List$map,
+			function (c) {
+				return (_elm_lang$core$Native_Utils.eq(c, creature) && A3(_jweissman$rogue$Level$canCreatureStep, creature, _p26, _p25)) ? _jweissman$rogue$Creature$step(c) : c;
+			},
+			_p25.creatures);
+		return {
+			ctor: '_Tuple3',
+			_0: _elm_lang$core$Native_Utils.update(
+				_p25,
+				{creatures: creatures$}),
+			_1: _p24._1,
+			_2: _p26
+		};
+	});
+var _jweissman$rogue$Level$creatureSteps = F2(
+	function (creature, _p27) {
+		var _p28 = _p27;
+		return A2(
+			_jweissman$rogue$Level$creatureAttacks,
+			creature,
+			A2(
+				_jweissman$rogue$Level$creatureMoves,
+				creature,
+				{ctor: '_Tuple3', _0: _p28._0, _1: _p28._1, _2: _p28._2}));
+	});
+var _jweissman$rogue$Level$moveCreatures = F2(
+	function (player, model) {
+		return A3(
+			_elm_lang$core$List$foldl,
+			_jweissman$rogue$Level$creatureSteps,
+			{
+				ctor: '_Tuple3',
+				_0: model,
+				_1: _elm_lang$core$Native_List.fromArray(
+					[]),
+				_2: player
+			},
+			model.creatures);
+	});
+var _jweissman$rogue$Level$movesFrom = F2(
+	function (model, point) {
+		return A2(
+			_elm_lang$core$List$filter,
+			function (_p29) {
+				return function (p) {
+					return _elm_lang$core$Basics$not(
+						A2(_jweissman$rogue$Level$isBlocked, p, model));
+				}(
+					_elm_lang$core$Basics$fst(_p29));
+			},
+			A2(
+				_elm_lang$core$List$map,
+				function (direction) {
+					return {
+						ctor: '_Tuple2',
+						_0: A2(_jweissman$rogue$Point$slide, direction, point),
+						_1: direction
+					};
+				},
+				_jweissman$rogue$Direction$directions));
+	});
+var _jweissman$rogue$Level$path = F3(
+	function (dst, src, model) {
+		return A3(
+			_jweissman$rogue$Path$find,
+			dst,
+			src,
+			_jweissman$rogue$Level$movesFrom(model));
+	});
+var _jweissman$rogue$Level$dropCoins = function (model) {
+	var path$ = A2(
+		_elm_lang$core$Maybe$withDefault,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$List$tail(
+			_elm_lang$core$List$reverse(
+				A2(
+					_elm_lang$core$Maybe$withDefault,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$List$tail(
+						A2(
+							_elm_lang$core$Maybe$withDefault,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							A3(_jweissman$rogue$Level$path, model.downstairs, model.upstairs, model)))))));
+	var coins$ = A2(
+		_elm_lang$core$List$filterMap,
+		function (_p30) {
+			var _p31 = _p30;
+			var _p33 = _p31.y;
+			var _p32 = _p31.x;
+			return (_elm_lang$core$Native_Utils.cmp(
+				A2(
+					_elm_lang$core$Basics_ops['%'],
+					Math.pow(_p32, 31) + _p33,
+					20),
+				2) < 0) ? _elm_lang$core$Maybe$Just(
+				{x: _p32, y: _p33}) : _elm_lang$core$Maybe$Nothing;
+		},
+		path$);
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			coins: A2(_elm_lang$core$Basics_ops['++'], model.coins, coins$)
+		});
 };
-var _jweissman$rogue$Event$AttackEnemy = F2(
-	function (a, b) {
-		return {ctor: 'AttackEnemy', _0: a, _1: b};
+var _jweissman$rogue$Level$entityAt = F3(
+	function (point, warrior, model) {
+		if (_elm_lang$core$Native_Utils.eq(point, warrior.position)) {
+			return _elm_lang$core$Maybe$Just(
+				_jweissman$rogue$Entity$player(warrior));
+		} else {
+			if (A2(_jweissman$rogue$Level$isDoor, point, model)) {
+				return _elm_lang$core$Maybe$Just(
+					_jweissman$rogue$Entity$door(point));
+			} else {
+				if (A2(_jweissman$rogue$Level$isWall, point, model)) {
+					return _elm_lang$core$Maybe$Just(
+						_jweissman$rogue$Entity$wall(point));
+				} else {
+					if (A2(_jweissman$rogue$Level$isCoin, point, model)) {
+						return _elm_lang$core$Maybe$Just(
+							_jweissman$rogue$Entity$coin(point));
+					} else {
+						if (A2(_jweissman$rogue$Level$isStairsUp, point, model)) {
+							return _elm_lang$core$Maybe$Just(
+								_jweissman$rogue$Entity$upstairs(point));
+						} else {
+							if (A2(_jweissman$rogue$Level$isStairsDown, point, model)) {
+								return _elm_lang$core$Maybe$Just(
+									_jweissman$rogue$Entity$downstairs(point));
+							} else {
+								var creature = A2(_jweissman$rogue$Level$creatureAt, point, model);
+								var _p34 = creature;
+								if (_p34.ctor === 'Just') {
+									return _elm_lang$core$Maybe$Just(
+										_jweissman$rogue$Entity$monster(_p34._0));
+								} else {
+									return A2(_jweissman$rogue$Level$isFloor, point, model) ? _elm_lang$core$Maybe$Just(
+										_jweissman$rogue$Entity$floor(point)) : _elm_lang$core$Maybe$Nothing;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	});
-var _jweissman$rogue$Event$attack = F2(
-	function (target, damage) {
-		return A2(_jweissman$rogue$Event$AttackEnemy, target, damage);
+var _jweissman$rogue$Level$origin = {x: 0, y: 0};
+var _jweissman$rogue$Level$extrudeStairwells = function (model) {
+	var adjacentToTwoWalls = function (pt) {
+		return _elm_lang$core$Native_Utils.eq(
+			_elm_lang$core$List$length(
+				A2(
+					_elm_lang$core$List$filter,
+					function (ls) {
+						return _elm_lang$core$Native_Utils.cmp(
+							_elm_lang$core$List$length(ls),
+							0) > 0;
+					},
+					A2(
+						_elm_lang$core$List$map,
+						function (ds) {
+							return A2(
+								_elm_lang$core$List$filter,
+								function (pt) {
+									return A2(_jweissman$rogue$Level$isWall, pt, model);
+								},
+								A2(
+									_elm_lang$core$List$map,
+									function (d) {
+										return A2(_jweissman$rogue$Point$slide, d, pt);
+									},
+									ds));
+						},
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$core$Native_List.fromArray(
+								[_jweissman$rogue$Direction$North, _jweissman$rogue$Direction$South]),
+								_elm_lang$core$Native_List.fromArray(
+								[_jweissman$rogue$Direction$East, _jweissman$rogue$Direction$West])
+							])))),
+			1);
+	};
+	var adjacentToFloor = function (pt) {
+		return _elm_lang$core$Native_Utils.eq(
+			_elm_lang$core$List$length(
+				A2(
+					_elm_lang$core$List$filter,
+					function (pt$) {
+						return A2(_elm_lang$core$List$member, pt$, model.floors);
+					},
+					A2(
+						_elm_lang$core$List$map,
+						function (direction) {
+							return A2(_jweissman$rogue$Point$slide, direction, pt);
+						},
+						_jweissman$rogue$Direction$cardinalDirections))),
+			1);
+	};
+	var candidates = A2(
+		_elm_lang$core$List$filter,
+		adjacentToTwoWalls,
+		A2(_elm_lang$core$List$filter, adjacentToFloor, model.walls));
+	var candidateHead = A2(
+		_elm_lang$core$Maybe$withDefault,
+		_jweissman$rogue$Level$origin,
+		_elm_lang$core$List$head(candidates));
+	var upstairs = candidateHead;
+	var candidateLast = A2(
+		_elm_lang$core$Maybe$withDefault,
+		_jweissman$rogue$Level$origin,
+		_elm_lang$core$List$head(
+			_elm_lang$core$List$reverse(candidates)));
+	var downstairs = candidateLast;
+	return A2(
+		_jweissman$rogue$Level$emplaceDownstairs,
+		downstairs,
+		A2(_jweissman$rogue$Level$emplaceUpstairs, upstairs, model));
+};
+var _jweissman$rogue$Level$init = {
+	walls: _elm_lang$core$Native_List.fromArray(
+		[]),
+	floors: _elm_lang$core$Native_List.fromArray(
+		[]),
+	doors: _elm_lang$core$Native_List.fromArray(
+		[]),
+	creatures: _elm_lang$core$Native_List.fromArray(
+		[]),
+	coins: _elm_lang$core$Native_List.fromArray(
+		[]),
+	upstairs: _jweissman$rogue$Level$origin,
+	downstairs: _jweissman$rogue$Level$origin
+};
+var _jweissman$rogue$Level$fromRooms = function (roomCandidates) {
+	var rooms = _jweissman$rogue$Room$filterOverlaps(roomCandidates);
+	return _jweissman$rogue$Level$dropCoins(
+		_jweissman$rogue$Level$extrudeStairwells(
+			A2(
+				_jweissman$rogue$Level$connectRooms,
+				rooms,
+				A2(_jweissman$rogue$Level$extrudeRooms, rooms, _jweissman$rogue$Level$init))));
+};
+var _jweissman$rogue$Level$Level = F7(
+	function (a, b, c, d, e, f, g) {
+		return {walls: a, floors: b, doors: c, creatures: d, downstairs: e, upstairs: f, coins: g};
 	});
-var _jweissman$rogue$Event$PickupCoin = {ctor: 'PickupCoin'};
-var _jweissman$rogue$Event$pickupCoin = _jweissman$rogue$Event$PickupCoin;
-var _jweissman$rogue$Event$Awaken = {ctor: 'Awaken'};
-var _jweissman$rogue$Event$awaken = _jweissman$rogue$Event$Awaken;
+var _jweissman$rogue$Dungeon$levelAt = F2(
+	function (depth, model) {
+		return A2(
+			_elm_lang$core$Maybe$withDefault,
+			_jweissman$rogue$Level$init,
+			A2(_jweissman$rogue$Util$getAt, model, depth));
+	});
+var _jweissman$rogue$Dungeon$apply$ = F3(
+	function (f, depth, model) {
+		return f(
+			A2(_jweissman$rogue$Dungeon$levelAt, depth, model));
+	});
+var _jweissman$rogue$Dungeon$apply = F3(
+	function (f, depth, model) {
+		var level = A3(_jweissman$rogue$Dungeon$apply$, f, depth, model);
+		var model$ = A2(
+			_elm_lang$core$List$indexedMap,
+			F2(
+				function (n, level$) {
+					return _elm_lang$core$Native_Utils.eq(n, depth) ? level : level$;
+				}),
+			model);
+		return model$;
+	});
+var _jweissman$rogue$Dungeon$collectCoin = F3(
+	function (pt, depth, model) {
+		return A3(
+			_jweissman$rogue$Dungeon$apply,
+			_jweissman$rogue$Level$collectCoin(pt),
+			depth,
+			model);
+	});
+var _jweissman$rogue$Dungeon$turnCreature = F4(
+	function (creature, direction, depth, model) {
+		return A3(
+			_jweissman$rogue$Dungeon$apply,
+			A2(_jweissman$rogue$Level$turnCreature, creature, direction),
+			depth,
+			model);
+	});
+var _jweissman$rogue$Dungeon$injureCreature = F4(
+	function (creature, amount, depth, model) {
+		return A3(
+			_jweissman$rogue$Dungeon$apply,
+			A2(_jweissman$rogue$Level$injureCreature, creature, amount),
+			depth,
+			model);
+	});
+var _jweissman$rogue$Dungeon$moveCreatures = F3(
+	function (player, depth, model) {
+		var _p0 = A3(
+			_jweissman$rogue$Dungeon$apply$,
+			_jweissman$rogue$Level$moveCreatures(player),
+			depth,
+			model);
+		var level = _p0._0;
+		var events = _p0._1;
+		var player$ = _p0._2;
+		var model$ = A2(
+			_elm_lang$core$List$indexedMap,
+			F2(
+				function (n, level$) {
+					return _elm_lang$core$Native_Utils.eq(n, depth) ? level : level$;
+				}),
+			model);
+		return {ctor: '_Tuple3', _0: model$, _1: events, _2: player$};
+	});
+var _jweissman$rogue$Dungeon$purge = F2(
+	function (depth, model) {
+		var _p1 = A3(_jweissman$rogue$Dungeon$apply$, _jweissman$rogue$Level$purge, depth, model);
+		var level = _p1._0;
+		var events = _p1._1;
+		var model$ = A2(
+			_elm_lang$core$List$indexedMap,
+			F2(
+				function (n, level$) {
+					return _elm_lang$core$Native_Utils.eq(n, depth) ? level : level$;
+				}),
+			model);
+		return {ctor: '_Tuple2', _0: model$, _1: events};
+	});
+var _jweissman$rogue$Dungeon$generate = function (depth) {
+	return A2(
+		_elm_lang$core$Random$list,
+		depth,
+		A2(
+			_elm_lang$core$Random$map,
+			_jweissman$rogue$Level$fromRooms,
+			_jweissman$rogue$Room$generate(1000)));
+};
 var _jweissman$rogue$Log$origin = {x: 1, y: 25};
 var _jweissman$rogue$Log$logLineView = F2(
 	function (idx, note) {
@@ -10052,55 +11559,6 @@ var _jweissman$rogue$Log$view = function (model) {
 };
 var _jweissman$rogue$Log$init = _elm_lang$core$Native_List.fromArray(
 	[_jweissman$rogue$Event$awaken]);
-var _jweissman$rogue$Util$simpleDirectionBetween = F2(
-	function (a, b) {
-		return (_elm_lang$core$Native_Utils.cmp(a.x, b.x) > 0) ? _jweissman$rogue$Direction$East : ((_elm_lang$core$Native_Utils.cmp(a.x, b.x) < 0) ? _jweissman$rogue$Direction$West : ((_elm_lang$core$Native_Utils.cmp(a.y, b.y) > 0) ? _jweissman$rogue$Direction$South : _jweissman$rogue$Direction$North));
-	});
-var _jweissman$rogue$Util$directionBetween = F2(
-	function (a, b) {
-		return ((_elm_lang$core$Native_Utils.cmp(a.x, b.x) > 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) > 0)) ? _jweissman$rogue$Direction$Southeast : (((_elm_lang$core$Native_Utils.cmp(a.x, b.x) < 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) > 0)) ? _jweissman$rogue$Direction$Southwest : (((_elm_lang$core$Native_Utils.cmp(a.x, b.x) > 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) < 0)) ? _jweissman$rogue$Direction$Northeast : (((_elm_lang$core$Native_Utils.cmp(a.x, b.x) < 0) && (_elm_lang$core$Native_Utils.cmp(a.y, b.y) < 0)) ? _jweissman$rogue$Direction$Northwest : A2(_jweissman$rogue$Util$simpleDirectionBetween, a, b))));
-	});
-var _jweissman$rogue$World$listEntities = function (model) {
-	var player = _jweissman$rogue$Entity$player(model.player);
-	var creatures = A2(
-		_elm_lang$core$List$map,
-		function (c) {
-			return _jweissman$rogue$Entity$monster(c);
-		},
-		model.creatures);
-	var coins = A2(
-		_elm_lang$core$List$map,
-		function (pt) {
-			return _jweissman$rogue$Entity$coin(pt);
-		},
-		model.coins);
-	var floors = A2(
-		_elm_lang$core$List$map,
-		function (pt) {
-			return _jweissman$rogue$Entity$floor(pt);
-		},
-		model.floors);
-	var walls = A2(
-		_elm_lang$core$List$map,
-		function (pt) {
-			return _jweissman$rogue$Entity$wall(pt);
-		},
-		model.walls);
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		walls,
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			floors,
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				coins,
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					creatures,
-					_elm_lang$core$Native_List.fromArray(
-						[player])))));
-};
 var _jweissman$rogue$World$highlightCell = F2(
 	function (_p0, color) {
 		var _p1 = _p0;
@@ -10155,15 +11613,187 @@ var _jweissman$rogue$World$infoView = function (model) {
 		_elm_lang$core$Basics_ops['++'],
 		'GOLD: ',
 		_elm_lang$core$Basics$toString(model.player.gold));
-	var message = A2(
+	var level = A2(
 		_elm_lang$core$Basics_ops['++'],
-		gold,
-		A2(_elm_lang$core$Basics_ops['++'], '  |  ', hp));
+		'LEVEL: ',
+		_elm_lang$core$Basics$toString(model.depth));
+	var message = A2(
+		_elm_lang$core$String$join,
+		'  |  ',
+		_elm_lang$core$Native_List.fromArray(
+			[gold, hp, level]));
 	return A3(
 		_jweissman$rogue$Graphics$render,
 		message,
 		{x: 0, y: 1},
 		'green');
+};
+var _jweissman$rogue$World$removeDeceasedCreatures = function (model) {
+	var _p4 = A2(_jweissman$rogue$Dungeon$purge, model.depth, model.dungeon);
+	var dungeon$ = _p4._0;
+	var events$ = _p4._1;
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			dungeon: dungeon$,
+			events: A2(_elm_lang$core$Basics_ops['++'], model.events, events$)
+		});
+};
+var _jweissman$rogue$World$creatureTakesDamage = F3(
+	function (creature, amount, model) {
+		var attackEvent = A2(_jweissman$rogue$Event$attack, creature, amount);
+		var dungeon$ = A4(_jweissman$rogue$Dungeon$injureCreature, creature, amount, model.depth, model.dungeon);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				dungeon: dungeon$,
+				events: A2(
+					_elm_lang$core$Basics_ops['++'],
+					model.events,
+					_elm_lang$core$Native_List.fromArray(
+						[attackEvent]))
+			});
+	});
+var _jweissman$rogue$World$playerAttacksCreature = F2(
+	function (creature, model) {
+		var damage = model.player.attack - creature.defense;
+		return A3(_jweissman$rogue$World$creatureTakesDamage, creature, damage, model);
+	});
+var _jweissman$rogue$World$playerMoves = F2(
+	function (direction, model) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				player: A2(_jweissman$rogue$Warrior$step, direction, model.player)
+			});
+	});
+var _jweissman$rogue$World$update = F2(
+	function (message, model) {
+		var _p5 = message;
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				dungeon: A4(_jweissman$rogue$Dungeon$turnCreature, _p5._0, _p5._1, model.depth, model.dungeon)
+			});
+	});
+var _jweissman$rogue$World$isPlayer = F2(
+	function (position, model) {
+		return _elm_lang$core$Native_Utils.eq(model.player.position, position);
+	});
+var _jweissman$rogue$World$level = function (model) {
+	return A2(
+		_elm_lang$core$Maybe$withDefault,
+		_jweissman$rogue$Level$init,
+		A2(_jweissman$rogue$Util$getAt, model.dungeon, model.depth));
+};
+var _jweissman$rogue$World$walls = function (model) {
+	return _jweissman$rogue$World$level(model).walls;
+};
+var _jweissman$rogue$World$coins = function (model) {
+	return _jweissman$rogue$World$level(model).coins;
+};
+var _jweissman$rogue$World$creatures = function (model) {
+	return _jweissman$rogue$World$level(model).creatures;
+};
+var _jweissman$rogue$World$doors = function (model) {
+	return _jweissman$rogue$World$level(model).doors;
+};
+var _jweissman$rogue$World$floors = function (model) {
+	return _jweissman$rogue$World$level(model).floors;
+};
+var _jweissman$rogue$World$upstairs = function (model) {
+	return _jweissman$rogue$World$level(model).upstairs;
+};
+var _jweissman$rogue$World$downstairs = function (model) {
+	return _jweissman$rogue$World$level(model).downstairs;
+};
+var _jweissman$rogue$World$playerAscendsOrDescends = function (model) {
+	var playerPos = model.player.position;
+	if (_elm_lang$core$Native_Utils.eq(
+		playerPos,
+		_jweissman$rogue$World$downstairs(model))) {
+		var model$ = _elm_lang$core$Native_Utils.update(
+			model,
+			{depth: model.depth + 1});
+		var player = model.player;
+		var player$ = _elm_lang$core$Native_Utils.update(
+			player,
+			{
+				position: _jweissman$rogue$World$upstairs(model$)
+			});
+		return A2(
+			_elm_lang$core$Debug$log,
+			'DESCEND!',
+			_elm_lang$core$Native_Utils.update(
+				model$,
+				{player: player$}));
+	} else {
+		if (_elm_lang$core$Native_Utils.eq(
+			playerPos,
+			_jweissman$rogue$World$upstairs(model)) && (_elm_lang$core$Native_Utils.cmp(model.depth, 0) > 0)) {
+			var model$ = _elm_lang$core$Native_Utils.update(
+				model,
+				{depth: model.depth - 1});
+			var player = model.player;
+			var player$ = _elm_lang$core$Native_Utils.update(
+				player,
+				{
+					position: _jweissman$rogue$World$downstairs(model$)
+				});
+			return A2(
+				_elm_lang$core$Debug$log,
+				'ASCEND!',
+				_elm_lang$core$Native_Utils.update(
+					model$,
+					{player: player$}));
+		} else {
+			return model;
+		}
+	}
+};
+var _jweissman$rogue$World$listEntities = function (model) {
+	var player$ = _jweissman$rogue$Entity$player(model.player);
+	var downstairs$ = _jweissman$rogue$Entity$downstairs(
+		_jweissman$rogue$World$downstairs(model));
+	var upstairs$ = _jweissman$rogue$Entity$upstairs(
+		_jweissman$rogue$World$upstairs(model));
+	var doors$ = A2(
+		_elm_lang$core$List$map,
+		_jweissman$rogue$Entity$door,
+		_jweissman$rogue$World$doors(model));
+	var creatures$ = A2(
+		_elm_lang$core$List$map,
+		_jweissman$rogue$Entity$monster,
+		_jweissman$rogue$World$creatures(model));
+	var coins$ = A2(
+		_elm_lang$core$List$map,
+		_jweissman$rogue$Entity$coin,
+		_jweissman$rogue$World$coins(model));
+	var floors$ = A2(
+		_elm_lang$core$List$map,
+		_jweissman$rogue$Entity$floor,
+		_jweissman$rogue$World$floors(model));
+	var walls$ = A2(
+		_elm_lang$core$List$map,
+		_jweissman$rogue$Entity$wall,
+		_jweissman$rogue$World$walls(model));
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		walls$,
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			floors$,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				doors$,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					coins$,
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						creatures$,
+						_elm_lang$core$Native_List.fromArray(
+							[upstairs$, downstairs$, player$]))))));
 };
 var _jweissman$rogue$World$view = function (model) {
 	var highlight = _jweissman$rogue$World$highlightCells(model.debugPath);
@@ -10183,605 +11813,29 @@ var _jweissman$rogue$World$view = function (model) {
 					[info]),
 				highlight)));
 };
-var _jweissman$rogue$World$playerTakesDamage = F3(
-	function (creature, amount, model) {
-		var defenseEvent = A2(_jweissman$rogue$Event$defend, creature, amount);
-		var player = A2(_jweissman$rogue$Warrior$takeDamage, amount, model.player);
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{
-				player: player,
-				events: A2(
-					_elm_lang$core$Basics_ops['++'],
-					model.events,
-					_elm_lang$core$Native_List.fromArray(
-						[defenseEvent]))
-			});
-	});
-var _jweissman$rogue$World$engageIndicatedCreature = F2(
-	function (id, creature) {
-		var isIndicated = _elm_lang$core$Native_Utils.eq(creature.id, id);
-		return isIndicated ? _jweissman$rogue$Creature$engage(creature) : creature;
-	});
-var _jweissman$rogue$World$creatureBecomesEngaged = F2(
-	function (creature, model) {
-		var creatures = A2(
-			_elm_lang$core$List$map,
-			_jweissman$rogue$World$engageIndicatedCreature(creature.id),
-			model.creatures);
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{creatures: creatures});
-	});
-var _jweissman$rogue$World$turnIndicatedCreature = F4(
-	function (id, direction, model, creature) {
-		var isIndicated = _elm_lang$core$Native_Utils.eq(creature.id, id);
-		if (isIndicated) {
-			if (creature.engaged) {
-				var followDirection = A2(_jweissman$rogue$Util$directionBetween, model.player.position, creature.position);
-				return A2(_jweissman$rogue$Creature$turn, followDirection, creature);
-			} else {
-				return A2(_jweissman$rogue$Creature$turn, direction, creature);
-			}
-		} else {
-			return creature;
-		}
-	});
-var _jweissman$rogue$World$creatureTurns = F3(
-	function (id, direction, model) {
-		var creatures = A2(
-			_elm_lang$core$List$map,
-			A3(_jweissman$rogue$World$turnIndicatedCreature, id, direction, model),
-			model.creatures);
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{creatures: creatures});
-	});
-var _jweissman$rogue$World$damageIndicatedCreature = F3(
-	function (id, amount, creature) {
-		var isIndicated = _elm_lang$core$Native_Utils.eq(creature.id, id);
-		return isIndicated ? _elm_lang$core$Native_Utils.update(
-			creature,
-			{hp: creature.hp - amount}) : creature;
-	});
-var _jweissman$rogue$World$creatureTakesDamage = F3(
-	function (creature, amount, model) {
-		var attackEvent = A2(_jweissman$rogue$Event$attack, creature, amount);
-		var creatures = A2(
-			_elm_lang$core$List$map,
-			A2(_jweissman$rogue$World$damageIndicatedCreature, creature.id, amount),
-			model.creatures);
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{
-				creatures: creatures,
-				events: A2(
-					_elm_lang$core$Basics_ops['++'],
-					model.events,
-					_elm_lang$core$Native_List.fromArray(
-						[attackEvent]))
-			});
-	});
-var _jweissman$rogue$World$playerAttacksCreature = F2(
-	function (creature, model) {
-		var damage = model.player.attack - creature.defense;
-		return A2(
-			_jweissman$rogue$World$creatureBecomesEngaged,
-			creature,
-			A3(_jweissman$rogue$World$creatureTakesDamage, creature, damage, model));
-	});
-var _jweissman$rogue$World$playerMoves = F2(
-	function (direction, model) {
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{
-				player: A2(_jweissman$rogue$Warrior$step, direction, model.player)
-			});
-	});
-var _jweissman$rogue$World$update = F2(
-	function (message, model) {
-		var _p4 = message;
-		return A3(_jweissman$rogue$World$creatureTurns, _p4._0, _p4._1, model);
-	});
-var _jweissman$rogue$World$creatureById = F2(
-	function (creatures, id) {
-		var creaturesWithId = A2(
-			_elm_lang$core$List$filter,
-			function (c) {
-				return _elm_lang$core$Native_Utils.eq(c.id, id);
-			},
-			creatures);
-		return _elm_lang$core$List$head(creaturesWithId);
-	});
-var _jweissman$rogue$World$creatureAt = F2(
-	function (position, _p5) {
-		var _p6 = _p5;
-		var creaturesAtPosition = A2(
-			_elm_lang$core$List$filter,
-			function (c) {
-				return _elm_lang$core$Native_Utils.eq(c.position, position);
-			},
-			_p6.creatures);
-		return _elm_lang$core$List$head(creaturesAtPosition);
-	});
-var _jweissman$rogue$World$isAlive = function (livingThing) {
-	return _elm_lang$core$Native_Utils.cmp(livingThing.hp, 0) > 0;
-};
-var _jweissman$rogue$World$removeDeceasedCreatures = function (model) {
-	var killed = A2(
-		_elm_lang$core$List$filter,
-		function (c) {
-			return _elm_lang$core$Basics$not(
-				_jweissman$rogue$World$isAlive(c));
-		},
-		model.creatures);
-	var deathEvents = A2(_elm_lang$core$List$map, _jweissman$rogue$Event$killEnemy, killed);
-	var survivors = A2(_elm_lang$core$List$filter, _jweissman$rogue$World$isAlive, model.creatures);
-	return _elm_lang$core$Native_Utils.update(
-		model,
-		{
-			creatures: survivors,
-			events: A2(_elm_lang$core$Basics_ops['++'], model.events, deathEvents)
-		});
-};
-var _jweissman$rogue$World$playerAttacks = F2(
-	function (direction, model) {
-		var attackedPosition = A2(_jweissman$rogue$Point$slide, direction, model.player.position);
-		var maybeCreature = A2(_jweissman$rogue$World$creatureAt, attackedPosition, model);
-		var _p7 = maybeCreature;
-		if (_p7.ctor === 'Nothing') {
-			return model;
-		} else {
-			return _jweissman$rogue$World$removeDeceasedCreatures(
-				A2(_jweissman$rogue$World$playerAttacksCreature, _p7._0, model));
-		}
-	});
-var _jweissman$rogue$World$isFloor = F2(
-	function (position, model) {
-		return A2(
-			_elm_lang$core$List$any,
-			function (p) {
-				return _elm_lang$core$Native_Utils.eq(p, position);
-			},
-			model.floors);
-	});
-var _jweissman$rogue$World$isPlayer = F2(
-	function (position, model) {
-		return _elm_lang$core$Native_Utils.eq(model.player.position, position);
-	});
-var _jweissman$rogue$World$isCreature = F2(
-	function (position, model) {
-		return A2(
-			_elm_lang$core$List$any,
-			function (pos) {
-				return _elm_lang$core$Native_Utils.eq(pos, position);
-			},
-			A2(
-				_elm_lang$core$List$map,
-				function (_) {
-					return _.position;
-				},
-				model.creatures));
-	});
-var _jweissman$rogue$World$isCoin = F2(
-	function (position, model) {
-		return A2(
-			_elm_lang$core$List$any,
-			function (pos) {
-				return _elm_lang$core$Native_Utils.eq(pos, position);
-			},
-			model.coins);
-	});
-var _jweissman$rogue$World$playerCollectsCoins = function (model) {
-	if (_elm_lang$core$Basics$not(
-		A2(_jweissman$rogue$World$isCoin, model.player.position, model))) {
-		return model;
-	} else {
-		var collectionEvent = _jweissman$rogue$Event$pickupCoin;
-		var coinsWithoutCollectedCoin = A2(
-			_elm_lang$core$List$filter,
-			function (coin) {
-				return _elm_lang$core$Basics$not(
-					_elm_lang$core$Native_Utils.eq(coin, model.player.position));
-			},
-			model.coins);
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{
-				player: A2(_jweissman$rogue$Warrior$enrich, 1, model.player),
-				coins: coinsWithoutCollectedCoin,
-				events: A2(
-					_elm_lang$core$Basics_ops['++'],
-					model.events,
-					_elm_lang$core$Native_List.fromArray(
-						[collectionEvent]))
-			});
-	}
-};
-var _jweissman$rogue$World$isWall = F2(
-	function (position, model) {
-		return A2(
-			_elm_lang$core$List$any,
-			function (pos) {
-				return _elm_lang$core$Native_Utils.eq(pos, position);
-			},
-			model.walls);
-	});
 var _jweissman$rogue$World$isBlocked = F2(
-	function (position, model) {
-		return A2(_jweissman$rogue$World$isWall, position, model) || (A2(_jweissman$rogue$World$isCreature, position, model) || A2(_jweissman$rogue$World$isPlayer, position, model));
+	function (move, model) {
+		return A2(
+			_jweissman$rogue$Level$isBlocked,
+			move,
+			_jweissman$rogue$World$level(model));
 	});
 var _jweissman$rogue$World$canPlayerStep = F2(
 	function (direction, model) {
-		var nextPosition = A2(_jweissman$rogue$Point$slide, direction, model.player.position);
+		var move = A2(_jweissman$rogue$Point$slide, direction, model.player.position);
 		return _elm_lang$core$Basics$not(
-			A2(_jweissman$rogue$World$isBlocked, nextPosition, model));
+			A2(_jweissman$rogue$World$isBlocked, move, model));
 	});
-var _jweissman$rogue$World$playerSteps = F2(
-	function (direction, model) {
-		return _elm_lang$core$Basics$not(
-			A2(_jweissman$rogue$World$canPlayerStep, direction, model)) ? A2(_jweissman$rogue$World$playerAttacks, direction, model) : _jweissman$rogue$World$playerCollectsCoins(
-			A2(_jweissman$rogue$World$playerMoves, direction, model));
-	});
-var _jweissman$rogue$World$canCreatureStep = F3(
-	function (creature, direction, model) {
-		var nextPosition = A2(_jweissman$rogue$Point$slide, direction, creature.position);
-		return _elm_lang$core$Basics$not(
-			A2(_jweissman$rogue$World$isBlocked, nextPosition, model));
-	});
-var _jweissman$rogue$World$moveIndicatedCreature = F3(
-	function (id, model, creature) {
-		var shouldMove = A3(_jweissman$rogue$World$canCreatureStep, creature, creature.direction, model);
-		var isIndicated = _elm_lang$core$Native_Utils.eq(creature.id, id);
-		return (isIndicated && shouldMove) ? _jweissman$rogue$Creature$step(creature) : creature;
-	});
-var _jweissman$rogue$World$creatureMoves = F2(
-	function (creature, model) {
-		var creatures = A2(
-			_elm_lang$core$List$map,
-			A2(_jweissman$rogue$World$moveIndicatedCreature, creature.id, model),
-			model.creatures);
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{creatures: creatures});
-	});
-var _jweissman$rogue$World$entityAt = F2(
-	function (point, world) {
-		if (A2(_jweissman$rogue$World$isWall, point, world)) {
-			return _elm_lang$core$Maybe$Just(
-				_jweissman$rogue$Entity$wall(point));
-		} else {
-			if (A2(_jweissman$rogue$World$isCoin, point, world)) {
-				return _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Entity$coin(point));
-			} else {
-				if (A2(_jweissman$rogue$World$isPlayer, point, world)) {
-					return _elm_lang$core$Maybe$Just(
-						_jweissman$rogue$Entity$player(world.player));
-				} else {
-					var creature = A2(_jweissman$rogue$World$creatureAt, point, world);
-					var _p8 = creature;
-					if (_p8.ctor === 'Just') {
-						return _elm_lang$core$Maybe$Just(
-							_jweissman$rogue$Entity$monster(_p8._0));
-					} else {
-						return A2(_jweissman$rogue$World$isFloor, point, world) ? _elm_lang$core$Maybe$Just(
-							_jweissman$rogue$Entity$floor(point)) : _elm_lang$core$Maybe$Nothing;
-					}
-				}
-			}
-		}
-	});
-var _jweissman$rogue$World$layoutRoom = F3(
-	function (_p9, width, height) {
-		var _p10 = _p9;
-		var _p12 = _p10.y;
-		var _p11 = _p10.x;
-		var floors = A2(
-			_elm_lang$core$List$concatMap,
-			function (y$) {
-				return A2(
-					_elm_lang$core$List$map,
-					function (x$) {
-						return {x: _p11 + x$, y: _p12 + y$};
-					},
-					_elm_lang$core$Native_List.range(1, width - 1));
-			},
-			_elm_lang$core$Native_List.range(1, height - 1));
-		var walls = A2(
-			_elm_lang$core$Basics_ops['++'],
-			A2(
-				_elm_lang$core$List$map,
-				function (x$) {
-					return {x: _p11 + x$, y: _p12};
-				},
-				_elm_lang$core$Native_List.range(0, width)),
-			A2(
-				_elm_lang$core$Basics_ops['++'],
-				A2(
-					_elm_lang$core$List$map,
-					function (x$) {
-						return {x: _p11 + x$, y: _p12 + height};
-					},
-					_elm_lang$core$Native_List.range(0, width)),
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					A2(
-						_elm_lang$core$List$map,
-						function (y$) {
-							return {x: _p11, y: _p12 + y$};
-						},
-						_elm_lang$core$Native_List.range(0, height)),
-					A2(
-						_elm_lang$core$List$map,
-						function (y$) {
-							return {x: _p11 + width, y: _p12 + y$};
-						},
-						_elm_lang$core$Native_List.range(0, height)))));
-		return {ctor: '_Tuple2', _0: walls, _1: floors};
-	});
-var _jweissman$rogue$World$init = function () {
-	var coins = _elm_lang$core$Native_List.fromArray(
-		[
-			{x: 4, y: 10},
-			{x: 9, y: 8},
-			{x: 5, y: 7},
-			{x: 8, y: 8},
-			{x: 9, y: 7},
-			{x: 29, y: 17},
-			{x: 15, y: 8},
-			{x: 23, y: 13}
-		]);
-	var _p13 = A3(
-		_jweissman$rogue$World$layoutRoom,
-		{x: 2, y: 3},
-		30,
-		20);
-	var walls = _p13._0;
-	var floors = _p13._1;
-	return {
-		walls: walls,
-		floors: floors,
-		coins: coins,
-		creatures: _elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_jweissman$rogue$Creature$createRat,
-				1,
-				{x: 10, y: 8}),
-				A2(
-				_jweissman$rogue$Creature$createMonkey,
-				2,
-				{x: 16, y: 9}),
-				A2(
-				_jweissman$rogue$Creature$createBandit,
-				3,
-				{x: 15, y: 6})
-			]),
-		player: _jweissman$rogue$Warrior$init(
-			{x: 10, y: 10}),
-		events: _jweissman$rogue$Log$init,
-		debugPath: _elm_lang$core$Native_List.fromArray(
-			[])
-	};
-}();
-var _jweissman$rogue$World$playerDies = function (model) {
-	return _elm_lang$core$Basics$not(
-		_jweissman$rogue$World$isAlive(model.player)) ? _jweissman$rogue$World$init : model;
-};
-var _jweissman$rogue$World$creatureAttacksPlayer = F2(
-	function (creature, model) {
-		var damage = creature.attack - model.player.defense;
-		var attackedPosition = A2(_jweissman$rogue$Point$slide, creature.direction, creature.position);
-		return _elm_lang$core$Native_Utils.eq(attackedPosition, model.player.position) ? _jweissman$rogue$World$playerDies(
-			A3(_jweissman$rogue$World$playerTakesDamage, creature, damage, model)) : model;
-	});
-var _jweissman$rogue$World$creatureSteps = F2(
-	function (creature, model) {
-		return A2(
-			_jweissman$rogue$World$creatureAttacksPlayer,
-			creature,
-			A2(_jweissman$rogue$World$creatureMoves, creature, model));
-	});
-var _jweissman$rogue$World$moveCreatures = function (model) {
-	return A3(_elm_lang$core$List$foldl, _jweissman$rogue$World$creatureSteps, model, model.creatures);
-};
-var _jweissman$rogue$World$Model = F7(
-	function (a, b, c, d, e, f, g) {
-		return {walls: a, floors: b, coins: c, creatures: d, player: e, events: f, debugPath: g};
-	});
-var _jweissman$rogue$World$TurnCreature = F2(
-	function (a, b) {
-		return {ctor: 'TurnCreature', _0: a, _1: b};
-	});
-var _jweissman$rogue$World$turnCreatureRandomly = F2(
-	function (superMsg, creature) {
-		return A2(
-			_elm_lang$core$Random$generate,
-			function (dir) {
-				return superMsg(
-					A2(_jweissman$rogue$World$TurnCreature, creature.id, dir));
-			},
-			_jweissman$rogue$Direction$random);
-	});
-var _jweissman$rogue$World$turnCreaturesCommand = F2(
-	function (model, superMsg) {
-		var commands = A2(
-			_elm_lang$core$List$map,
-			function (creature) {
-				return A2(_jweissman$rogue$World$turnCreatureRandomly, superMsg, creature);
-			},
-			model.creatures);
-		return _elm_lang$core$Platform_Cmd$batch(commands);
-	});
-var _jweissman$rogue$Bfs$constructPath = F3(
-	function (visited, source, destination) {
-		var maybeDestination = _elm_lang$core$List$head(
-			A2(
-				_elm_lang$core$List$filter,
-				function (_p0) {
-					var _p1 = _p0;
-					return _elm_lang$core$Native_Utils.eq(_p1._0, destination);
-				},
-				visited));
-		if (_elm_lang$core$Native_Utils.eq(source, destination)) {
-			return _elm_lang$core$Native_List.fromArray(
-				[]);
-		} else {
-			var _p2 = maybeDestination;
-			if (_p2.ctor === 'Nothing') {
-				return _elm_lang$core$Native_List.fromArray(
-					[]);
-			} else {
-				var newDest = A2(
-					_jweissman$rogue$Point$slide,
-					_jweissman$rogue$Direction$invert(_p2._0._1),
-					_p2._0._0);
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Native_List.fromArray(
-						[destination]),
-					A3(_jweissman$rogue$Bfs$constructPath, visited, source, newDest));
-			}
-		}
-	});
-var _jweissman$rogue$Bfs$uniqueHelp = F3(
-	function (f, existing, remaining) {
-		uniqueHelp:
-		while (true) {
-			var _p3 = remaining;
-			if (_p3.ctor === '[]') {
-				return _elm_lang$core$Native_List.fromArray(
-					[]);
-			} else {
-				var _p5 = _p3._1;
-				var _p4 = _p3._0;
-				var computedFirst = f(_p4);
-				if (A2(_elm_lang$core$Set$member, computedFirst, existing)) {
-					var _v3 = f,
-						_v4 = existing,
-						_v5 = _p5;
-					f = _v3;
-					existing = _v4;
-					remaining = _v5;
-					continue uniqueHelp;
-				} else {
-					return A2(
-						_elm_lang$core$List_ops['::'],
-						_p4,
-						A3(
-							_jweissman$rogue$Bfs$uniqueHelp,
-							f,
-							A2(_elm_lang$core$Set$insert, computedFirst, existing),
-							_p5));
-				}
-			}
-		}
-	});
-var _jweissman$rogue$Bfs$uniqueBy = F2(
-	function (f, list) {
-		return A3(_jweissman$rogue$Bfs$uniqueHelp, f, _elm_lang$core$Set$empty, list);
-	});
-var _jweissman$rogue$Bfs$bfs$ = F7(
-	function (visited, frontier, source, predicate, moves, depth, model) {
-		bfs$:
-		while (true) {
-			if (_elm_lang$core$Native_Utils.cmp(depth, 0) < 0) {
-				return _elm_lang$core$Maybe$Nothing;
-			} else {
-				var matches = function (_p6) {
-					var _p7 = _p6;
-					return predicate(_p7._0);
-				};
-				var maybeGoal = _elm_lang$core$List$head(
-					A2(_elm_lang$core$List$filter, matches, frontier));
-				var _p8 = maybeGoal;
-				if (_p8.ctor === 'Just') {
-					var path = A3(
-						_jweissman$rogue$Bfs$constructPath,
-						A2(_elm_lang$core$Basics_ops['++'], visited, frontier),
-						source,
-						_p8._0._0);
-					return _elm_lang$core$Maybe$Just(
-						_elm_lang$core$List$reverse(path));
-				} else {
-					if (_elm_lang$core$Native_Utils.eq(
-						_elm_lang$core$List$length(frontier),
-						0)) {
-						var frontier$ = moves(source);
-						var _v8 = visited,
-							_v9 = frontier$,
-							_v10 = source,
-							_v11 = predicate,
-							_v12 = moves,
-							_v13 = depth - 1,
-							_v14 = model;
-						visited = _v8;
-						frontier = _v9;
-						source = _v10;
-						predicate = _v11;
-						moves = _v12;
-						depth = _v13;
-						model = _v14;
-						continue bfs$;
-					} else {
-						var newVisited = A2(_elm_lang$core$Basics_ops['++'], visited, frontier);
-						var visitedPositions = A2(_elm_lang$core$List$map, _elm_lang$core$Basics$fst, newVisited);
-						var pointCode = function (_p9) {
-							var _p10 = _p9;
-							return (_p10._0.x * 10000) + _p10._0.y;
-						};
-						var newFrontier = A2(
-							_jweissman$rogue$Bfs$uniqueBy,
-							pointCode,
-							A2(
-								_elm_lang$core$List$filter,
-								function (_p11) {
-									var _p12 = _p11;
-									return _elm_lang$core$Basics$not(
-										A2(_elm_lang$core$List$member, _p12._0, visitedPositions));
-								},
-								A2(
-									_elm_lang$core$List$concatMap,
-									function (_p13) {
-										var _p14 = _p13;
-										return moves(_p14._0);
-									},
-									frontier)));
-						if (_elm_lang$core$Native_Utils.cmp(
-							_elm_lang$core$List$length(frontier),
-							0) > 0) {
-							var _v18 = newVisited,
-								_v19 = newFrontier,
-								_v20 = source,
-								_v21 = predicate,
-								_v22 = moves,
-								_v23 = depth - 1,
-								_v24 = model;
-							visited = _v18;
-							frontier = _v19;
-							source = _v20;
-							predicate = _v21;
-							moves = _v22;
-							depth = _v23;
-							model = _v24;
-							continue bfs$;
-						} else {
-							return _elm_lang$core$Maybe$Nothing;
-						}
-					}
-				}
-			}
-		}
-	});
-var _jweissman$rogue$Bfs$movesFrom = F2(
+var _jweissman$rogue$World$movesFrom = F2(
 	function (model, point) {
 		return A2(
 			_elm_lang$core$List$filter,
-			function (_p15) {
-				var _p16 = _p15;
-				return _elm_lang$core$Basics$not(
-					A2(_jweissman$rogue$World$isBlocked, _p16._0, model));
+			function (_p6) {
+				return function (p) {
+					return _elm_lang$core$Basics$not(
+						A2(_jweissman$rogue$World$isBlocked, p, model));
+				}(
+					_elm_lang$core$Basics$fst(_p6));
 			},
 			A2(
 				_elm_lang$core$List$map,
@@ -10794,19 +11848,106 @@ var _jweissman$rogue$Bfs$movesFrom = F2(
 				},
 				_jweissman$rogue$Direction$directions));
 	});
-var _jweissman$rogue$Bfs$bfs = F3(
-	function (source, predicate, model) {
-		return A7(
-			_jweissman$rogue$Bfs$bfs$,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			source,
-			predicate,
-			_jweissman$rogue$Bfs$movesFrom(model),
-			100,
-			model);
+var _jweissman$rogue$World$path = F3(
+	function (dst, src, model) {
+		return A3(
+			_jweissman$rogue$Path$find,
+			dst,
+			src,
+			_jweissman$rogue$World$movesFrom(model));
+	});
+var _jweissman$rogue$World$entityAt = F2(
+	function (pt, model) {
+		return A3(
+			_jweissman$rogue$Level$entityAt,
+			pt,
+			model.player,
+			_jweissman$rogue$World$level(model));
+	});
+var _jweissman$rogue$World$playerCollectsCoins = function (model) {
+	var dungeon$ = A3(_jweissman$rogue$Dungeon$collectCoin, model.player.position, model.depth, model.dungeon);
+	var isCoin = A2(
+		_jweissman$rogue$Level$isCoin,
+		model.player.position,
+		_jweissman$rogue$World$level(model));
+	if (_elm_lang$core$Basics$not(isCoin)) {
+		return model;
+	} else {
+		var event = _jweissman$rogue$Event$pickupCoin;
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				player: A2(_jweissman$rogue$Warrior$enrich, 1, model.player),
+				dungeon: dungeon$,
+				events: A2(
+					_elm_lang$core$Basics_ops['++'],
+					model.events,
+					_elm_lang$core$Native_List.fromArray(
+						[event]))
+			});
+	}
+};
+var _jweissman$rogue$World$playerAttacks = F2(
+	function (direction, model) {
+		var _p7 = model;
+		var player = _p7.player;
+		var attackedPosition = A2(_jweissman$rogue$Point$slide, direction, player.position);
+		var maybeCreature = A2(
+			_jweissman$rogue$Level$creatureAt,
+			attackedPosition,
+			_jweissman$rogue$World$level(model));
+		var _p8 = maybeCreature;
+		if (_p8.ctor === 'Nothing') {
+			return model;
+		} else {
+			return _jweissman$rogue$World$removeDeceasedCreatures(
+				A2(_jweissman$rogue$World$playerAttacksCreature, _p8._0, model));
+		}
+	});
+var _jweissman$rogue$World$playerSteps = F2(
+	function (direction, model) {
+		return _elm_lang$core$Basics$not(
+			A2(_jweissman$rogue$World$canPlayerStep, direction, model)) ? A2(_jweissman$rogue$World$playerAttacks, direction, model) : _jweissman$rogue$World$playerAscendsOrDescends(
+			_jweissman$rogue$World$playerCollectsCoins(
+				A2(_jweissman$rogue$World$playerMoves, direction, model)));
+	});
+var _jweissman$rogue$World$init = {
+	dungeon: _elm_lang$core$Native_List.fromArray(
+		[]),
+	depth: 0,
+	player: _jweissman$rogue$Warrior$init(
+		{x: 0, y: 0}),
+	events: _jweissman$rogue$Log$init,
+	debugPath: _elm_lang$core$Native_List.fromArray(
+		[])
+};
+var _jweissman$rogue$World$Model = F5(
+	function (a, b, c, d, e) {
+		return {depth: a, dungeon: b, player: c, events: d, debugPath: e};
+	});
+var _jweissman$rogue$World$TurnCreature = F2(
+	function (a, b) {
+		return {ctor: 'TurnCreature', _0: a, _1: b};
+	});
+var _jweissman$rogue$World$turnCreatureRandomly = F2(
+	function (superMsg, creature) {
+		return A2(
+			_elm_lang$core$Random$generate,
+			function (dir) {
+				return superMsg(
+					A2(_jweissman$rogue$World$TurnCreature, creature, dir));
+			},
+			_jweissman$rogue$Direction$random);
+	});
+var _jweissman$rogue$World$turnCreaturesCommand = F2(
+	function (model, superMsg) {
+		var commands = A2(
+			_elm_lang$core$List$map,
+			function (creature) {
+				return A2(_jweissman$rogue$World$turnCreatureRandomly, superMsg, creature);
+			},
+			_jweissman$rogue$World$creatures(model));
+		return _elm_lang$core$Platform_Cmd$batch(commands);
 	});
 var _jweissman$rogue$Main$screenToCoordinate = function (_p0) {
 	var _p1 = _p0;
@@ -10822,26 +11963,31 @@ var _jweissman$rogue$Main$view = function (model) {
 		if (_p2.ctor === 'Nothing') {
 			return 'You aren\'t looking at anything in particular.';
 		} else {
+			var _p3 = _p2._0;
 			return A2(
 				_elm_lang$core$Basics_ops['++'],
-				'You see ',
+				_elm_lang$core$Basics$toString(
+					_jweissman$rogue$Entity$position(_p3)),
 				A2(
 					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Entity$describe(_p2._0),
-					'.'));
+					' You see ',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_jweissman$rogue$Entity$describe(_p3),
+						'.')));
 		}
 	}();
 	var note = A3(
 		_jweissman$rogue$Graphics$render,
 		debugMsg,
-		{x: 10, y: 1},
+		{x: 15, y: 1},
 		'white');
 	var path = function () {
-		var _p3 = model.followPath;
-		if (_p3.ctor === 'Nothing') {
+		var _p4 = model.followPath;
+		if (_p4.ctor === 'Nothing') {
 			return model.hoverPath;
 		} else {
-			return _p3._0;
+			return _p4._0;
 		}
 	}();
 	var world = model.world;
@@ -10850,46 +11996,37 @@ var _jweissman$rogue$Main$view = function (model) {
 			world,
 			{debugPath: path}));
 	return A2(
-		_elm_lang$html$Html$body,
+		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_elm_lang$html$Html_Attributes$style(bgStyle)
 			]),
 		_elm_lang$core$Native_List.fromArray(
 			[
-				A2(
-				_elm_lang$html$Html$div,
+				A3(
+				_elm_lang$html$Html$node,
+				'style',
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$style(bgStyle)
+						_elm_lang$html$Html_Attributes$type$('text/css')
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						A3(
-						_elm_lang$html$Html$node,
-						'style',
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$type$('text/css')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('@import \'https://fonts.googleapis.com/css?family=VT323\'')
-							])),
-						A2(
-						_elm_lang$svg$Svg$svg,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$svg$Svg_Attributes$viewBox('0 0 60 40'),
-								_elm_lang$svg$Svg_Attributes$width('1200px'),
-								_elm_lang$svg$Svg_Attributes$height('800px')
-							]),
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							worldView,
-							_elm_lang$core$Native_List.fromArray(
-								[note])))
-					]))
+						_elm_lang$html$Html$text('@import \'https://fonts.googleapis.com/css?family=VT323\'')
+					])),
+				A2(
+				_elm_lang$svg$Svg$svg,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$svg$Svg_Attributes$viewBox('0 0 60 40'),
+						_elm_lang$svg$Svg_Attributes$width('1200px'),
+						_elm_lang$svg$Svg_Attributes$height('800px')
+					]),
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					worldView,
+					_elm_lang$core$Native_List.fromArray(
+						[note])))
 			]));
 };
 var _jweissman$rogue$Main$playerExplores = function (model) {
@@ -10898,19 +12035,16 @@ var _jweissman$rogue$Main$playerExplores = function (model) {
 		return A2(_jweissman$rogue$Point$distance, playerPos, c);
 	};
 	var maybeCoin = _elm_lang$core$List$head(
-		A2(_elm_lang$core$List$sortBy, byDistanceFromPlayer, model.world.coins));
+		A2(
+			_elm_lang$core$List$sortBy,
+			byDistanceFromPlayer,
+			_jweissman$rogue$World$coins(model.world)));
 	var path = function () {
-		var _p4 = maybeCoin;
-		if (_p4.ctor === 'Nothing') {
+		var _p5 = maybeCoin;
+		if (_p5.ctor === 'Nothing') {
 			return _elm_lang$core$Maybe$Nothing;
 		} else {
-			return A3(
-				_jweissman$rogue$Bfs$bfs,
-				playerPos,
-				function (p) {
-					return _elm_lang$core$Native_Utils.eq(p, _p4._0);
-				},
-				model.world);
+			return A3(_jweissman$rogue$World$path, _p5._0, playerPos, model.world);
 		}
 	}();
 	return _elm_lang$core$Native_Utils.update(
@@ -10919,8 +12053,8 @@ var _jweissman$rogue$Main$playerExplores = function (model) {
 };
 var _jweissman$rogue$Main$clickAt = F2(
 	function (point, model) {
-		var _p5 = model.followPath;
-		if (_p5.ctor === 'Nothing') {
+		var _p6 = model.followPath;
+		if (_p6.ctor === 'Nothing') {
 			return _elm_lang$core$Native_Utils.update(
 				model,
 				{
@@ -10935,22 +12069,22 @@ var _jweissman$rogue$Main$hoverAt = F2(
 		var point = _jweissman$rogue$Main$screenToCoordinate(position);
 		var maybeEntity = A2(_jweissman$rogue$World$entityAt, point, model.world);
 		var pathToEntity = function () {
-			var _p6 = maybeEntity;
-			if (_p6.ctor === 'Nothing') {
+			var _p7 = maybeEntity;
+			if (_p7.ctor === 'Nothing') {
 				return _elm_lang$core$Native_List.fromArray(
 					[]);
 			} else {
-				var _p8 = _p6._0;
+				var _p9 = _p7._0;
 				var alreadyHovering = function () {
-					var _p7 = model.hover;
-					if (_p7.ctor === 'Just') {
-						return _elm_lang$core$Native_Utils.eq(_p7._0, _p8);
+					var _p8 = model.hover;
+					if (_p8.ctor === 'Just') {
+						return _elm_lang$core$Native_Utils.eq(_p8._0, _p9);
 					} else {
 						return false;
 					}
 				}();
 				var playerPos = model.world.player.position;
-				var entityPos = _jweissman$rogue$Entity$position(_p8);
+				var entityPos = _jweissman$rogue$Entity$position(_p9);
 				var accessible = _elm_lang$core$Basics$not(
 					A2(_jweissman$rogue$World$isBlocked, entityPos, model.world));
 				return accessible ? ((alreadyHovering || _elm_lang$core$Basics$not(
@@ -10958,13 +12092,7 @@ var _jweissman$rogue$Main$hoverAt = F2(
 					_elm_lang$core$Maybe$withDefault,
 					_elm_lang$core$Native_List.fromArray(
 						[]),
-					A3(
-						_jweissman$rogue$Bfs$bfs,
-						playerPos,
-						function (pos) {
-							return _elm_lang$core$Native_Utils.eq(entityPos, pos);
-						},
-						model.world))) : _elm_lang$core$Native_List.fromArray(
+					A3(_jweissman$rogue$World$path, entityPos, playerPos, model.world))) : _elm_lang$core$Native_List.fromArray(
 					[]);
 			}
 		}();
@@ -10991,37 +12119,41 @@ var _jweissman$rogue$Main$resetHover = function (model) {
 			hover: _elm_lang$core$Maybe$Nothing
 		});
 };
-var _jweissman$rogue$Main$moveCreatures = function (model) {
-	return _elm_lang$core$Native_Utils.update(
-		model,
-		{
-			world: _jweissman$rogue$World$moveCreatures(model.world)
-		});
-};
 var _jweissman$rogue$Main$playerFollowsPath = function (model) {
-	var _p9 = model.followPath;
-	if (_p9.ctor === 'Nothing') {
+	var _p10 = model.followPath;
+	if (_p10.ctor === 'Nothing') {
 		return model;
 	} else {
-		var _p11 = _p9._0;
-		var _p10 = _elm_lang$core$List$head(_p11);
-		if (_p10.ctor === 'Nothing') {
-			return _jweissman$rogue$Main$resetHover(
-				_elm_lang$core$Native_Utils.update(
-					model,
-					{followPath: _elm_lang$core$Maybe$Nothing}));
+		var _p14 = _p10._0;
+		var _p11 = _elm_lang$core$List$head(_p14);
+		if (_p11.ctor === 'Nothing') {
+			return _jweissman$rogue$Main$resetFollow(
+				_jweissman$rogue$Main$resetHover(model));
 		} else {
-			var world = A2(
-				_jweissman$rogue$World$playerSteps,
-				A2(_jweissman$rogue$Util$directionBetween, _p10._0, model.world.player.position),
-				model.world);
-			return _jweissman$rogue$Main$moveCreatures(
-				_elm_lang$core$Native_Utils.update(
-					model,
-					{
-						followPath: _elm_lang$core$List$tail(_p11),
-						world: world
-					}));
+			var _p13 = _p11._0;
+			var direction = A2(_jweissman$rogue$Util$directionBetween, _p13, model.world.player.position);
+			var world = A2(_jweissman$rogue$World$playerSteps, direction, model.world);
+			var _p12 = A3(_jweissman$rogue$Dungeon$moveCreatures, world.player, world.depth, world.dungeon);
+			var dungeon$ = _p12._0;
+			var events = _p12._1;
+			var player$ = _p12._2;
+			var world$ = _elm_lang$core$Native_Utils.update(
+				world,
+				{
+					dungeon: dungeon$,
+					events: A2(_elm_lang$core$Basics_ops['++'], world.events, events),
+					player: player$
+				});
+			var playerPos = model.world.player.position;
+			return _elm_lang$core$Native_Utils.eq(
+				_p13,
+				A2(_jweissman$rogue$Point$slide, direction, playerPos)) ? _elm_lang$core$Native_Utils.update(
+				model,
+				{
+					followPath: _elm_lang$core$List$tail(_p14),
+					world: world
+				}) : _jweissman$rogue$Main$resetHover(
+				_jweissman$rogue$Main$resetFollow(model));
 		}
 	}
 };
@@ -11042,8 +12174,8 @@ var _jweissman$rogue$Main$autorogue = function (model) {
 var _jweissman$rogue$Main$handleKeypress = F2(
 	function (keyChar, model) {
 		return function () {
-			var _p12 = keyChar;
-			switch (_p12.valueOf()) {
+			var _p15 = keyChar;
+			switch (_p15.valueOf()) {
 				case 'k':
 					return _jweissman$rogue$Main$playerSteps(_jweissman$rogue$Direction$North);
 				case 'l':
@@ -11057,41 +12189,38 @@ var _jweissman$rogue$Main$handleKeypress = F2(
 				case 'a':
 					return _jweissman$rogue$Main$autorogue;
 				default:
-					return function (_p13) {
+					return function (_p16) {
 						return _jweissman$rogue$Main$resetFollow(
-							_jweissman$rogue$Main$resetAuto(_p13));
+							_jweissman$rogue$Main$resetAuto(_p16));
 					};
 			}
 		}()(model);
 	});
-var _jweissman$rogue$Main$init = {
-	ctor: '_Tuple2',
-	_0: {
-		world: _jweissman$rogue$World$init,
-		hover: _elm_lang$core$Maybe$Nothing,
-		hoverPath: _elm_lang$core$Native_List.fromArray(
-			[]),
-		followPath: _elm_lang$core$Maybe$Nothing,
-		auto: false
-	},
-	_1: _elm_lang$core$Platform_Cmd$none
-};
-var _jweissman$rogue$Main$Model = F5(
-	function (a, b, c, d, e) {
-		return {world: a, hover: b, hoverPath: c, followPath: d, auto: e};
-	});
-var _jweissman$rogue$Main$TickMsg = function (a) {
-	return {ctor: 'TickMsg', _0: a};
-};
-var _jweissman$rogue$Main$WorldMsg = function (a) {
-	return {ctor: 'WorldMsg', _0: a};
-};
 var _jweissman$rogue$Main$update = F2(
 	function (message, model) {
-		var _p14 = message;
-		switch (_p14.ctor) {
+		var _p17 = message;
+		switch (_p17.ctor) {
+			case 'MapMsg':
+				var _p18 = _p17._0;
+				var world = model.world;
+				var player = world.player;
+				var player$ = _elm_lang$core$Native_Utils.update(
+					player,
+					{
+						position: A2(_jweissman$rogue$Dungeon$levelAt, 0, _p18).upstairs
+					});
+				var world$ = _elm_lang$core$Native_Utils.update(
+					world,
+					{dungeon: _p18, depth: 0, player: player$});
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{world: world$}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 			case 'WorldMsg':
-				var world = A2(_jweissman$rogue$World$update, _p14._0, model.world);
+				var world = A2(_jweissman$rogue$World$update, _p17._0, model.world);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -11102,43 +12231,68 @@ var _jweissman$rogue$Main$update = F2(
 			case 'ClickMsg':
 				return {
 					ctor: '_Tuple2',
-					_0: A2(_jweissman$rogue$Main$clickAt, _p14._0, model),
+					_0: A2(_jweissman$rogue$Main$clickAt, _p17._0, model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'HoverMsg':
 				return {
 					ctor: '_Tuple2',
-					_0: A2(_jweissman$rogue$Main$hoverAt, _p14._0, model),
+					_0: A2(_jweissman$rogue$Main$hoverAt, _p17._0, model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'TickMsg':
-				var _p15 = model.followPath;
-				if (_p15.ctor === 'Nothing') {
+				var _p19 = model.followPath;
+				if (_p19.ctor === 'Nothing') {
 					return model.auto ? {
 						ctor: '_Tuple2',
 						_0: _jweissman$rogue$Main$playerExplores(model),
 						_1: _elm_lang$core$Platform_Cmd$none
 					} : {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				} else {
-					var cmds = A2(_jweissman$rogue$World$turnCreaturesCommand, model.world, _jweissman$rogue$Main$WorldMsg);
 					return {
 						ctor: '_Tuple2',
 						_0: _jweissman$rogue$Main$playerFollowsPath(model),
-						_1: cmds
+						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				}
 			default:
-				var turnCreatureCommands = A2(_jweissman$rogue$World$turnCreaturesCommand, model.world, _jweissman$rogue$Main$WorldMsg);
-				var keyChar = _elm_lang$core$Char$fromCode(_p14._0);
+				var keyChar = _elm_lang$core$Char$fromCode(_p17._0);
 				return {
 					ctor: '_Tuple2',
 					_0: _jweissman$rogue$Main$resetHover(
-						_jweissman$rogue$Main$moveCreatures(
-							A2(_jweissman$rogue$Main$handleKeypress, keyChar, model))),
-					_1: turnCreatureCommands
+						A2(_jweissman$rogue$Main$handleKeypress, keyChar, model)),
+					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
 	});
+var _jweissman$rogue$Main$Model = F5(
+	function (a, b, c, d, e) {
+		return {world: a, hover: b, hoverPath: c, followPath: d, auto: e};
+	});
+var _jweissman$rogue$Main$MapMsg = function (a) {
+	return {ctor: 'MapMsg', _0: a};
+};
+var _jweissman$rogue$Main$init = {
+	ctor: '_Tuple2',
+	_0: {
+		world: _jweissman$rogue$World$init,
+		hover: _elm_lang$core$Maybe$Nothing,
+		hoverPath: _elm_lang$core$Native_List.fromArray(
+			[]),
+		followPath: _elm_lang$core$Maybe$Nothing,
+		auto: false
+	},
+	_1: A2(
+		_elm_lang$core$Random$generate,
+		_jweissman$rogue$Main$MapMsg,
+		_jweissman$rogue$Dungeon$generate(10))
+};
+var _jweissman$rogue$Main$TickMsg = function (a) {
+	return {ctor: 'TickMsg', _0: a};
+};
+var _jweissman$rogue$Main$WorldMsg = function (a) {
+	return {ctor: 'WorldMsg', _0: a};
+};
 var _jweissman$rogue$Main$ClickMsg = function (a) {
 	return {ctor: 'ClickMsg', _0: a};
 };
