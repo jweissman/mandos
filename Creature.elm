@@ -1,4 +1,4 @@
-module Creature exposing (Model, step, turn, describe, engage, disengage, createRat, createMonkey, createBandit)
+module Creature exposing (Model, step, turn, injure, describe, engage, disengage, createRat, createMonkey, createBandit)
 
 import Species exposing (Species)
 
@@ -67,6 +67,11 @@ step model =
 turn : Direction -> Model -> Model
 turn direction model =
   { model | direction = direction }
+
+injure : Int -> Model -> Model
+injure amount model =
+  let hp' = model.hp - amount in
+  { model | hp = max 0 hp' }
 
 describe : Model -> String
 describe model =

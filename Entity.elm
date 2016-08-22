@@ -1,7 +1,7 @@
-module Entity exposing (Entity, view, describe, position, wall, floor, coin, player, monster)
+module Entity exposing (Entity, view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs)
 
 
-import Point
+import Point exposing (Point)
 import Creature
 import Warrior
 
@@ -11,14 +11,18 @@ import Svg
 
 -- types
 
+type Orientation = Up | Down
+
 type Entity = Monster Creature.Model
             | Player Warrior.Model
-            | Wall Point.Point
-            | Coin Point.Point
-            | Floor Point.Point
+            | Wall Point
+            | Coin Point
+            | Floor Point
+            | Door Point
+            | StairsUp Point
+            | StairsDown Point
 
 -- constructors
-
 wall point =
   Wall point
 
@@ -28,11 +32,20 @@ coin point =
 floor point =
   Floor point
 
+door point =
+  Door point
+
 player warrior =
   Player warrior
 
 monster creature =
   Monster creature
+
+upstairs point =
+  StairsUp point
+
+downstairs point =
+  StairsDown point
 
 -- helpers
 
@@ -45,14 +58,23 @@ describe entity =
     Player player ->
       "a nameless warrior"
 
-    Wall point ->
+    Wall _ ->
       "a sturdy wall"
 
-    Coin point ->
+    Coin _ ->
       "a golden coin"
 
-    Floor point ->
+    Floor _ ->
       "a cobblestone floor"
+
+    Door _ ->
+      "a creaky door"
+
+    StairsUp _ ->
+      "an upward-curving staircase"
+
+    StairsDown _ ->
+      "a downward-curving staircase"
 
 -- view
 view : Entity -> Svg.Svg a
@@ -77,6 +99,17 @@ color entity =
     Floor _ ->
       "gray"
 
+    Door _ ->
+      "orange"
+
+    StairsUp _ ->
+      "green"
+
+    StairsDown _ ->
+      "yellow"
+
+    
+
 position : Entity -> Point.Point
 position entity =
   case entity of
@@ -86,6 +119,9 @@ position entity =
     Player player ->
       player.position
 
+    Door point ->
+      point
+
     Wall point ->
       point
 
@@ -94,6 +130,14 @@ position entity =
 
     Floor point ->
       point
+
+    StairsUp point ->
+      point
+
+    StairsDown point ->
+      point
+
+
 
 glyph : Entity -> String
 glyph entity =
@@ -112,4 +156,13 @@ glyph entity =
 
     Floor _ ->
       " "
+
+    Door _ ->
+      "+"
+
+    StairsUp _ ->
+      ">"
+
+    StairsDown _ ->
+      "<"
 

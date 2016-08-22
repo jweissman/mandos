@@ -1,64 +1,183 @@
-module Graph exposing (Graph(..), map, match, rankPaths, mergePaths, bfs)
+module Graph exposing (Graph, map, fold, minimumBy, match, node, edge, nodeWithEdges, tree)
+import Util
 
 type Graph a = Node a (List (Graph a))
 
+node x =
+  Node x []
+
+nodeWithEdges x edges =
+  Node x edges
+
+-- map values
 map : (a -> b) -> Graph a -> Graph b
-map f (Node x xs) =
-  Node (f x) (List.map (map f) xs)
+map f (Node n ns) =
+  Node (f n) (List.map (map f) ns)
+
+-- map nodes themselves (i.e., wrapped, with structure)
+mapNodes : (Graph a -> Graph a) -> Graph a -> Graph a
+mapNodes f (Node n ns) =
+  f (Node n (List.map (mapNodes f) ns))
+
+-- fold over edges
+fold : ((a,a) -> b -> b) -> b -> Graph a -> b
+fold f initial graph =
+  List.foldr f initial (edges graph)
+
+edges : Graph a -> List (a,a)
+edges (Node n ns) =
+  let
+    edges' =
+      List.map (\n' -> (n, nodeValue n')) ns
+  in
+    edges' ++ (List.concatMap edges ns)
+
+edge : a -> a -> Graph a -> Graph a
+edge n n' graph =
+  mapNodes (joinMatching n n') graph
+
+joinMatching : a -> a -> Graph a -> Graph a
+joinMatching n node' trialNode =
+  let (Node n' _) = trialNode in
+  if n' == n then
+    connect' trialNode (node node')
+  else
+    trialNode
+
+connect' : Graph a -> Graph a -> Graph a
+connect' (Node n ns) n' = 
+  Node n (n' :: ns)
+
+nodeValue : Graph a -> a
+nodeValue (Node n _) = n
+
+
+
+minimumBy : (a -> comparable) -> Graph a -> Graph a
+minimumBy f graph =
+  let
+    (Node n edges) =
+      graph
+
+    restMinDist =
+      f (nodeValue minRest)
+
+    minEdges =
+      edges
+      |> List.map (minimumBy f)
+
+    minRest =
+      minEdges
+      |> Util.minBy (\n' -> f (nodeValue n'))
+      |> Maybe.withDefault graph
+  in
+   if (f n) < restMinDist  then
+     graph
+   else
+     minRest
+
+-- minimum by a comparator, filtered by a bool
+minimumWhere : (a -> comparable) -> (a -> Bool) -> Graph a -> Maybe (Graph a)
+minimumWhere f pred graph =
+  let
+    (Node n edges) =
+      graph
+
+
+    minEdges =
+      edges
+      |> List.filterMap (minimumWhere f pred)
+
+    minRest =
+      minEdges
+      |> Util.minBy (\n' -> f (nodeValue n'))
+  in
+    case minRest of
+      Just minRestNode ->
+        let restMinDist = f (nodeValue minRestNode) in
+        if (f n) < restMinDist && pred n then
+          Just graph
+        else
+          minRest
+
+      Nothing -> 
+        if pred n then
+          Just graph
+        else
+          Nothing
 
 match : Graph a -> Graph a -> Bool
-match node graph =
+match n graph =
   let
     (Node _ rest) =
        graph
   in
-    if node == graph then
+    if n == graph then
       True
     else
       if List.length rest == 0 then
         False
       else
-        List.any (match node) rest
+        List.any (match n) rest
 
--- merge paths together sorting by length
-mergePaths : List (List a) -> List (List a) -> List (List a)
-mergePaths x' y' =
-  case (x',y') of
-    (left,[]) ->
-      left
+span : (a -> a -> comparable) -> List a -> Maybe (Graph a)
+span f ls = tree f (\_ _ -> True) ls
 
-    ([],right) ->
-      right
+-- span with a predicate... determining whether these two nodes 'should' be connected
+-- allow to structure according to another criteria on top of just raw weight
+-- note this may leave disconnected graphs etc --
+-- how to ensure we have at least a connected fragment...?
+tree : (a -> a -> comparable) -> (a -> a -> Bool) -> List a -> Maybe (Graph a)
+tree f predicate ls =
+  case (List.head ls) of
+    Nothing ->
+      Nothing
 
-    ((x :: xs), (y :: ys)) ->
-      if List.length x < List.length y then
-        x :: (mergePaths xs (y :: ys))
-      else
-        y :: (mergePaths (x :: xs) ys)
+    Just elem ->
+      let
+        firstNode =
+          node elem
+      in
+        case (List.tail ls) of
+          Nothing ->
+            Just firstNode
 
--- paths from focus to all other nodes...
-rankPaths : Graph a -> List (List a)
-rankPaths (Node label edges) =
+          Just rest ->
+            Just (tree' f predicate firstNode rest)
+
+tree' : (a -> a -> comparable) -> (a -> a -> Bool) -> Graph a -> List a -> Graph a
+tree' f pred graph ls =
   let
-    paths =
-      edges
-      |> List.map rankPaths
-      |> List.foldr mergePaths []
-      |> List.map (List.append [label])
+    weight = \x -> -- least f to a node in the graph
+      graph
+      |> minimumBy (f x)
+      |> nodeValue
+      |> f x 
+      
+    rest =
+      ls |> List.sortBy weight
+
   in
-    [[label]] ++ paths
+    case (List.head rest) of
+      Nothing ->
+        graph
 
+      Just elem ->
+        let
+          closestNode =
+            graph 
+            |> minimumWhere (f elem) (pred elem)
 
-bfs : (a -> Bool) -> Graph a -> Maybe (List a)
-bfs predicate graph =
-  graph
-  |> rankPaths
-  |> List.filter (\path -> 
-    let
-      last = (List.head (List.reverse path))
-    in
-      case last of
-        Nothing -> False
-        Just elem -> predicate elem 
-    )
-  |> List.head
+          graph' =
+            case closestNode of
+              Just closest ->
+                graph |> edge (nodeValue closest) (elem)
+              Nothing ->
+                graph
+        in
+          case (List.tail rest) of
+            Nothing ->
+              graph'
+
+            Just rest' ->
+              rest' |> tree' f pred graph'

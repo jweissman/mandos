@@ -1,4 +1,4 @@
-module Direction exposing (Direction(..), random, describe, invert, directions) --, between)
+module Direction exposing (Direction(..), random, describe, invert, directions, cardinalDirections) --, between)
 
 import Random
 
@@ -11,13 +11,20 @@ type Direction = North
                | Southeast
                | Southwest
 
-directions : List Direction
-directions = 
+
+cardinalDirections : List Direction
+cardinalDirections =
   [ North
   , South
   , East
   , West
-  , Northeast
+  ]
+
+
+directions : List Direction
+directions = 
+  cardinalDirections ++
+  [ Northeast
   , Northwest
   , Southeast
   , Southwest 

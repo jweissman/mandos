@@ -1,6 +1,8 @@
-module Point exposing (Point, slide, describe, distance) --, orbit)
+module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code)
 
 import Direction exposing (Direction(..), directions)
+
+import Random
 
 type alias Point =
   { x : Int
@@ -10,16 +12,16 @@ type alias Point =
 slide : Direction -> Point -> Point
 slide direction point =
   case direction of
-    North -> 
+    North ->
       { point | y = point.y - 1 }
 
-    South -> 
+    South ->
       { point | y = point.y + 1 }
 
-    West  -> 
+    West  ->
       { point | x = point.x - 1 }
 
-    East  -> 
+    East  ->
       { point | x = point.x + 1 }
 
     Northeast ->
@@ -49,10 +51,23 @@ describe point =
 distance : Point -> Point -> Float
 distance a b =
   let
-    dx = 
+    dx =
       toFloat (a.x - b.x)
 
     dy =
       toFloat (a.y - b.y)
   in
     sqrt( (dx*dx) + (dy*dy) )
+
+random : Int -> Int -> Random.Generator Point
+random width height =
+  Random.map2 (\x y -> {x=x,y=y}) (Random.int 0 width) (Random.int 0 height)
+
+
+randomWithOffset : Point -> Int -> Int -> Random.Generator Point
+randomWithOffset {x,y} width height =
+  Random.map2 (\x' y' -> {x=x+x',y=y+y'}) (Random.int 0 width) (Random.int 0 height)
+
+code : Point -> Int
+code {x,y} =
+  (x * 10000) + y

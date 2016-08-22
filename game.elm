@@ -3,17 +3,19 @@ import Point exposing (Point, slide)
 
 import Warrior
 import World
-import Bfs
+--import Bfs
 import Creature
 import Log
 import Graphics
 
 import Entity exposing (Entity)
+import Dungeon exposing (Dungeon)
 import Util
+import Path exposing (Path)
 
 import Char
 import Task
-import Keyboard
+import Keyboard exposing (KeyCode)
 import Mouse
 import Random
 import Time exposing (Time, millisecond)
@@ -47,26 +49,52 @@ type alias Model =
 -- INIT
 init : (Model, Cmd Msg)
 init =
-  ({world = World.init
-  , hover = Nothing
-  , hoverPath = []
-  , followPath = Nothing
-  , auto = False
-  }
-  , Cmd.none)
+  (
+    { world = World.init
+    , hover = Nothing
+    , hoverPath = []
+    , followPath = Nothing
+    , auto = False
+    }
+    , Random.generate MapMsg (Dungeon.generate 10)
+  )
 
 -- TYPES
 type Msg
-  = KeyMsg Keyboard.KeyCode
+  = KeyMsg KeyCode
   | HoverMsg Mouse.Position
   | ClickMsg Mouse.Position
   | WorldMsg World.Msg
-  | TickMsg Time.Time
+  | TickMsg Time
+  | MapMsg Dungeon
 
 -- UPDATE
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
+    MapMsg dungeon ->
+      let
+        world =
+          model.world
+
+        player =
+          world.player
+
+        --floors =
+        --  (Dungeon.levelAt 0 dungeon).floors
+          --World.floors world'
+
+        player' =
+          { player | position = (Dungeon.levelAt 0 dungeon).upstairs } --(List.head floors |> Maybe.withDefault {x=5,y=5}) }
+
+        world' =
+          { world | dungeon = dungeon
+                  , depth = 0
+                  , player = player'
+          }
+      in
+      ({ model | world = world' }, Cmd.none)
+
     WorldMsg subMsg ->
       let
         world =
@@ -90,22 +118,24 @@ update message model =
             (model, Cmd.none)
 
         Just path ->
-          let cmds = World.turnCreaturesCommand model.world WorldMsg in
-          (model |> playerFollowsPath, cmds)
+          --let 
+          --  cmds = World.turnCreaturesCommand model.world WorldMsg 
+          --in
+          (model |> playerFollowsPath, Cmd.none) -- cmds)
 
     KeyMsg keyCode ->
       let
         keyChar =
           (Char.fromCode keyCode)
 
-        turnCreatureCommands =
-          World.turnCreaturesCommand model.world WorldMsg
+        --turnCreatureCommands =
+        --  World.turnCreaturesCommand model.world WorldMsg
       in
         (model
          |> handleKeypress keyChar
-         |> moveCreatures
+         --|> moveCreatures
          |> resetHover
-        , turnCreatureCommands)
+        , Cmd.none) -- turnCreatureCommands)
 
 handleKeypress : Char -> Model -> Model
 handleKeypress keyChar model =
@@ -129,10 +159,6 @@ playerSteps direction model =
     { model | world = world } 
     |> resetFollow 
     |> resetAuto
-
-moveCreatures : Model -> Model
-moveCreatures model =
-  { model | world = (World.moveCreatures model.world) }
 
 resetHover : Model -> Model
 resetHover model =
@@ -184,7 +210,7 @@ hoverAt position model =
                  model.hoverPath
                else
                  model.world
-                 |> Bfs.bfs playerPos (\pos -> (entityPos == pos))
+                 |> World.path entityPos playerPos -- (\pos -> (entityPos == pos))
                  |> Maybe.withDefault []
             else
               []
@@ -210,17 +236,41 @@ playerFollowsPath model =
     Just path ->
       case (List.head path) of
         Nothing ->
-          { model | followPath = Nothing }
+          model
           |> resetHover
+          |> resetFollow
 
         Just nextStep ->
           let
-            world = World.playerSteps (Util.directionBetween nextStep model.world.player.position) model.world
+            playerPos =
+              model.world.player.position
+
+            direction =
+              (Util.directionBetween nextStep model.world.player.position) 
+
+            world = 
+              model.world 
+              |> World.playerSteps direction
+
+            (dungeon', events, player') =
+              world.dungeon 
+              |> Dungeon.moveCreatures world.player world.depth
+
+            world' =
+              { world | dungeon = dungeon'
+                      , events = world.events ++ events
+                      , player = player'
+              }
           in
-            ({model | followPath = List.tail path
-                    , world = world
-            })
-            |> moveCreatures
+            if (nextStep == (playerPos |> slide direction)) then
+              ({model | followPath = List.tail path
+                      , world = world
+              })
+              --|> Dungeon.moveCreatures
+            else
+              model
+              |> resetFollow
+              |> resetHover
 
 -- auto-assign follow path
 playerExplores : Model -> Model
@@ -233,7 +283,7 @@ playerExplores model =
       (\c -> Point.distance playerPos c)
 
     maybeCoin =
-      model.world.coins
+      World.coins model.world --0.coins
       |> List.sortBy byDistanceFromPlayer
       |> List.head
 
@@ -243,7 +293,9 @@ playerExplores model =
           Nothing
 
         Just coin ->
-          Bfs.bfs playerPos (\p -> p == coin) model.world
+          --Bfs.bfs playerPos (\p -> p == coin) model.world
+          model.world
+          |> World.path coin playerPos -- (\pos -> (entityPos == pos))
 
   in
     { model | followPath = path } -- |> playerFollowsPath
@@ -279,10 +331,10 @@ view model =
           "You aren't looking at anything in particular."
 
         Just entity ->
-          "You see " ++ (Entity.describe entity) ++ "."
+          (toString (Entity.position entity)) ++ " You see " ++ (Entity.describe entity) ++ "."
 
     note =
-      Graphics.render debugMsg {x=10,y=1} "white"
+      Graphics.render debugMsg {x=15,y=1} "white"
 
     bgStyle = [
       ( "background-color", "#280828"
@@ -290,13 +342,12 @@ view model =
     ]
 
   in
-    Html.body [ style bgStyle ] [
+    --Html.body [ style bgStyle ] [
       Html.div [ style bgStyle ] [
         Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
         , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
       ]
-    ]
-
+    --]
 
 screenToCoordinate : Mouse.Position -> Point
 screenToCoordinate {x,y} =
