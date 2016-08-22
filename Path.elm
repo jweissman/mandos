@@ -1,27 +1,23 @@
-module Bfs exposing (bfs)
+module Path exposing (Path, find, findBy)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
-
-import World exposing (Model)
 
 import Util
 
 -- bfs impl
 type alias Path = List Point
 
-bfs : Point -> (Point -> Bool) -> Model -> Maybe Path
-bfs source predicate model =
-  bfs' [] [] source predicate (movesFrom model) 100 model
+find : Point -> Point -> (Point -> List (Point, Direction)) -> Maybe Path
+find dst src moves =
+  findBy (\pt -> pt == dst) moves src
 
-movesFrom : Model -> Point -> List (Point, Direction)
-movesFrom model point =
-  Direction.directions
-  |> List.map (\direction -> (slide direction point, direction))
-  |> List.filter ((\p -> not (World.isBlocked p model)) << fst)
+findBy : (Point -> Bool) -> (Point -> List (Point, Direction)) -> Point -> Maybe Path
+findBy predicate moves source =
+  find' [] [] source predicate moves 100
 
-bfs' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Model -> Maybe Path
-bfs' visited frontier source predicate moves depth model =
+find' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Maybe Path
+find' visited frontier source predicate moves depth =
   if depth < 0 then
     Nothing
   else
@@ -42,7 +38,7 @@ bfs' visited frontier source predicate moves depth model =
         Nothing ->
           if List.length frontier == 0 then
             let frontier' = moves source in
-              bfs' visited frontier' source predicate moves (depth-1) model
+              find' visited frontier' source predicate moves (depth-1)
           else
             let
               visitedPositions =
@@ -58,14 +54,14 @@ bfs' visited frontier source predicate moves depth model =
                 (visited ++ frontier)
             in
               if List.length frontier > 0 then
-                bfs' newVisited (newFrontier) source predicate moves (depth-1) model
+                find' newVisited (newFrontier) source predicate moves (depth-1)
               else
                 Nothing
 
 constructPath : List (Point, Direction) -> Point -> Point -> Path
 constructPath visited source destination =
   let
-    isDestination = \pt -> 
+    isDestination = \pt ->
       pt == destination
 
     maybeDestination =

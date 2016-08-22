@@ -3,7 +3,7 @@ import Point exposing (Point, slide)
 
 import Warrior
 import World
-import Bfs
+--import Bfs
 import Creature
 import Log
 import Graphics
@@ -11,6 +11,7 @@ import Graphics
 import Entity exposing (Entity)
 import Dungeon exposing (Dungeon)
 import Util
+import Path exposing (Path)
 
 import Char
 import Task
@@ -209,7 +210,7 @@ hoverAt position model =
                  model.hoverPath
                else
                  model.world
-                 |> Bfs.bfs playerPos (\pos -> (entityPos == pos))
+                 |> World.path entityPos playerPos -- (\pos -> (entityPos == pos))
                  |> Maybe.withDefault []
             else
               []
@@ -292,7 +293,9 @@ playerExplores model =
           Nothing
 
         Just coin ->
-          Bfs.bfs playerPos (\p -> p == coin) model.world
+          --Bfs.bfs playerPos (\p -> p == coin) model.world
+          model.world
+          |> World.path coin playerPos -- (\pos -> (entityPos == pos))
 
   in
     { model | followPath = path } -- |> playerFollowsPath
@@ -339,12 +342,12 @@ view model =
     ]
 
   in
-    Html.body [ style bgStyle ] [
+    --Html.body [ style bgStyle ] [
       Html.div [ style bgStyle ] [
         Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
         , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
       ]
-    ]
+    --]
 
 screenToCoordinate : Mouse.Position -> Point
 screenToCoordinate {x,y} =

@@ -1,4 +1,4 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, turnCreaturesCommand, isBlocked, entityAt, floors, coins)
+module World exposing (Model, Msg, init, update, view, playerSteps, turnCreaturesCommand, isBlocked, entityAt, floors, coins, path)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -11,12 +11,14 @@ import Room exposing (Room)
 import Dungeon exposing (Dungeon)
 
 import Level exposing (Level)
+import Path exposing (Path)
 
 import Log
 import Event exposing (..)
 
 import Util
 
+import String
 import Html
 import Graphics
 import Svg
@@ -123,12 +125,12 @@ playerSteps direction model =
   if not (canPlayerStep direction model) then
     model
     |> playerAttacks direction
-    |> playerDescends direction
-    |> playerAscends direction
   else
     model
     |> playerMoves direction
     |> playerCollectsCoins
+    |> playerAscendsOrDescends --direction
+    --|> playerDescends --direction
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
@@ -218,12 +220,11 @@ removeDeceasedCreatures model =
     { model | dungeon = dungeon'
             , events = model.events ++ events' }
 
-
-playerDescends : Direction -> Model -> Model
-playerDescends direction model =
+playerAscendsOrDescends : Model -> Model
+playerAscendsOrDescends model =
   let 
     playerPos = 
-      model.player.position |> (Point.slide direction) 
+      model.player.position
   in
     if playerPos == (downstairs model) then
       let
@@ -236,30 +237,24 @@ playerDescends direction model =
         player' =
           { player | position = (upstairs model') } 
        in
+          Debug.log "DESCEND!"
          { model' | player = player' }
     else
-      model
+      if playerPos == (upstairs model) && model.depth > 0 then
+        let
+          player =
+            model.player
 
-playerAscends : Direction -> Model -> Model
-playerAscends direction model =
-  let 
-    playerPos = 
-      model.player.position |> (Point.slide direction) 
-  in
-    if playerPos == (upstairs model) && model.depth > 0 then
-      let
-        player =
-          model.player
+          model' =
+            { model | depth = model.depth - 1 }
 
-        model' =
-          { model | depth = model.depth - 1 }
-
-        player' =
-          { player | position = (downstairs model') } 
-       in
-         { model' | player = player' }
-    else
-      model
+          player' =
+            { player | position = (downstairs model') } 
+         in
+           Debug.log "ASCEND!"
+           { model' | player = player' }
+      else
+        model
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
@@ -286,6 +281,9 @@ view model =
 infoView : Model -> Svg.Svg a
 infoView model =
   let
+    level =
+      "LEVEL: " ++ toString model.depth
+
     gold =
       "GOLD: " ++ toString model.player.gold
 
@@ -293,7 +291,8 @@ infoView model =
       "HP: " ++ toString model.player.hp ++ "/" ++ toString model.player.maxHp
 
     message =
-      gold ++ "  |  " ++ hp
+      String.join "  |  " [ gold, hp, level ]
+      --gold ++ "  |  " ++ hp
   in
      Graphics.render message {x=0,y=1} "green"
 
@@ -343,7 +342,10 @@ listEntities model =
       List.map Entity.door (doors model)
 
     upstairs' =
+      --if (model.depth == 0) then
       Entity.upstairs (upstairs model)
+      --else
+      --  Entity.upstairs (upstairs model)
 
     downstairs' =
       Entity.downstairs (downstairs model)
@@ -357,3 +359,15 @@ listEntities model =
     coins' ++
     creatures' ++
     [upstairs', downstairs', player']
+
+
+-- util
+path : Point -> Point -> Model -> Maybe Path
+path dst src model =
+  Path.find dst src (movesFrom model)
+
+movesFrom : Model -> Point -> List (Point, Direction)
+movesFrom model point =
+  Direction.directions
+  |> List.map (\direction -> (slide direction point, direction))
+  |> List.filter ((\p -> not (isBlocked p model)) << fst)

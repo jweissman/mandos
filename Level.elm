@@ -6,6 +6,7 @@ import Room exposing (Room)
 import Graph exposing (Graph)
 
 import Util
+import Path exposing (Path)
 
 import Warrior
 import Creature
@@ -71,9 +72,9 @@ isStairsDown position model =
 isBlocked : Point -> Level -> Bool
 isBlocked position model =
   isWall position model ||
-  isCreature position model || -- ||
-  isStairsUp position model ||
-  isStairsDown position model
+  isCreature position model -- || -- ||
+  -- isStairsUp position model ||
+  -- isStairsDown position model
 
   --isPlayer position model
 
@@ -250,7 +251,7 @@ fromRooms roomCandidates =
     |> extrudeRooms rooms
     |> connectRooms rooms
     |> extrudeStairwells
-    --|> dropCoins rooms -- drop coins along shortest path between stairwells...
+    |> dropCoins -- rooms -- drop coins along shortest path between stairwells...
 
 extrudeRooms : List Room -> Level -> Level
 extrudeRooms rooms model =
@@ -431,7 +432,7 @@ extrudeStairwells model =
       candidateLast
       --List.head (List.tail candidates |> Maybe.withDefault origin) |> Maybe.withDefault origin
   in
-    Debug.log (toString upstairs)
+    --Debug.log (toString upstairs)
     model
     |> emplaceUpstairs upstairs
     |> emplaceDownstairs downstairs
@@ -485,3 +486,33 @@ addWallsAround pt model =
   --      model.floors
   --      |> not << List.any (\floor' -> wall == floor')
   --    )
+
+dropCoins : Level -> Level
+dropCoins model =
+  let
+    path' =
+      model
+      |> path (model.downstairs) (model.upstairs)
+      |> Maybe.withDefault []
+      |> List.tail |> Maybe.withDefault []
+      |> List.reverse
+      |> List.tail |> Maybe.withDefault []
+
+    coins' =
+      path'
+      |> List.filterMap (\{x,y} -> if ((((x ^ 31) + y) % 20) < 2) then Just {x=x,y=y} else Nothing)
+  in  
+    { model | coins = model.coins ++ coins' }
+
+
+-- pathfinding
+path : Point -> Point -> Level -> Maybe Path
+path dst src model =
+  Path.find dst src (movesFrom model)
+
+movesFrom : Level -> Point -> List (Point, Direction)
+movesFrom model point =
+  Direction.directions
+  |> List.map (\direction -> (Point.slide direction point, direction))
+  |> List.filter ((\p -> not (isBlocked p model)) << fst)
+
