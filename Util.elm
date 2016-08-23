@@ -40,9 +40,7 @@ simpleDirectionBetween a b =
       else
         North
 
--- from list extras
-{-| Find the first minimum element in a list using a comparable transformation
--}
+-- helpers from list extras
 minBy : (a -> comparable) -> List a -> Maybe a
 minBy f ls =
   let minBy x (y, fy) = let fx = f x in if fx < fy then (x, fx) else (y, fy)

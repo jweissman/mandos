@@ -1,4 +1,4 @@
-module Room exposing (Room, generate, overlaps, layout, filterOverlaps, network, directionBetween, distance)
+module Room exposing (Room, generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -115,8 +115,8 @@ filterOverlaps rooms =
 
 center : Room -> Point
 center {origin,width,height} =
-  { x = origin.x + width
-  , y = origin.y + height
+  { x = origin.x + width // 2
+  , y = origin.y + height // 2
   }
 
 distance : Room -> Room -> Float

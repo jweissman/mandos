@@ -39,7 +39,7 @@ adjective species =
     Snake  -> "wild"
     Tiger  -> "savage"
     Dragon -> "cruel"
-    Monkey -> "vicious"
+    Monkey -> "angry"
 
 hp : Species -> Int
 hp species =

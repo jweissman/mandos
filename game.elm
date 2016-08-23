@@ -13,6 +13,8 @@ import Dungeon exposing (Dungeon)
 import Util
 import Path exposing (Path)
 
+import Bresenham
+
 import Char
 import Task
 import Keyboard exposing (KeyCode)
@@ -38,6 +40,7 @@ main =
   }
 
 -- MODEL
+
 type alias Model =
   { world : World.Model
   , hover : Maybe Entity
@@ -55,9 +58,10 @@ init =
     , hoverPath = []
     , followPath = Nothing
     , auto = False
-    }
-    , Random.generate MapMsg (Dungeon.generate 10)
+    },
+    Random.generate MapMsg (Dungeon.generate 30)
   )
+
 
 -- TYPES
 type Msg
@@ -80,12 +84,8 @@ update message model =
         player =
           world.player
 
-        --floors =
-        --  (Dungeon.levelAt 0 dungeon).floors
-          --World.floors world'
-
         player' =
-          { player | position = (Dungeon.levelAt 0 dungeon).upstairs } --(List.head floors |> Maybe.withDefault {x=5,y=5}) }
+          { player | position = (Dungeon.levelAt 0 dungeon).upstairs }
 
         world' =
           { world | dungeon = dungeon
@@ -93,7 +93,9 @@ update message model =
                   , player = player'
           }
       in
-      ({ model | world = world' }, Cmd.none)
+      ({ model | world = world'
+       } 
+          , Cmd.none)
 
     WorldMsg subMsg ->
       let
@@ -151,14 +153,33 @@ handleKeypress keyChar model =
 autorogue model = 
   { model | auto = True }
 
+moveCreatures model =
+  let
+    world = 
+      model.world
+
+    (dungeon', events, player') =
+      world.dungeon 
+      |> Dungeon.moveCreatures world.player world.depth
+
+    world' =
+      { world | dungeon = dungeon'
+              , events = world.events ++ events
+              , player = player'
+      }
+
+  in
+    { model | world = world' }
+
 playerSteps direction model =
   let 
-    world = 
+    world' = 
       (World.playerSteps direction model.world) 
   in
-    { model | world = world } 
-    |> resetFollow 
-    |> resetAuto
+    { model | world = world' }
+            |> moveCreatures
+            |> resetFollow 
+            |> resetAuto
 
 resetHover : Model -> Model
 resetHover model =
@@ -283,7 +304,7 @@ playerExplores model =
       (\c -> Point.distance playerPos c)
 
     maybeCoin =
-      World.coins model.world --0.coins
+      [(World.downstairs model.world)] ++ (World.coins model.world) --0.coins
       |> List.sortBy byDistanceFromPlayer
       |> List.head
 
@@ -318,9 +339,16 @@ view model =
       model.world
 
     path =
-      case model.followPath of
-        Nothing -> model.hoverPath
-        Just path -> path
+      case model.hover of
+        Nothing ->
+          []
+
+        Just entity ->
+          Bresenham.line model.world.player.position (Entity.position entity)
+
+      --case model.followPath of
+      --  Nothing -> model.hoverPath
+      --  Just path -> path
 
     worldView =
       World.view { world | debugPath = path }
@@ -342,12 +370,10 @@ view model =
     ]
 
   in
-    --Html.body [ style bgStyle ] [
-      Html.div [ style bgStyle ] [
-        Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-        , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
-      ]
-    --]
+    Html.div [ style bgStyle ] [
+      Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
+      , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
+    ]
 
 screenToCoordinate : Mouse.Position -> Point
 screenToCoordinate {x,y} =

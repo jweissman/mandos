@@ -13,6 +13,8 @@ import Svg
 
 type Orientation = Up | Down
 
+type Accessible = Open | Closed 
+
 type Entity = Monster Creature.Model
             | Player Warrior.Model
             | Wall Point
@@ -21,6 +23,8 @@ type Entity = Monster Creature.Model
             | Door Point
             | StairsUp Point
             | StairsDown Point
+            --| Entrance Bool Point
+            --| Crystal Bool Point
 
 -- constructors
 wall point =
@@ -152,10 +156,10 @@ glyph entity =
       "#"
 
     Coin _ ->
-      "."
+      "*"
 
     Floor _ ->
-      " "
+      "."
 
     Door _ ->
       "+"

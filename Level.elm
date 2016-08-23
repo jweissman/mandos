@@ -86,28 +86,31 @@ entityAt point warrior model =
   if point == warrior.position then
     Just (Entity.player warrior)
   else
-    if isDoor point model then
-      Just (Entity.door point)
-    else
-      if isWall point model then
-        Just (Entity.wall point)
-      else
-        if isCoin point model then
-          Just (Entity.coin point)
+    entityAt' point model
+    
+entityAt' point model =
+  let creature = model |> creatureAt point in
+    case creature of
+      Just creature' ->
+        Just (Entity.monster creature')
+      Nothing ->
+        if model |> isFloor point then
+          Just (Entity.floor point)
         else
-          if isStairsUp point model then
-            Just (Entity.upstairs point)
-          else
-            if isStairsDown point model then
-              Just (Entity.downstairs point)
+          if isDoor point model then
+              Just (Entity.door point)
             else
-              let creature = model |> creatureAt point in
-                case creature of
-                  Just creature' ->
-                    Just (Entity.monster creature')
-                  Nothing ->
-                    if model |> isFloor point then
-                      Just (Entity.floor point)
+              if isWall point model then
+                Just (Entity.wall point)
+              else
+                if isCoin point model then
+                  Just (Entity.coin point)
+                else
+                  if isStairsUp point model then
+                    Just (Entity.upstairs point)
+                  else
+                    if isStairsDown point model then
+                      Just (Entity.downstairs point)
                     else
                       Nothing
 
@@ -141,17 +144,19 @@ creatureSteps creature (model, events, player) =
   |> creatureMoves creature
   |> creatureAttacks creature
 
+creatureMoves : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 creatureMoves creature (model, events, player) =
   let
     creatures' =
       model.creatures
-      |> List.map (\c -> if c == creature && (canCreatureStep creature player model) then c |> Creature.step else c)
+      |> List.map (\c -> if c.id == creature.id && (canCreatureStep creature player model) then c |> Creature.step else c)
   in
     ({ model | creatures = creatures' }
     , events
     , player
     )
 
+creatureAttacks : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 creatureAttacks creature (model, events, player) =
   let
     pos =
@@ -195,7 +200,7 @@ canCreatureStep creature player model =
       player.position == next
 
     blocked =
-      model |> (not << (isBlocked next))
+      (not (isBlocked next model))
   in
     not (isPlayer || blocked)
 
@@ -250,6 +255,7 @@ fromRooms roomCandidates =
     init
     |> extrudeRooms rooms
     |> connectRooms rooms
+    |> spawnCreatures rooms
     |> extrudeStairwells
     |> dropCoins -- rooms -- drop coins along shortest path between stairwells...
 
@@ -349,24 +355,6 @@ extrudeCorridor' pt dir depth model =
               |> addWallsAround pt
               |> removeWall pt
 
-    --slideDir =
-    --  \dir' -> Point.slide dir' pt
-
-    --newWalls =
-    --  List.map slideDir newWallDirs
-    --  |> List.filter (\wall ->
-    --    model.floors
-    --    |> not << List.any (\floor' -> wall == floor')
-    --  )
-
-    --newWallDirs =
-    --  case dir of
-    --    North -> [East,West]
-    --    South -> [East,West]
-    --    East -> [North,South]
-    --    West -> [North,South]
-    --    _ -> []
-
     next =
       Point.slide dir pt
 
@@ -430,9 +418,7 @@ extrudeStairwells model =
 
     downstairs = 
       candidateLast
-      --List.head (List.tail candidates |> Maybe.withDefault origin) |> Maybe.withDefault origin
   in
-    --Debug.log (toString upstairs)
     model
     |> emplaceUpstairs upstairs
     |> emplaceDownstairs downstairs
@@ -473,20 +459,12 @@ addWallsAround pt model =
       |> List.map (\d -> Point.slide d pt)
       |> List.filter (\wall ->
         not
-          (model.floors
-          |> List.any (\floor' -> wall == floor')) ||
-          (model.walls
-          |> List.any (\wall' -> wall == wall'))
+          (model.floors |> List.any (\floor' -> wall == floor')) ||
+          (model.walls |> List.any (\wall' -> wall == wall'))
       )
   in 
      { model | walls = newWalls ++ model.walls }
-  
-  --List.map slideDir newWallDirs
-  --    |> List.filter (\wall ->
-  --      model.floors
-  --      |> not << List.any (\floor' -> wall == floor')
-  --    )
-
+ 
 dropCoins : Level -> Level
 dropCoins model =
   let
@@ -498,11 +476,27 @@ dropCoins model =
       |> List.reverse
       |> List.tail |> Maybe.withDefault []
 
+    everyN = \n ls ->
+      case (ls |> List.drop (n-1)) of
+        [] ->
+          []
+        (head :: rest) ->
+          head :: (everyN n rest)
+
     coins' =
-      path'
-      |> List.filterMap (\{x,y} -> if ((((x ^ 31) + y) % 20) < 2) then Just {x=x,y=y} else Nothing)
+      path' |> everyN 5
   in  
     { model | coins = model.coins ++ coins' }
+
+spawnCreatures : List Room -> Level -> Level
+spawnCreatures rooms model =
+  let
+    creatures' = 
+      rooms
+      |> List.map Room.center
+      |> List.indexedMap (\n pt -> Creature.createMonkey n pt)
+  in
+    { model | creatures = creatures' }
 
 
 -- pathfinding

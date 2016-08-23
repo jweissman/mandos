@@ -1,7 +1,9 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, turnCreaturesCommand, isBlocked, entityAt, floors, coins, path)
+module World exposing (Model, Msg, init, update, view, playerSteps, isBlocked, entityAt, floors, coins, downstairs, path)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
+
+import Bresenham
 
 import Warrior
 import Creature
@@ -106,18 +108,18 @@ update message model =
 
 -- command ctors
 -- todo change to something deterministic??
-turnCreaturesCommand : Model -> (Msg -> a) -> Cmd a
-turnCreaturesCommand model superMsg =
-  let
-    commands =
-      (creatures model)
-      |> List.map (\creature -> turnCreatureRandomly superMsg creature)
-  in
-    Cmd.batch commands
-
-turnCreatureRandomly : (Msg -> a) -> Creature.Model -> Cmd a
-turnCreatureRandomly superMsg creature =
-  Random.generate (\dir -> superMsg (TurnCreature creature dir)) Direction.random
+--turnCreaturesCommand : Model -> (Msg -> a) -> Cmd a
+--turnCreaturesCommand model superMsg =
+--  let
+--    commands =
+--      (creatures model)
+--      |> List.map (\creature -> turnCreatureRandomly superMsg creature)
+--  in
+--    Cmd.batch commands
+--
+--turnCreatureRandomly : (Msg -> a) -> Creature.Model -> Cmd a
+--turnCreatureRandomly superMsg creature =
+--  Random.generate (\dir -> superMsg (TurnCreature creature dir)) Direction.random
 
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
@@ -129,8 +131,7 @@ playerSteps direction model =
     model
     |> playerMoves direction
     |> playerCollectsCoins
-    |> playerAscendsOrDescends --direction
-    --|> playerDescends --direction
+    |> playerAscendsOrDescends
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
@@ -226,7 +227,7 @@ playerAscendsOrDescends model =
     playerPos = 
       model.player.position
   in
-    if playerPos == (downstairs model) then
+    if playerPos == (downstairs model) && model.depth < (List.length model.dungeon) then
       let
         player =
           model.player
@@ -237,7 +238,6 @@ playerAscendsOrDescends model =
         player' =
           { player | position = (upstairs model') } 
        in
-          Debug.log "DESCEND!"
          { model' | player = player' }
     else
       if playerPos == (upstairs model) && model.depth > 0 then
@@ -251,17 +251,42 @@ playerAscendsOrDescends model =
           player' =
             { player | position = (downstairs model') } 
          in
-           Debug.log "ASCEND!"
            { model' | player = player' }
       else
         model
+
+visibleFrom : Point -> Model -> Entity -> Bool
+visibleFrom position model entity =
+  let
+    line = 
+      Bresenham.line position (Entity.position entity)
+      |> List.tail
+      |> Maybe.withDefault []
+      |> List.reverse
+      |> List.tail
+      |> Maybe.withDefault []
+
+    blockers = 
+      walls model
+      --walls model
+      --(walls model) ++ (doors model)
+
+    anyBlocked =
+      line |> List.any (\pt -> (List.member pt blockers))
+  in
+    not anyBlocked
+    
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
 view model =
   let
+    visible = 
+      visibleFrom model.player.position model
+
     entities =
       listEntities model
+      |> List.filter (visible)
 
     entityViews =
       List.map (Entity.view) entities
