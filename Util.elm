@@ -1,4 +1,4 @@
-module Util exposing (directionBetween, simpleDirectionBetween, minBy, uniqueBy, getAt)
+module Util exposing (directionBetween, simpleDirectionBetween, minBy, uniqueBy, getAt, takeWhile, takeWhile')
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -67,3 +67,17 @@ uniqueHelp f existing remaining =
 
 getAt : List a -> Int -> Maybe a
 getAt xs idx = List.head <| List.drop idx xs
+
+takeWhile : (a -> Bool) -> List a -> List a
+takeWhile predicate list =
+  case list of
+    []      -> []
+    x::xs   -> if (predicate x) then x :: takeWhile predicate xs
+               else []
+
+takeWhile' : (a -> Bool) -> List a -> List a
+takeWhile' predicate list =
+  case list of
+    []      -> []
+    x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
+               else [x]

@@ -1,4 +1,4 @@
-module Entity exposing (Entity, view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs)
+module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory)
 
 
 import Point exposing (Point)
@@ -23,6 +23,7 @@ type Entity = Monster Creature.Model
             | Door Point
             | StairsUp Point
             | StairsDown Point
+            | Memory Entity
             --| Entrance Bool Point
             --| Crystal Bool Point
 
@@ -50,6 +51,9 @@ upstairs point =
 
 downstairs point =
   StairsDown point
+
+memory entity =
+  Memory entity
 
 -- helpers
 
@@ -80,6 +84,9 @@ describe entity =
     StairsDown _ ->
       "a downward-curving staircase"
 
+    Memory entity ->
+      "You saw " ++ (describe entity) ++ " here"
+
 -- view
 view : Entity -> Svg.Svg a
 view entity =
@@ -89,13 +96,13 @@ color : Entity -> String
 color entity =
   case entity of
     Monster _ ->
-      "darkgrey"
+      "grey"
 
     Player _ ->
       "white"
 
     Wall _ ->
-      "darkgrey"
+      "grey"
 
     Coin _ ->
       "gold"
@@ -112,7 +119,8 @@ color entity =
     StairsDown _ ->
       "yellow"
 
-    
+    Memory _ ->
+      "darkblue"
 
 position : Entity -> Point.Point
 position entity =
@@ -141,7 +149,8 @@ position entity =
     StairsDown point ->
       point
 
-
+    Memory entity ->
+      position entity
 
 glyph : Entity -> String
 glyph entity =
@@ -169,4 +178,7 @@ glyph entity =
 
     StairsDown _ ->
       "<"
+    
+    Memory e ->
+      glyph e
 

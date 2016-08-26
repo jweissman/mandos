@@ -55,27 +55,9 @@ nodeValue (Node n _) = n
 
 minimumBy : (a -> comparable) -> Graph a -> Graph a
 minimumBy f graph =
-  let
-    (Node n edges) =
-      graph
-
-    restMinDist =
-      f (nodeValue minRest)
-
-    minEdges =
-      edges
-      |> List.map (minimumBy f)
-
-    minRest =
-      minEdges
-      |> Util.minBy (\n' -> f (nodeValue n'))
-      |> Maybe.withDefault graph
-  in
-   if (f n) < restMinDist  then
-     graph
-   else
-     minRest
-
+  minimumWhere f (\_ -> True) graph
+  |> Maybe.withDefault (graph)
+  
 -- minimum by a comparator, filtered by a bool
 minimumWhere : (a -> comparable) -> (a -> Bool) -> Graph a -> Maybe (Graph a)
 minimumWhere f pred graph =

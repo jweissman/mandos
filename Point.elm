@@ -1,4 +1,4 @@
-module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code)
+module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code, perimeter)
 
 import Direction exposing (Direction(..), directions)
 
@@ -71,3 +71,13 @@ randomWithOffset {x,y} width height =
 code : Point -> Int
 code {x,y} =
   (x * 10000) + y
+
+
+perimeter : Point -> Int -> Int -> List Point
+perimeter {x,y} width height =
+  List.map (\x' -> {x=x+x',y=y}) [0..width] ++
+  List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
+  List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
+  List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
+
+

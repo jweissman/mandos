@@ -20,13 +20,13 @@ generate' : Random.Generator Room
 generate' =
   let
     width =
-      Random.int 3 12 
+      Random.int 3 10 
 
     height =
-      Random.int 4 6
+      Random.int 4 10 
 
     origin =
-      Point.randomWithOffset {x=3,y=4} 26 14
+      Point.randomWithOffset {x=3,y=4} 21 15
   in
     Random.map3 create origin width height
 
@@ -80,10 +80,11 @@ layout {origin,width,height} =
 layout' {x,y} width height =
   let
     walls =
-      List.map (\x' -> {x=x+x',y=y}) [0..width] ++
-      List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
-      List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
-      List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
+      Point.perimeter {x=x, y=y} width height
+      --List.map (\x' -> {x=x+x',y=y}) [0..width] ++
+      --List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
+      --List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
+      --List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
 
     floors =
       List.concatMap (\y' ->

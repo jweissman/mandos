@@ -20,11 +20,11 @@ line src dst =
       line' src dst (dx,dy) 
 
 vline x y0 y1 =
-  if y1 < y0 then vline x y1 y0 else
+  if y1 < y0 then List.reverse (vline x y1 y0) else
   List.map (\y -> {x=x,y=y}) [y0..y1]
     
 hline y x0 x1 =
-  if x1 < x0 then hline y x1 x0 else
+  if x1 < x0 then List.reverse (hline y x1 x0) else
   List.map (\x -> {x=x,y=y}) [x0..x1]
 
 line' src dst (dx,dy) =
@@ -36,7 +36,7 @@ line' src dst (dx,dy) =
       slope = 
         dy / dx
     in
-      if src.x > dst.x then line dst src else
+      if src.x > dst.x then (List.reverse (line dst src)) else
       [(src.x)..(dst.x)]
       |> List.map (\x -> {x=x, y=round (f x) + src.y})
   else
@@ -47,7 +47,7 @@ line' src dst (dx,dy) =
       slope = 
         dx / dy
     in
-      if src.y > dst.y then line dst src else
+      if src.y > dst.y then (List.reverse (line dst src)) else
       [(src.y)..(dst.y)]
       |> List.map (\y -> {x=round (f y) + src.x, y=y})
 

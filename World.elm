@@ -1,4 +1,4 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, isBlocked, entityAt, floors, coins, downstairs, path)
+module World exposing (Model, init, view, playerSteps, isBlocked, floors, coins, downstairs, path, playerViewsField, entitiesAt, viewed)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -34,6 +34,8 @@ type alias Model =
   , player : Warrior.Model
   , events : Log.Model
   , debugPath : List Point
+  , illuminated : List Point
+  --, viewed : List Point
   }
 
 -- INIT
@@ -45,12 +47,20 @@ init =
   , player = Warrior.init {x=0,y=0}
   , events = Log.init
   , debugPath = []
+  , illuminated = []
+  --, viewed = []
   }
 
 level : Model -> Level
 level model =
   Util.getAt model.dungeon model.depth
   |> Maybe.withDefault Level.init
+
+viewed : Model -> List Point
+viewed model =
+  let lvl = (level model) in
+  lvl.viewed
+  --|> Level.viewed
 
 walls : Model -> List Point
 walls model =
@@ -91,36 +101,20 @@ isBlocked move model =
   level model
   |> Level.isBlocked move
 
-entityAt : Point -> Model -> Maybe Entity
-entityAt pt model =
-  level model
-  |> Level.entityAt pt model.player
+entitiesAt : Point -> Model -> List Entity
+entitiesAt pt model =
+  let 
+    player = 
+      if model.player.position == pt then
+        [Entity.player model.player]
+      else
+        []
 
--- UPDATE
-type Msg = TurnCreature Creature.Model Direction
-
-update : Msg -> Model -> Model
-update message model =
-  case message of
-    TurnCreature creature direction ->
-      { model | dungeon = model.dungeon
-                          |> Dungeon.turnCreature creature direction model.depth }
-
--- command ctors
--- todo change to something deterministic??
---turnCreaturesCommand : Model -> (Msg -> a) -> Cmd a
---turnCreaturesCommand model superMsg =
---  let
---    commands =
---      (creatures model)
---      |> List.map (\creature -> turnCreatureRandomly superMsg creature)
---  in
---    Cmd.batch commands
---
---turnCreatureRandomly : (Msg -> a) -> Creature.Model -> Cmd a
---turnCreatureRandomly superMsg creature =
---  Random.generate (\dir -> superMsg (TurnCreature creature dir)) Direction.random
-
+    entities =
+      Level.entitiesAt pt (level model)
+  in
+    entities ++ player
+     
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
@@ -130,8 +124,10 @@ playerSteps direction model =
   else
     model
     |> playerMoves direction
-    |> playerCollectsCoins
     |> playerAscendsOrDescends
+    |> playerViewsField
+    |> playerCollectsCoins
+
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
@@ -223,11 +219,11 @@ removeDeceasedCreatures model =
 
 playerAscendsOrDescends : Model -> Model
 playerAscendsOrDescends model =
-  let 
+  let
     playerPos = 
       model.player.position
   in
-    if playerPos == (downstairs model) && model.depth < (List.length model.dungeon) then
+    if playerPos == (downstairs model) && model.depth < ((List.length model.dungeon) - 1) then
       let
         player =
           model.player
@@ -236,7 +232,7 @@ playerAscendsOrDescends model =
           { model | depth = model.depth + 1 }
 
         player' =
-          { player | position = (upstairs model') } 
+          { player | position = (upstairs model') }
        in
          { model' | player = player' }
     else
@@ -249,44 +245,86 @@ playerAscendsOrDescends model =
             { model | depth = model.depth - 1 }
 
           player' =
-            { player | position = (downstairs model') } 
+            { player | position = (downstairs model') }
          in
            { model' | player = player' }
       else
         model
 
-visibleFrom : Point -> Model -> Entity -> Bool
-visibleFrom position model entity =
+playerViewsField : Model -> Model
+playerViewsField model =
   let
-    line = 
-      Bresenham.line position (Entity.position entity)
-      |> List.tail
-      |> Maybe.withDefault []
-      |> List.reverse
-      |> List.tail
-      |> Maybe.withDefault []
+    source =
+      model.player.position
 
-    blockers = 
-      walls model
-      --walls model
-      --(walls model) ++ (doors model)
+    locations =
+      model |> illuminate source
 
-    anyBlocked =
-      line |> List.any (\pt -> (List.member pt blockers))
+    dungeon =
+      locations
+      |> List.foldr (\location -> Dungeon.playerSees location model.depth) model.dungeon
+
+    --viewed' =
+    --  model.viewed ++ locations
+    --  |> Util.uniqueBy Point.code
   in
-    not anyBlocked
-    
+    { model | dungeon = dungeon
+            , illuminated = locations --entities
+            --, viewed = viewed'
+    }
+
+illuminate : Point -> Model -> List Point
+illuminate source model =
+  let
+    perimeter =
+      Point.perimeter {x=1,y=1} 35 30
+
+    blockers =
+      (walls model) 
+      ++ (doors model) 
+      ++ ((creatures model) |> List.map .position)
+
+    rays = 
+      castRay blockers source
+
+    points =
+      perimeter
+      |> List.concatMap rays
+  in
+    points
+    |> Util.uniqueBy Point.code
+
+castRay : List Point -> Point -> Point -> List Point
+castRay blockers src dst =
+  let
+    line =
+      Bresenham.line src dst
+      |> List.tail
+      |> Maybe.withDefault []
+
+  in
+    line
+    |> Util.takeWhile' (\pt -> not (List.member pt blockers))
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
 view model =
   let
-    visible = 
-      visibleFrom model.player.position model
+    litEntities =
+      model.illuminated
+      |> List.concatMap (\pt -> entitiesAt pt model)
 
+    memoryEntities =
+      --model.viewed
+      (viewed model)
+      |> List.concatMap (\pt -> entitiesAt pt model)
+      |> List.map (Entity.memory)
+      |> List.filter (\pt -> not (List.member pt litEntities))
+    
     entities =
-      listEntities model
-      |> List.filter (visible)
+      memoryEntities ++
+      litEntities ++ 
+      [Entity.player model.player]
 
     entityViews =
       List.map (Entity.view) entities
@@ -317,7 +355,7 @@ infoView model =
 
     message =
       String.join "  |  " [ gold, hp, level ]
-      --gold ++ "  |  " ++ hp
+
   in
      Graphics.render message {x=0,y=1} "green"
 
@@ -344,47 +382,6 @@ highlightCells cells =
 
 highlightCell {x,y} color =
   Graphics.render "@" {x=x,y=y} color
-
-
--- view help..
-
-listEntities : Model -> List Entity
-listEntities model =
-  let
-    walls' =
-      List.map Entity.wall (walls model)
-
-    floors' =
-      List.map Entity.floor (floors model)
-
-    coins' =
-      List.map Entity.coin (coins model)
-
-    creatures' =
-      List.map Entity.monster (creatures model)
-
-    doors' =
-      List.map Entity.door (doors model)
-
-    upstairs' =
-      --if (model.depth == 0) then
-      Entity.upstairs (upstairs model)
-      --else
-      --  Entity.upstairs (upstairs model)
-
-    downstairs' =
-      Entity.downstairs (downstairs model)
-
-    player' =
-      Entity.player model.player
-  in
-    walls' ++
-    floors' ++
-    doors' ++
-    coins' ++
-    creatures' ++
-    [upstairs', downstairs', player']
-
 
 -- util
 path : Point -> Point -> Model -> Maybe Path

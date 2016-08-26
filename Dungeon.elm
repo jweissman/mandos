@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, moveCreatures, turnCreature, injureCreature, collectCoin, purge, levelAt)
+module Dungeon exposing (Dungeon, generate, moveCreatures, turnCreature, injureCreature, collectCoin, purge, levelAt, playerSees)
 
 import Warrior
 import Creature
@@ -46,14 +46,11 @@ apply f depth model =
 
 apply' : (Level -> a) -> Int -> Dungeon -> a
 apply' f depth model =
-  --model
-  --|> levelAt depth
-  --|> f
-  f (levelAt depth model) -- |> f
+  f (levelAt depth model)
 
 collectCoin : Point -> Int -> Dungeon -> Dungeon
 collectCoin pt depth model =
-  model 
+  model
   |> apply (Level.collectCoin pt) depth
 
 moveCreatures : Warrior.Model -> Int -> Dungeon -> (Dungeon, List Event, Warrior.Model)
@@ -86,3 +83,9 @@ purge depth model =
         if n == depth then level else level')
   in
     (model', events)
+
+--purge' model = model |> apply' Level.purge
+
+playerSees : Point -> Int -> Dungeon -> Dungeon
+playerSees pt depth model =
+  model |> apply (Level.playerSees pt) depth

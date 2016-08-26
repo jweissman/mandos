@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, turnCreature, moveCreatures, injureCreature, purge, collectCoin, isBlocked, isCoin, creatureAt, entityAt)
+module Level exposing (Level, init, fromRooms, turnCreature, moveCreatures, injureCreature, purge, collectCoin, isBlocked, isCoin, creatureAt, entitiesAt, playerSees)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -18,10 +18,11 @@ import Entity exposing (Entity)
 type alias Level = { walls : List Point
                    , floors : List Point
                    , doors : List Point
-                   , creatures : List Creature.Model
                    , downstairs : Point
                    , upstairs : Point
                    , coins : List Point
+                   , creatures : List Creature.Model
+                   , viewed : List Point
                    }
 
 -- INIT
@@ -35,6 +36,8 @@ init =
   , coins = []
   , upstairs = origin
   , downstairs = origin
+
+  , viewed = []
   }
 
 origin = {x=0,y=0}
@@ -69,50 +72,78 @@ isStairsDown : Point -> Level -> Bool
 isStairsDown position model =
   model.downstairs == position
 
+hasBeenViewed : Point -> Level -> Bool
+hasBeenViewed point model =
+  List.member point model.viewed
+
 isBlocked : Point -> Level -> Bool
 isBlocked position model =
   isWall position model ||
-  isCreature position model -- || -- ||
-  -- isStairsUp position model ||
-  -- isStairsDown position model
-
-  --isPlayer position model
+  isCreature position model
+  --isDoor position model
 
 isAlive livingThing =
   livingThing.hp > 0
 
-entityAt : Point -> Warrior.Model -> Level -> Maybe Entity
-entityAt point warrior model =
-  if point == warrior.position then
-    Just (Entity.player warrior)
-  else
-    entityAt' point model
-    
-entityAt' point model =
-  let creature = model |> creatureAt point in
-    case creature of
-      Just creature' ->
-        Just (Entity.monster creature')
-      Nothing ->
-        if model |> isFloor point then
-          Just (Entity.floor point)
-        else
-          if isDoor point model then
-              Just (Entity.door point)
-            else
-              if isWall point model then
-                Just (Entity.wall point)
-              else
-                if isCoin point model then
-                  Just (Entity.coin point)
-                else
-                  if isStairsUp point model then
-                    Just (Entity.upstairs point)
-                  else
-                    if isStairsDown point model then
-                      Just (Entity.downstairs point)
-                    else
-                      Nothing
+entitiesAt : Point -> Level -> List Entity
+entitiesAt point model =
+  let
+    monster = 
+      let creature = model |> creatureAt point in
+      case creature of
+        Just creature' ->
+          Just (Entity.monster creature')
+        Nothing ->
+          Nothing
+
+    door =
+      if isDoor point model then
+        Just (Entity.door point)
+      else
+        Nothing
+
+    wall =
+      if isWall point model then
+        Just (Entity.wall point)
+      else
+        Nothing
+
+    floor =
+      if isFloor point model then
+        Just (Entity.floor point)
+      else
+        Nothing
+
+    coin =
+      if isCoin point model then
+        Just (Entity.coin point)
+      else
+        Nothing
+
+    downstairs =
+      if isStairsDown point model then
+        Just (Entity.downstairs point)
+      else
+        Nothing
+
+    upstairs =
+      if isStairsUp point model then
+        Just (Entity.upstairs point)
+      else
+        Nothing
+
+    entities =
+      [ floor
+      , door
+      , wall
+      , coin
+      , monster
+      , downstairs
+      , upstairs
+      ]
+  in
+    entities
+    |> List.filterMap identity
 
 creatureAt : Point -> Level -> Maybe Creature.Model
 creatureAt pt model =
@@ -123,6 +154,13 @@ creatureAt pt model =
     List.head creatures'
 
 -- HELPERS (for update)
+
+playerSees : Point -> Level -> Level
+playerSees pt model =
+  if List.member pt model.viewed then
+    model
+  else
+    { model | viewed = pt :: model.viewed }
 
 turnCreature : Creature.Model -> Direction -> Level -> Level
 turnCreature creature direction model =
@@ -257,7 +295,7 @@ fromRooms roomCandidates =
     |> connectRooms rooms
     |> spawnCreatures rooms
     |> extrudeStairwells
-    |> dropCoins -- rooms -- drop coins along shortest path between stairwells...
+    |> dropCoins
 
 extrudeRooms : List Room -> Level -> Level
 extrudeRooms rooms model =
@@ -403,21 +441,25 @@ extrudeStairwells model =
       |> List.filter adjacentToFloor
       |> List.filter adjacentToTwoWalls
 
-    candidateHead =
+    candidate =
       candidates
       |> List.head
       |> Maybe.withDefault origin
 
-    candidateLast =
-      (List.reverse candidates)
+    otherCandidate =
+      candidates
+      |> List.tail
+      |> Maybe.withDefault []
+      --|> List.sortBy ()
+      |> List.reverse --candidates
       |> List.head
       |> Maybe.withDefault origin
 
     upstairs =
-      candidateHead
+      candidate
 
     downstairs = 
-      candidateLast
+      otherCandidate
   in
     model
     |> emplaceUpstairs upstairs
@@ -484,7 +526,7 @@ dropCoins model =
           head :: (everyN n rest)
 
     coins' =
-      path' |> everyN 5
+      path' |> everyN (List.length path' // 5)
   in  
     { model | coins = model.coins ++ coins' }
 

@@ -14,10 +14,10 @@ find dst src moves =
 
 findBy : (Point -> Bool) -> (Point -> List (Point, Direction)) -> Point -> Maybe Path
 findBy predicate moves source =
-  find' [] [] source predicate moves 100
+  findBy' [] [] source predicate moves 100
 
-find' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Maybe Path
-find' visited frontier source predicate moves depth =
+findBy' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Maybe Path
+findBy' visited frontier source predicate moves depth =
   if depth < 0 then
     Nothing
   else
@@ -38,7 +38,7 @@ find' visited frontier source predicate moves depth =
         Nothing ->
           if List.length frontier == 0 then
             let frontier' = moves source in
-              find' visited frontier' source predicate moves (depth-1)
+              findBy' visited frontier' source predicate moves (depth-1)
           else
             let
               visitedPositions =
@@ -54,7 +54,7 @@ find' visited frontier source predicate moves depth =
                 (visited ++ frontier)
             in
               if List.length frontier > 0 then
-                find' newVisited (newFrontier) source predicate moves (depth-1)
+                findBy' newVisited (newFrontier) source predicate moves (depth-1)
               else
                 Nothing
 
@@ -83,3 +83,7 @@ constructPath visited source destination =
                |> slide (Direction.invert direction)
            in
              [destination] ++ (constructPath visited source newDest)
+
+
+---
+
