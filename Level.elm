@@ -6,7 +6,7 @@ import Room exposing (Room)
 import Graph exposing (Graph)
 
 import Util
-import Path exposing (Path)
+import Path
 
 import Warrior
 import Creature
@@ -441,25 +441,14 @@ extrudeStairwells model =
       |> List.filter adjacentToFloor
       |> List.filter adjacentToTwoWalls
 
-    candidate =
+    (upstairs, downstairs) =
       candidates
+      |> List.map2 (,) (List.reverse candidates)
+      |> List.filter (\(a,b) -> not (a.x == b.x && a.y == b.y))
+      |> List.sortBy (\(a,b) -> Point.distance a b)
+      |> List.reverse
       |> List.head
-      |> Maybe.withDefault origin
-
-    otherCandidate =
-      candidates
-      |> List.tail
-      |> Maybe.withDefault []
-      --|> List.sortBy ()
-      |> List.reverse --candidates
-      |> List.head
-      |> Maybe.withDefault origin
-
-    upstairs =
-      candidate
-
-    downstairs = 
-      otherCandidate
+      |> Maybe.withDefault (origin, origin)
   in
     model
     |> emplaceUpstairs upstairs
@@ -540,9 +529,8 @@ spawnCreatures rooms model =
   in
     { model | creatures = creatures' }
 
-
 -- pathfinding
-path : Point -> Point -> Level -> Maybe Path
+path : Point -> Point -> Level -> Maybe (List Point)
 path dst src model =
   Path.find dst src (movesFrom model)
 

@@ -1,9 +1,9 @@
 module Bresenham exposing (line)
 
 import Point exposing (Point)
-import Path exposing (Path)
+import Path
 
-line : Point -> Point -> Path
+line : Point -> Point -> List Point
 line src dst =
   let
     dy =

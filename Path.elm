@@ -1,4 +1,4 @@
-module Path exposing (Path, find, findBy)
+module Path exposing (find, findBy)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -6,17 +6,20 @@ import Direction exposing (Direction)
 import Util
 
 -- bfs impl
-type alias Path = List Point
 
-find : Point -> Point -> (Point -> List (Point, Direction)) -> Maybe Path
+type alias PathSegment = (Point, Direction)
+
+--type alias Path = List Point
+
+find : Point -> Point -> (Point -> List PathSegment) -> Maybe (List Point)
 find dst src moves =
   findBy (\pt -> pt == dst) moves src
 
-findBy : (Point -> Bool) -> (Point -> List (Point, Direction)) -> Point -> Maybe Path
+findBy : (Point -> Bool) -> (Point -> List PathSegment) -> Point -> Maybe (List Point)
 findBy predicate moves source =
   findBy' [] [] source predicate moves 100
 
-findBy' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Maybe Path
+findBy' : List PathSegment -> List PathSegment -> Point -> (Point -> Bool) -> (Point -> List PathSegment) -> Int -> Maybe (List Point)
 findBy' visited frontier source predicate moves depth =
   if depth < 0 then
     Nothing
@@ -58,7 +61,7 @@ findBy' visited frontier source predicate moves depth =
               else
                 Nothing
 
-constructPath : List (Point, Direction) -> Point -> Point -> Path
+constructPath : List PathSegment -> Point -> Point -> List Point
 constructPath visited source destination =
   let
     isDestination = \pt ->

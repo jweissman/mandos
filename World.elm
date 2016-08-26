@@ -13,7 +13,7 @@ import Room exposing (Room)
 import Dungeon exposing (Dungeon)
 
 import Level exposing (Level)
-import Path exposing (Path)
+import Path -- exposing (Path)
 
 import Log
 import Event exposing (..)
@@ -103,8 +103,8 @@ isBlocked move model =
 
 entitiesAt : Point -> Model -> List Entity
 entitiesAt pt model =
-  let 
-    player = 
+  let
+    player =
       if model.player.position == pt then
         [Entity.player model.player]
       else
@@ -114,7 +114,7 @@ entitiesAt pt model =
       Level.entitiesAt pt (level model)
   in
     entities ++ player
-     
+
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
@@ -220,7 +220,7 @@ removeDeceasedCreatures model =
 playerAscendsOrDescends : Model -> Model
 playerAscendsOrDescends model =
   let
-    playerPos = 
+    playerPos =
       model.player.position
   in
     if playerPos == (downstairs model) && model.depth < ((List.length model.dungeon) - 1) then
@@ -280,11 +280,11 @@ illuminate source model =
       Point.perimeter {x=1,y=1} 35 30
 
     blockers =
-      (walls model) 
-      ++ (doors model) 
+      (walls model)
+      ++ (doors model)
       ++ ((creatures model) |> List.map .position)
 
-    rays = 
+    rays =
       castRay blockers source
 
     points =
@@ -315,15 +315,14 @@ view model =
       |> List.concatMap (\pt -> entitiesAt pt model)
 
     memoryEntities =
-      --model.viewed
       (viewed model)
       |> List.concatMap (\pt -> entitiesAt pt model)
       |> List.map (Entity.memory)
       |> List.filter (\pt -> not (List.member pt litEntities))
-    
+
     entities =
       memoryEntities ++
-      litEntities ++ 
+      litEntities ++
       [Entity.player model.player]
 
     entityViews =
@@ -384,7 +383,7 @@ highlightCell {x,y} color =
   Graphics.render "@" {x=x,y=y} color
 
 -- util
-path : Point -> Point -> Model -> Maybe Path
+path : Point -> Point -> Model -> Maybe (List Point)
 path dst src model =
   Path.find dst src (movesFrom model)
 
