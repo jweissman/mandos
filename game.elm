@@ -3,7 +3,7 @@ import Engine exposing (Engine)
 import World
 import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
-import Graphics exposing (render)
+import Graphics
 
 import Char
 import Task
@@ -31,18 +31,24 @@ main =
 
 -- MODEL
 
-type alias Model = Engine
+type GameState = Splash | Generating | Playing -- | Death
+
+type alias Model = 
+  { engine : Engine
+  , state : GameState
+  , generationUnderway : Bool
+  }
 
 -- INIT
 init : (Model, Cmd Msg)
-init = ( Engine.init, generate )
+init = ( { engine = Engine.init, state = Splash, generationUnderway = False  }, Cmd.none ) -- generate )
 
 generate : Cmd Msg
 generate =
   Random.generate MapMsg (Dungeon.generate depth)
 
 depth : Int
-depth = 10
+depth = 50
 
 -- TYPES
 type Msg
@@ -57,23 +63,46 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
     MapMsg dungeon ->
-      ((model |> Engine.enter dungeon), Cmd.none)
+      ({ model | engine = (model.engine |> Engine.enter dungeon) 
+               , state = Playing
+      }, Cmd.none)
 
     ClickMsg position ->
-      (model |> Engine.clickAt position, Cmd.none)
+      ({ model | engine = (model.engine |> Engine.clickAt position) }, Cmd.none)
+      --(model |> Engine.clickAt position, Cmd.none)
 
     HoverMsg position ->
-      (model |> Engine.hoverAt position, Cmd.none)
+      ({ model | engine = (model.engine |> Engine.hoverAt position) }, Cmd.none)
+      --(model |> Engine.hoverAt position, Cmd.none)
 
     TickMsg time ->
-      (model |> Engine.tick time, Cmd.none)
+      case model.state of
+        Splash -> (model, Cmd.none)
+        Playing ->
+          ({ model | engine = (model.engine |> Engine.tick time) }, Cmd.none)
+        Generating ->
+          if model.generationUnderway then
+             (model, Cmd.none)
+          else
+             (model, generate)
+      --(model |> Engine.tick time, Cmd.none)
 
     KeyMsg keyCode ->
-      let keyChar = (Char.fromCode keyCode) in
-        (model
-         |> Engine.handleKeypress keyChar
-         |> Engine.resetHover
-        , Cmd.none)
+      case model.state of
+        Splash -> ({model | state = Generating}, Cmd.none) -- generate)
+        Generating -> (model, Cmd.none)
+        Playing ->
+          let 
+            keyChar = 
+              Char.fromCode keyCode
+
+            engine' =
+              model.engine
+              |> Engine.handleKeypress keyChar
+              |> Engine.resetHover
+
+          in
+            ({ model | engine = engine'}, Cmd.none)
 
 -- SUBS
 subscriptions : Model -> Sub Msg
@@ -82,48 +111,35 @@ subscriptions model =
     [ Mouse.moves HoverMsg
     , Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
-    , Time.every (150*millisecond) TickMsg
+    , Time.every (80*millisecond) TickMsg
     ]
 
 -- VIEW
 view : Model -> Html Msg
 view model =
   let
-    world =
-      model.world
-
-    path =
-      case model.followPath of
-        Nothing -> model.hoverPath
-        Just path -> path
-
-    worldView =
-      World.view { world | debugPath = path }
-
-    debugMsg =
-      case model.hover of
-        Nothing ->
-          "You aren't looking at anything in particular."
-
-        Just entity ->
-          case entity of
-            Entity.Memory e ->
-              "You remember seeing " ++ (Entity.describe e) ++ " here."
-            _ ->
-              "You see " ++ (Entity.describe entity) ++ "."
-          --(toString (Entity.position entity)) ++ " You see " ++ 
-          --(Entity.describe entity) ++ "."
-
-    note =
-      Graphics.render debugMsg {x=15,y=1} "white"
-
     bgStyle = [
       ( "background-color", "#280828"
       )
     ]
-
   in
-    Html.div [ style bgStyle ] [
-      Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-      , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
+    Html.div [ style bgStyle ] 
+    [ Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
+    , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (stateView model)
     ]
+
+stateView model = 
+  case model.state of
+    Splash ->
+      [Graphics.render "MANDOS" {x=25,y=10} "white"
+      ,Graphics.render "Press any key to start" {x=22, y=15} "green"
+      ]
+
+    Generating ->
+      [Graphics.render "MANDOS" {x=25,y=10} "white"
+      ,Graphics.render "Generating world..." {x=22, y=15} "lightgreen"
+      ,Graphics.render "(This may take a little while!)" {x=22, y=16} "green"
+      ]
+
+    Playing ->
+      Engine.view model.engine

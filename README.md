@@ -14,4 +14,3 @@ this is a learning elm project but i'd also like the code to be clear and well-f
   - [x] field of vision
   - [ ] combat
   - [ ] quests
-

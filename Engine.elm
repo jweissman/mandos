@@ -1,4 +1,4 @@
-module Engine exposing (Engine, init, enter, clickAt, hoverAt, tick, handleKeypress, resetHover)
+module Engine exposing (Engine, init, view, enter, clickAt, hoverAt, tick, handleKeypress, resetHover)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction(..))
@@ -6,9 +6,15 @@ import World
 import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
 
+
 import Mouse
 import Util
 import Time
+
+import Graphics
+import Svg exposing (svg, rect, text')
+import Svg.Attributes exposing (viewBox, width, height, x, y, fontSize, fontFamily)
+import Svg.Events
 
 type alias Engine =
   { world : World.Model
@@ -269,3 +275,46 @@ playerExplores model =
 
   in
     { model | followPath = path }
+
+view : Engine -> List (Svg.Svg a) -- Html Msg
+view model =
+  let
+    world =
+      model.world
+
+    path =
+      case model.followPath of
+        Nothing -> model.hoverPath
+        Just path -> path
+
+    worldView =
+      World.view { world | debugPath = path }
+
+    debugMsg =
+      case model.hover of
+        Nothing ->
+          "You aren't looking at anything in particular."
+
+        Just entity ->
+          case entity of
+            Entity.Memory e ->
+              "You remember seeing " ++ (Entity.describe e) ++ " here."
+            _ ->
+              "You see " ++ (Entity.describe entity) ++ "."
+          --(toString (Entity.position entity)) ++ " You see " ++ 
+          --(Entity.describe entity) ++ "."
+
+    note =
+      Graphics.render debugMsg {x=15,y=1} "white"
+
+    --bgStyle = [
+    --  ( "background-color", "#280828"
+    --  )
+    --]
+
+  in
+    worldView ++ [note]
+    --Html.div [ style bgStyle ] [
+    --  Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
+      --svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
+    --]
