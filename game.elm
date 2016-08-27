@@ -5,12 +5,15 @@ import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
 import Graphics
 
+import Configuration
+
 import Char
 import Task
 import Keyboard exposing (KeyCode)
 import Mouse
 import Random
 import Time exposing (Time, millisecond)
+import String
 
 import Html exposing (Html)
 import Html.App as App
@@ -31,7 +34,7 @@ main =
 
 -- MODEL
 
-type GameState = Splash | Generating | Playing -- | Death
+type GameState = Splash | Generating | Playing | Death | Victory
 
 type alias Model = 
   { engine : Engine
@@ -45,10 +48,10 @@ init = ( { engine = Engine.init, state = Splash, generationUnderway = False  }, 
 
 generate : Cmd Msg
 generate =
-  Random.generate MapMsg (Dungeon.generate depth)
+  Random.generate MapMsg (Dungeon.generate Configuration.levelCount)
 
-depth : Int
-depth = 50
+--depth : Int
+--depth = 50
 
 -- TYPES
 type Msg
@@ -77,20 +80,27 @@ update message model =
 
     TickMsg time ->
       case model.state of
-        Splash -> (model, Cmd.none)
         Playing ->
-          ({ model | engine = (model.engine |> Engine.tick time) }, Cmd.none)
+          ({ model | engine = (model.engine |> Engine.tick time) }
+           |> inferState
+         , Cmd.none)
         Generating ->
           if model.generationUnderway then
              (model, Cmd.none)
           else
              (model, generate)
+
+        _ -> (model, Cmd.none)
       --(model |> Engine.tick time, Cmd.none)
 
     KeyMsg keyCode ->
       case model.state of
         Splash -> ({model | state = Generating}, Cmd.none) -- generate)
+        Death -> ({model | state = Splash, engine = Engine.init}, Cmd.none)
+        Victory -> ({model | state = Splash, engine = Engine.init}, Cmd.none)
+
         Generating -> (model, Cmd.none)
+
         Playing ->
           let 
             keyChar = 
@@ -100,9 +110,28 @@ update message model =
               model.engine
               |> Engine.handleKeypress keyChar
               |> Engine.resetHover
-
           in
-            ({ model | engine = engine'}, Cmd.none)
+            ({ model | engine = engine' } |> inferState, Cmd.none)
+
+inferState : Model -> Model
+inferState model =
+  let
+    won =
+      model.engine.world.hallsEscaped
+
+    died =
+      model.engine.world.player.hp < 1
+
+    state' =
+      if won then 
+        Victory 
+      else
+        if died then
+          Death
+        else
+          Playing
+  in
+   { model | state = state' }
 
 -- SUBS
 subscriptions : Model -> Sub Msg
@@ -111,7 +140,7 @@ subscriptions model =
     [ Mouse.moves HoverMsg
     , Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
-    , Time.every (80*millisecond) TickMsg
+    , Time.every Configuration.tickInterval TickMsg
     ]
 
 -- VIEW
@@ -125,20 +154,48 @@ view model =
   in
     Html.div [ style bgStyle ] 
     [ Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-    , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (stateView model)
+    , box (stateView model) --svg [ box ] (stateView model)
     ]
+
+box viewModel =
+  let 
+    scale = 
+      Configuration.viewScale 
+    height' =
+      Configuration.viewHeight
+    width' =
+      Configuration.viewWidth
+    dims =
+      [0,0,width',height']
+      |> List.map toString
+      |> String.join " "
+      --"0 0 " ++ (toString width) ++ " "
+  in
+    svg [ viewBox dims, width ((toString (width'*scale)) ++ "px"), height ((toString (height'*scale)) ++ "px") ] viewModel
 
 stateView model = 
   case model.state of
     Splash ->
-      [Graphics.render "MANDOS" {x=25,y=10} "white"
-      ,Graphics.render "Press any key to start" {x=22, y=15} "green"
+      [Graphics.render "MANDOS" {x=35,y=10} "white"
+      ,Graphics.render "Press any key to start" {x=32, y=15} "green"
       ]
 
     Generating ->
-      [Graphics.render "MANDOS" {x=25,y=10} "white"
-      ,Graphics.render "Generating world..." {x=22, y=15} "lightgreen"
-      ,Graphics.render "(This may take a little while!)" {x=22, y=16} "green"
+      [Graphics.render "MANDOS" {x=35,y=10} "white"
+      ,Graphics.render "Generating world..." {x=32, y=15} "lightgreen"
+      ,Graphics.render "(This may take a little while!)" {x=32, y=16} "green"
+      ]
+
+    Victory ->
+      Engine.view model.engine
+      ++ [
+        Graphics.render "YOU WON!!!" {x=32, y=15} "lightgreen"
+      ]
+
+    Death ->
+      Engine.view model.engine
+      ++ [
+        Graphics.render "YOU DIED!!!" {x=32, y=15} "lightgreen"
       ]
 
     Playing ->

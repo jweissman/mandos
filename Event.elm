@@ -1,4 +1,4 @@
-module Event exposing (Event, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, describe)
+module Event exposing (Event, describe, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, ascend, descend, crystalTaken, hallsEscaped)
 
 import Creature
 
@@ -12,6 +12,10 @@ type Event
   | KillEnemy Creature.Model
   | DefendEnemy Creature.Model Int
   | Death
+  | Descend Int
+  | Ascend Int
+  | CrystalTaken
+  | HallsEscaped
 
 -- ctors
 awaken =
@@ -34,6 +38,18 @@ defend target damage =
 
 death =
   Death
+
+descend level =
+  Descend level
+
+ascend level =
+  Ascend level
+
+crystalTaken =
+  CrystalTaken
+
+hallsEscaped =
+  HallsEscaped
 
 -- helpers
 describe : Event -> String
@@ -60,4 +76,15 @@ describe event =
     Death ->
       "You were slain..."
 
+    Ascend lvl ->
+      "You ascend to level " ++ (toString lvl)
+
+    Descend lvl ->
+      "You descend to level " ++ (toString lvl)
+
+    CrystalTaken ->
+      "You take the long-sought Crystal of Time!"
+
+    HallsEscaped ->
+      "The doors swing open and you emerge into daylight...!"
 

@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, isBlocked, floors, coins, downstairs, path, playerViewsField, entitiesAt, viewed)
+module World exposing (Model, init, view, playerSteps, isBlocked, floors, coins, downstairs, upstairs, entrances, crystals, path, playerViewsField, entitiesAt, viewed)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -19,6 +19,7 @@ import Log
 import Event exposing (..)
 
 import Util
+import Configuration
 
 import String
 import Html
@@ -35,7 +36,8 @@ type alias Model =
   , events : Log.Model
   , debugPath : List Point
   , illuminated : List Point
-  --, viewed : List Point
+  , crystalTaken : Bool
+  , hallsEscaped : Bool
   }
 
 -- INIT
@@ -48,7 +50,8 @@ init =
   , events = Log.init
   , debugPath = []
   , illuminated = []
-  --, viewed = []
+  , crystalTaken = False
+  , hallsEscaped = False
   }
 
 level : Model -> Level
@@ -82,13 +85,31 @@ floors : Model -> List Point
 floors model =
   (level model).floors
 
-upstairs : Model -> Point
+upstairs : Model -> List Point
 upstairs model =
-  (level model).upstairs
+  case (level model).upstairs of
+    Just pt -> [pt]
+    Nothing -> []
 
-downstairs : Model -> Point
+downstairs : Model -> List Point
 downstairs model =
-  (level model).downstairs
+  case (level model).downstairs of
+    Just pt -> [pt]
+    Nothing -> []
+
+entrances : Model -> List Point
+entrances model =
+  case (level model).entrance of
+    Just (pt,_) -> [pt]
+    Nothing -> []
+
+crystals : Model -> List Point
+crystals model =
+  case (level model).crystal of
+    Just (pt,_) -> [pt]
+    Nothing -> []
+
+origin = {x=0,y=0}
 
 -- PREDICATES
 
@@ -127,6 +148,8 @@ playerSteps direction model =
     |> playerAscendsOrDescends
     |> playerViewsField
     |> playerCollectsCoins
+    |> playerLiberatesCrystal
+    |> playerEscapesHall
 
 
 playerMoves : Direction -> Model -> Model
@@ -161,6 +184,41 @@ playerCollectsCoins model =
                 , dungeon = dungeon'
                 , events  = model.events ++ [event]
         }
+
+playerLiberatesCrystal : Model -> Model
+playerLiberatesCrystal model =
+  let
+    isCrystal =
+      level model
+      |> Level.isCrystal model.player.position
+
+    dungeon' =
+      model.dungeon
+      |> Dungeon.liberateCrystal model.depth
+  in
+    if model.crystalTaken || (not isCrystal) then
+      model
+    else
+      let event = Event.crystalTaken in
+      { model | crystalTaken = True
+              , dungeon = dungeon'
+              , events = model.events ++ [event]
+      }
+
+playerEscapesHall : Model -> Model
+playerEscapesHall model =
+  let
+    isEntrance =
+      level model
+      |> Level.isEntrance model.player.position
+  in
+    if model.crystalTaken && isEntrance then
+      let event = Event.hallsEscaped in
+      { model | hallsEscaped = True
+              , events = model.events ++ [event]
+      }
+    else
+      model
 
 playerAttacks : Direction -> Model -> Model
 playerAttacks direction model =
@@ -223,33 +281,47 @@ playerAscendsOrDescends model =
     playerPos =
       model.player.position
   in
-    if playerPos == (downstairs model) && model.depth < ((List.length model.dungeon) - 1) then
-      let
-        player =
-          model.player
-
-        model' =
-          { model | depth = model.depth + 1 }
-
-        player' =
-          { player | position = (upstairs model') }
-       in
-         { model' | player = player' }
+    if List.member playerPos (downstairs model) && model.depth < ((List.length model.dungeon) - 1) then
+      model |> playerDescends
     else
-      if playerPos == (upstairs model) && model.depth > 0 then
-        let
-          player =
-            model.player
-
-          model' =
-            { model | depth = model.depth - 1 }
-
-          player' =
-            { player | position = (downstairs model') }
-         in
-           { model' | player = player' }
+      if List.member playerPos (upstairs model) && model.depth > 0 then
+        model |> playerAscends
       else
         model
+
+playerAscends : Model -> Model
+playerAscends model =
+  let
+    player =
+      model.player
+
+    model' =
+      { model | depth = model.depth - 1 }
+
+    player' =
+      { player | position = (downstairs model') |> List.head |> Maybe.withDefault origin }
+
+    events' =
+      model.events ++ [Event.ascend (model.depth-1)]
+  in
+    { model' | player = player' }
+
+playerDescends : Model -> Model
+playerDescends model =
+  let
+    player =
+      model.player
+
+    model' =
+      { model | depth = model.depth + 1 }
+
+    player' =
+      { player | position = (upstairs model') |> List.head |> Maybe.withDefault origin }
+
+    events' =
+      model.events ++ [Event.descend (model.depth+1)]
+  in
+    { model' | player = player', events = events' }
 
 playerViewsField : Model -> Model
 playerViewsField model =
@@ -277,7 +349,7 @@ illuminate : Point -> Model -> List Point
 illuminate source model =
   let
     perimeter =
-      Point.perimeter {x=1,y=1} 35 30
+      Point.perimeter {x=1,y=1} Configuration.viewWidth Configuration.viewHeight
 
     blockers =
       (walls model)

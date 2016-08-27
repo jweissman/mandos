@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, turnCreature, moveCreatures, injureCreature, purge, collectCoin, isBlocked, isCoin, creatureAt, entitiesAt, playerSees)
+module Level exposing (Level, init, fromRooms, finalize, turnCreature, moveCreatures, injureCreature, purge, collectCoin, isBlocked, isCoin, isCrystal, isEntrance, creatureAt, entitiesAt, playerSees, liberateCrystal)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -7,6 +7,7 @@ import Graph exposing (Graph)
 
 import Util
 import Path
+import Configuration
 
 import Warrior
 import Creature
@@ -18,11 +19,13 @@ import Entity exposing (Entity)
 type alias Level = { walls : List Point
                    , floors : List Point
                    , doors : List Point
-                   , downstairs : Point
-                   , upstairs : Point
                    , coins : List Point
                    , creatures : List Creature.Model
                    , viewed : List Point
+                   , downstairs : Maybe Point
+                   , upstairs : Maybe Point
+                   , crystal : Maybe (Point, Bool)
+                   , entrance : Maybe (Point, Bool)
                    }
 
 -- INIT
@@ -34,11 +37,41 @@ init =
   , doors = []
   , creatures = []
   , coins = []
-  , upstairs = origin
-  , downstairs = origin
+  , upstairs = Nothing --origin
+  , downstairs = Nothing --origin
+  , crystal = Nothing
+  , entrance = Nothing
 
   , viewed = []
   }
+
+-- should probably spawn creatures here too
+-- since we finally know what level we are!
+finalize : Int -> Level -> Level
+finalize depth model =
+  model
+  |> finalizeEntrance depth
+  |> finalizeCrystal depth
+
+finalizeEntrance depth model =
+  if depth == 0 then
+    case model.upstairs of
+      Nothing -> model
+      Just pt ->
+        model
+        |> emplaceEntrance pt
+  else
+    model
+
+finalizeCrystal depth model =
+  if depth == (Configuration.levelCount - 1) then
+    case model.downstairs of
+      Nothing -> model
+      Just pt ->
+        model
+        |> emplaceCrystal pt
+  else
+    model
 
 origin = {x=0,y=0}
 
@@ -66,11 +99,36 @@ isFloor position model =
 
 isStairsUp : Point -> Level -> Bool
 isStairsUp position model =
-  model.upstairs == position
+  case model.upstairs of
+    Just pt ->
+      position == pt
+    Nothing ->
+      False
 
 isStairsDown : Point -> Level -> Bool
 isStairsDown position model =
-  model.downstairs == position
+  case model.downstairs of
+    Just pt ->
+      position == pt
+    Nothing ->
+      False
+  --model.downstairs == position
+
+isEntrance : Point -> Level -> Bool
+isEntrance position model =
+  case model.entrance of
+    Just (pt,_) ->
+      position == pt
+    Nothing ->
+      False
+
+isCrystal : Point -> Level -> Bool
+isCrystal position model =
+  case model.crystal of
+    Just (pt,_) ->
+      position == pt
+    Nothing ->
+      False
 
 hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
@@ -88,7 +146,7 @@ isAlive livingThing =
 entitiesAt : Point -> Level -> List Entity
 entitiesAt point model =
   let
-    monster = 
+    monster =
       let creature = model |> creatureAt point in
       case creature of
         Just creature' ->
@@ -132,6 +190,26 @@ entitiesAt point model =
       else
         Nothing
 
+    entrance =
+      if isEntrance point model then
+        case model.entrance of
+          Nothing ->
+            Nothing
+          Just (pt,open) ->
+            Just (Entity.entrance open point)
+      else
+        Nothing
+
+    crystal =
+      if isCrystal point model then
+        case model.crystal of
+          Nothing -> 
+            Nothing
+          Just (pt,taken) ->
+            Just (Entity.crystal taken point)
+      else
+        Nothing
+
     entities =
       [ floor
       , door
@@ -140,6 +218,8 @@ entitiesAt point model =
       , monster
       , downstairs
       , upstairs
+      , entrance
+      , crystal
       ]
   in
     entities
@@ -184,15 +264,22 @@ creatureSteps creature (model, events, player) =
 
 creatureMoves : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 creatureMoves creature (model, events, player) =
-  let
-    creatures' =
-      model.creatures
-      |> List.map (\c -> if c.id == creature.id && (canCreatureStep creature player model) then c |> Creature.step else c)
-  in
-    ({ model | creatures = creatures' }
-    , events
-    , player
-    )
+  if canCreatureStep creature player model then
+    let
+      creature' =
+        Creature.step creature
+
+      creatures' =
+        model.creatures
+        |> List.map (\c -> if c.id == creature.id then creature' else c)
+    in
+      Debug.log ("Creature moves: " ++ (Creature.describe creature) ++ "(" ++ (toString creature.id) ++ ")")
+      ({ model | creatures = creatures' }
+      , events
+      , player
+      )
+   else
+     (model, events, player)
 
 creatureAttacks : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 creatureAttacks creature (model, events, player) =
@@ -238,7 +325,7 @@ canCreatureStep creature player model =
       player.position == next
 
     blocked =
-      (not (isBlocked next model))
+      (isBlocked next model)
   in
     not (isPlayer || blocked)
 
@@ -280,6 +367,14 @@ collectCoin pt model =
   in
     { model | coins = coins' }
 
+liberateCrystal : Level -> Level
+liberateCrystal model =
+  { model | crystal = case model.crystal of
+      Nothing -> Nothing
+      Just (pt,taken) ->
+        Just (pt, True)
+    }
+
 -- GENERATE
 
 -- actually build out the rooms and corridors for a level
@@ -290,11 +385,11 @@ fromRooms roomCandidates =
       roomCandidates
       |> Room.filterOverlaps
   in
-    init
+    init -- depth
     |> extrudeRooms rooms
     |> connectRooms rooms
     |> spawnCreatures rooms
-    |> extrudeStairwells
+    |> extrudeStairwells --depth
     |> dropCoins
 
 extrudeRooms : List Room -> Level -> Level
@@ -345,7 +440,9 @@ connectRooms' (a, b) model =
       [(xOverlapStart)..(xOverlapEnd)]
 
     sampleOverlap = \overlap ->
-       Util.getAt overlap ((a.height ^ 31 + b.origin.x) % (List.length overlap))
+      --overlap |> List.head |> Maybe.withDefault -1
+      --overlap |> List.head |> Maybe.withDefault (Debug.crash)
+       Util.getAt overlap ((a.height ^ 31 + b.origin.x) % (max 1 (List.length overlap - 1)))
        |> Maybe.withDefault -1
 
     yOverlapStart =
@@ -427,7 +524,7 @@ extrudeStairwells model =
 
     adjacentToTwoWalls = (\pt ->
         ([[ North, South ], [ East, West ]]
-        |> List.map (\ds -> 
+        |> List.map (\ds ->
           ds
           |> List.map (\d -> Point.slide d pt)
           |> List.filter (\pt -> (model |> isWall pt))
@@ -441,7 +538,7 @@ extrudeStairwells model =
       |> List.filter adjacentToFloor
       |> List.filter adjacentToTwoWalls
 
-    (upstairs, downstairs) =
+    (up, down) =
       candidates
       |> List.map2 (,) (List.reverse candidates)
       |> List.filter (\(a,b) -> not (a.x == b.x && a.y == b.y))
@@ -451,39 +548,55 @@ extrudeStairwells model =
       |> Maybe.withDefault (origin, origin)
   in
     model
-    |> emplaceUpstairs upstairs
-    |> emplaceDownstairs downstairs
+    |> emplaceUpstairs up
+    |> emplaceDownstairs down
 
 emplaceUpstairs : Point -> Level -> Level
 emplaceUpstairs point model =
-  { model | upstairs = point }
+  { model | upstairs = Just point }
           |> addWallsAround point
           |> removeWall point
 
 emplaceDownstairs : Point -> Level -> Level
 emplaceDownstairs point model =
-  { model | downstairs = point }
+  { model | downstairs = Just point }
+          |> addWallsAround point
+          |> removeWall point
+
+emplaceCrystal : Point -> Level -> Level
+emplaceCrystal point model =
+  { model | crystal = Just (point, False)
+          , downstairs = Nothing
+          }
+          |> addWallsAround point
+          |> removeWall point
+
+emplaceEntrance : Point -> Level -> Level
+emplaceEntrance point model =
+  { model | entrance = Just (point, False)
+          , upstairs = Nothing
+          }
           |> addWallsAround point
           |> removeWall point
 
 removeWall pt model =
   let
     walls' =
-      model.walls |> List.filterMap (\pt' -> 
+      model.walls |> List.filterMap (\pt' ->
         if not (pt == pt') then Just pt' else Nothing)
   in
   { model | walls = walls' }
 
-removeFloor pt model = 
+removeFloor pt model =
   let
     floors' =
-      model.floors 
-      |> List.filterMap (\pt' -> 
+      model.floors
+      |> List.filterMap (\pt' ->
         if not (pt == pt') then Just pt' else Nothing)
   in
   { model | floors = floors' }
 
-addWallsAround pt model = 
+addWallsAround pt model =
   let
     newWalls =
       Direction.directions
@@ -493,15 +606,37 @@ addWallsAround pt model =
           (model.floors |> List.any (\floor' -> wall == floor')) ||
           (model.walls |> List.any (\wall' -> wall == wall'))
       )
-  in 
+  in
      { model | walls = newWalls ++ model.walls }
- 
+
 dropCoins : Level -> Level
 dropCoins model =
   let
+    down =
+      case model.downstairs of
+        Just pt ->
+          pt
+        Nothing ->
+          case model.crystal of
+            Just (pt,_) ->
+              pt
+            Nothing ->
+              origin
+
+    up =
+       case model.upstairs of
+        Just pt ->
+          pt
+        Nothing ->
+          case model.entrance of
+            Just (pt,_) ->
+              pt
+            Nothing ->
+              origin
+
     path' =
       model
-      |> path (model.downstairs) (model.upstairs)
+      |> path up down
       |> Maybe.withDefault []
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
@@ -515,14 +650,14 @@ dropCoins model =
           head :: (everyN n rest)
 
     coins' =
-      path' |> everyN (List.length path' // 5)
-  in  
+      path' |> everyN (List.length path' // 3)
+  in
     { model | coins = model.coins ++ coins' }
 
 spawnCreatures : List Room -> Level -> Level
 spawnCreatures rooms model =
   let
-    creatures' = 
+    creatures' =
       rooms
       |> List.map Room.center
       |> List.indexedMap (\n pt -> Creature.createMonkey n pt)

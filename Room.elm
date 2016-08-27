@@ -4,6 +4,7 @@ import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Graph exposing (Graph)
 import Util
+import Configuration
 
 import Random
 
@@ -19,14 +20,24 @@ generate n =
 generate' : Random.Generator Room
 generate' =
   let
+    maxRoomSize = 
+      8
+
+    vWidth =
+      Configuration.viewWidth // 2
+
+    vHeight =
+      Configuration.viewHeight // 2
+
     width =
-      Random.int 3 10 
+      Random.int 3 maxRoomSize
 
     height =
-      Random.int 4 10 
+      Random.int 4 maxRoomSize
 
     origin =
-      Point.randomWithOffset {x=3,y=4} 21 15
+      Point.randomWithOffset {x=3,y=4} (vWidth-maxRoomSize) (vHeight-maxRoomSize)
+
   in
     Random.map3 create origin width height
 

@@ -5,6 +5,7 @@ import Direction exposing (Direction(..))
 import World
 import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
+import Configuration
 
 
 import Mouse
@@ -36,17 +37,25 @@ init =
 enter : Dungeon -> Engine -> Engine
 enter dungeon model =
   let
+    dungeon' =
+      dungeon |> Dungeon.prepare
+
     world =
       model.world
 
     player =
       world.player
 
+    startPos =
+      case (Dungeon.levelAt 0 dungeon').entrance of
+        Just (pt,_) -> pt
+        Nothing -> {x=10,y=10}
+
     player' =
-      { player | position = (Dungeon.levelAt 0 dungeon).upstairs }
+      { player | position = startPos }
 
     world' =
-      { world | dungeon = dungeon
+      { world | dungeon = dungeon'
               , depth = 0
               , player = player'
       }
@@ -83,6 +92,7 @@ autorogue model =
   { model | auto = True }
 
 moveCreatures model =
+  --model
   let
     world = 
       model.world
@@ -127,8 +137,9 @@ resetAuto model =
 -- maybe to utils?
 screenToCoordinate : Mouse.Position -> Point
 screenToCoordinate {x,y} =
-  { x = x//20
-  , y = (y//20)+1
+  let scale = Configuration.viewScale in
+  { x = x//scale
+  , y = (y//scale)+1 -- ignore top bar ...
   }
 
 hoverAt : Point -> Engine -> Engine
@@ -152,13 +163,6 @@ hoverAt position model =
               Nothing
         else
           Nothing
-        
-      --model.world.illuminated
-      --|> List.filter (\pt -> pt == point)
-      --|> List.
-      --|> List.reverse
-      --|> List.head
-      --World.visibleEntityAt point model.world
 
     pathToEntity =
       case maybeEntity of
@@ -188,16 +192,14 @@ hoverAt position model =
                  model.hoverPath
                else
                  model.world
-                 |> World.path entityPos playerPos -- (\pos -> (entityPos == pos))
+                 |> World.path entityPos playerPos
                  |> Maybe.withDefault []
             else
               []
     in
       { model | hover = maybeEntity
               , hoverPath = pathToEntity
-         }
-
-
+      }
 
 clickAt : Point -> Engine -> Engine
 clickAt point model =
@@ -230,20 +232,13 @@ playerFollowsPath model =
               model.world
               |> World.playerSteps direction
 
-            (dungeon', events, player') =
-              world.dungeon
-              |> Dungeon.moveCreatures world.player world.depth
-
-            world' =
-              { world | dungeon = dungeon'
-                      , events = world.events ++ events
-                      , player = player'
-              }
+            onPath =
+              nextStep == (playerPos |> slide direction)
           in
-            if (nextStep == (playerPos |> slide direction)) then
+            if onPath then
               ({model | followPath = List.tail path
                       , world = world
-              })
+              }) |> moveCreatures
             else
               model
               |> resetFollow
@@ -259,8 +254,14 @@ playerExplores model =
     byDistanceFromPlayer =
       (\c -> Point.distance playerPos c)
 
+    destSources =
+      if model.world.crystalTaken then
+        World.upstairs model.world ++ World.entrances model.world
+      else
+        World.downstairs model.world ++ World.crystals model.world
+
     maybeDest =
-      [(World.downstairs model.world)] ++ (World.coins model.world) --0.coins
+      destSources
       |> List.sortBy byDistanceFromPlayer
       |> List.head
 

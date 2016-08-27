@@ -77,7 +77,7 @@ describe : Model -> String
 describe model =
   let
     parts =
-      [ "the", describeHealth model, model.subtype, model.name ]
+      [ "the", describeHealth model, model.subtype, model.name, "[", "uid", toString model.id, ")" ]
   in
     parts
     |> String.join " "

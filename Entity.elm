@@ -1,4 +1,4 @@
-module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory)
+module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal)
 
 
 import Point exposing (Point)
@@ -24,8 +24,8 @@ type Entity = Monster Creature.Model
             | StairsUp Point
             | StairsDown Point
             | Memory Entity
-            --| Entrance Bool Point
-            --| Crystal Bool Point
+            | Entrance Bool Point
+            | Crystal Bool Point
 
 -- constructors
 wall point =
@@ -54,6 +54,12 @@ downstairs point =
 
 memory entity =
   Memory entity
+
+crystal taken pt =
+  Crystal taken pt
+
+entrance open pt =
+  Entrance open pt
 
 -- helpers
 
@@ -86,6 +92,18 @@ describe entity =
 
     Memory entity ->
       "You saw " ++ (describe entity) ++ " here"
+      
+    Crystal taken _ ->
+      if taken then
+        "a pedestal where the Crystal was"
+      else
+        "the shimmering Crystal"
+
+    Entrance open _ ->
+      if open then
+        "an open heavy metal gateway and daylight beyond"
+      else
+        "a closed heavy metal gateway"
 
 -- view
 view : Entity -> Svg.Svg a
@@ -122,6 +140,12 @@ color entity =
     Memory _ ->
       "darkblue"
 
+    Crystal taken _ ->
+      if taken then "gray" else "white"
+
+    Entrance open _ ->
+      if open then "green" else "red"
+
 position : Entity -> Point.Point
 position entity =
   case entity of
@@ -151,6 +175,12 @@ position entity =
 
     Memory entity ->
       position entity
+
+    Crystal _ pt ->
+      pt
+
+    Entrance _ pt ->
+      pt
 
 glyph : Entity -> String
 glyph entity =
@@ -182,3 +212,8 @@ glyph entity =
     Memory e ->
       glyph e
 
+    Entrance _ _ ->
+      "∞" 
+
+    Crystal _ _ ->
+      "∆"
