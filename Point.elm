@@ -1,4 +1,4 @@
-module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code, perimeter)
+module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code, perimeter, isAdjacent)
 
 import Direction exposing (Direction(..), directions)
 
@@ -8,6 +8,10 @@ type alias Point =
   { x : Int
   , y : Int
   }
+
+isAdjacent a b =
+  Direction.directions
+  |> List.any (\dir -> slide dir a == b)
 
 slide : Direction -> Point -> Point
 slide direction point =

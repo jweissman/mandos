@@ -1,9 +1,10 @@
-module World exposing (Model, init, view, playerSteps, isBlocked, floors, coins, downstairs, upstairs, entrances, crystals, path, playerViewsField, entitiesAt, viewed)
+module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, exploration, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 
-import Bresenham
+--import Bresenham
+import Optics
 
 import Warrior
 import Creature
@@ -13,7 +14,7 @@ import Room exposing (Room)
 import Dungeon exposing (Dungeon)
 
 import Level exposing (Level)
-import Path -- exposing (Path)
+import Path
 
 import Log
 import Event exposing (..)
@@ -64,6 +65,26 @@ viewed model =
   let lvl = (level model) in
   lvl.viewed
   --|> Level.viewed
+
+exploration : Model -> (List Point, List Point)
+exploration model =
+  let v = viewed model in
+  model |> floors |> List.partition (\p -> List.member p v)
+
+--explored : Model -> List Point
+--explored model = 
+--  model 
+--  |> floors
+--  |> List.filter (\pt -> 
+--    (List.member pt (viewed model)))
+--
+--unexplored : Model -> List Point
+--unexplored model =
+--  --let lvl = (level model) in
+--  model 
+--  |> floors
+--  |> List.filter (\pt -> 
+--    not (List.member pt (viewed model)))
 
 walls : Model -> List Point
 walls model =
@@ -117,10 +138,10 @@ isPlayer : Point -> Model -> Bool
 isPlayer position model =
   model.player.position == position
 
-isBlocked : Point -> Model -> Bool
-isBlocked move model =
-  level model
-  |> Level.isBlocked move
+--isBlocked : Point -> Model -> Bool
+--isBlocked move model =
+--  level model
+--  |> Level.isBlocked move
 
 entitiesAt : Point -> Model -> List Entity
 entitiesAt pt model =
@@ -151,7 +172,6 @@ playerSteps direction model =
     |> playerLiberatesCrystal
     |> playerEscapesHall
 
-
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
   { model | player = (Warrior.step direction model.player) }
@@ -163,7 +183,11 @@ canPlayerStep direction model =
       model.player.position
       |> slide direction
   in
-    not (isBlocked move model)
+    not ( Level.isCreature move (level model) || List.member move (walls model))
+--    not (isBlockedForPlayer move model)
+
+--isBlockedForPlayer : Point -> Model -> Bool
+--isBlockedForPlayer pt model =
 
 playerCollectsCoins : Model -> Model
 playerCollectsCoins model =
@@ -335,14 +359,9 @@ playerViewsField model =
     dungeon =
       locations
       |> List.foldr (\location -> Dungeon.playerSees location model.depth) model.dungeon
-
-    --viewed' =
-    --  model.viewed ++ locations
-    --  |> Util.uniqueBy Point.code
   in
     { model | dungeon = dungeon
-            , illuminated = locations --entities
-            --, viewed = viewed'
+            , illuminated = locations
     }
 
 illuminate : Point -> Model -> List Point
@@ -354,29 +373,10 @@ illuminate source model =
     blockers =
       (walls model)
       ++ (doors model)
-      ++ ((creatures model) |> List.map .position)
-
-    rays =
-      castRay blockers source
-
-    points =
-      perimeter
-      |> List.concatMap rays
-  in
-    points
-    |> Util.uniqueBy Point.code
-
-castRay : List Point -> Point -> Point -> List Point
-castRay blockers src dst =
-  let
-    line =
-      Bresenham.line src dst
-      |> List.tail
-      |> Maybe.withDefault []
 
   in
-    line
-    |> Util.takeWhile' (\pt -> not (List.member pt blockers))
+    source
+    |> Optics.illuminate perimeter blockers
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
@@ -389,6 +389,7 @@ view model =
     memoryEntities =
       (viewed model)
       |> List.concatMap (\pt -> entitiesAt pt model)
+      |> List.filter (not << Entity.isCreature)
       |> List.map (Entity.memory)
       |> List.filter (\pt -> not (List.member pt litEntities))
 
@@ -453,14 +454,3 @@ highlightCells cells =
 
 highlightCell {x,y} color =
   Graphics.render "@" {x=x,y=y} color
-
--- util
-path : Point -> Point -> Model -> Maybe (List Point)
-path dst src model =
-  Path.find dst src (movesFrom model)
-
-movesFrom : Model -> Point -> List (Point, Direction)
-movesFrom model point =
-  Direction.directions
-  |> List.map (\direction -> (slide direction point, direction))
-  |> List.filter ((\p -> not (isBlocked p model)) << fst)

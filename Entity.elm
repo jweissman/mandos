@@ -1,4 +1,4 @@
-module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal)
+module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, isCreature)
 
 
 import Point exposing (Point)
@@ -60,6 +60,14 @@ crystal taken pt =
 
 entrance open pt =
   Entrance open pt
+
+isCreature entity =
+  case entity of
+    Monster _ -> 
+      True
+  
+    _ ->
+      False
 
 -- helpers
 

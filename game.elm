@@ -6,6 +6,7 @@ import Entity exposing (Entity)
 import Graphics
 
 import Configuration
+import Event
 
 import Char
 import Task
@@ -50,9 +51,6 @@ generate : Cmd Msg
 generate =
   Random.generate MapMsg (Dungeon.generate Configuration.levelCount)
 
---depth : Int
---depth = 50
-
 -- TYPES
 type Msg
   = KeyMsg KeyCode
@@ -72,11 +70,9 @@ update message model =
 
     ClickMsg position ->
       ({ model | engine = (model.engine |> Engine.clickAt position) }, Cmd.none)
-      --(model |> Engine.clickAt position, Cmd.none)
 
     HoverMsg position ->
       ({ model | engine = (model.engine |> Engine.hoverAt position) }, Cmd.none)
-      --(model |> Engine.hoverAt position, Cmd.none)
 
     TickMsg time ->
       case model.state of
@@ -84,6 +80,7 @@ update message model =
           ({ model | engine = (model.engine |> Engine.tick time) }
            |> inferState
          , Cmd.none)
+
         Generating ->
           if model.generationUnderway then
              (model, Cmd.none)
@@ -91,15 +88,20 @@ update message model =
              (model, generate)
 
         _ -> (model, Cmd.none)
-      --(model |> Engine.tick time, Cmd.none)
 
     KeyMsg keyCode ->
       case model.state of
-        Splash -> ({model | state = Generating}, Cmd.none) -- generate)
-        Death -> ({model | state = Splash, engine = Engine.init}, Cmd.none)
-        Victory -> ({model | state = Splash, engine = Engine.init}, Cmd.none)
+        Splash -> 
+          ({model | state = Generating}, Cmd.none)
 
-        Generating -> (model, Cmd.none)
+        Death -> 
+          ({model | state = Splash, engine = Engine.init}, Cmd.none)
+
+        Victory -> 
+          ({model | state = Splash, engine = Engine.init}, Cmd.none)
+
+        Generating -> 
+          (model, Cmd.none)
 
         Playing ->
           let 
@@ -174,29 +176,49 @@ box viewModel =
     svg [ viewBox dims, width ((toString (width'*scale)) ++ "px"), height ((toString (height'*scale)) ++ "px") ] viewModel
 
 stateView model = 
+  let 
+    hero = 
+      Graphics.hero "MANDOS" {x=27,y=10} 
+
+    steps =
+      model.engine.world.player.steps
+
+    kills =
+      model.engine.world.events
+      |> List.filter Event.isEnemyKill
+      |> List.length
+  in 
   case model.state of
     Splash ->
-      [Graphics.render "MANDOS" {x=35,y=10} "white"
-      ,Graphics.render "Press any key to start" {x=32, y=15} "green"
+      [ Graphics.jumbo "@" {x=30,y=30}
+      , hero
+      ,Graphics.render "Press any key to start..." {x=32, y=15} "lightgreen"
+      ,Graphics.render "A Deep Cerulean Experience" {x=32, y=34} "darkgray"
       ]
 
     Generating ->
-      [Graphics.render "MANDOS" {x=35,y=10} "white"
-      ,Graphics.render "Generating world..." {x=32, y=15} "lightgreen"
-      ,Graphics.render "(This may take a little while!)" {x=32, y=16} "green"
+      [ Graphics.jumbo "@" {x=30,y=30}
+      , hero
+      ,Graphics.render "Generating world, please wait..." {x=32, y=15} "lightgreen"
+      ,Graphics.render "(This may take a little while!)" {x=32, y=20} "white"
       ]
 
     Victory ->
       Engine.view model.engine
       ++ [
-        Graphics.render "YOU WON!!!" {x=32, y=15} "lightgreen"
+        Graphics.hero "YOU WON!" {x=26, y=15} -- "lightgreen"
+      , Graphics.render "Congratulations!" {x=34, y=20} "white"
+      , Graphics.render "You escaped the Halls of Mandos!" {x=31, y=22} "white"
+        , Graphics.render ((toString steps) ++ " steps taken") {x=34, y=25} "white"
+        , Graphics.render ((toString kills) ++ " kills") {x=34, y=26} "white"
       ]
 
     Death ->
-      Engine.view model.engine
-      ++ [
-        Graphics.render "YOU DIED!!!" {x=32, y=15} "lightgreen"
-      ]
+        Engine.view model.engine ++ 
+        [ Graphics.hero "YOU DIED!" {x=25, y=15} -- "lightgreen"
+        , Graphics.render ((toString steps) ++ " steps taken") {x=34, y=26} "white"
+        , Graphics.render ((toString kills) ++ " kills") {x=34, y=26} "white"
+        ]
 
     Playing ->
       Engine.view model.engine

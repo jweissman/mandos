@@ -25,7 +25,6 @@ type alias Model =
   , subtype : String
   , direction : Direction
   , engaged : Bool
-  --, target : Maybe Point
   }
 
 -- INIT
@@ -77,7 +76,7 @@ describe : Model -> String
 describe model =
   let
     parts =
-      [ "the", describeHealth model, model.subtype, model.name, "[", "uid", toString model.id, ")" ]
+      [ "the", describeHealth model, model.subtype, model.name ]
   in
     parts
     |> String.join " "
@@ -90,7 +89,7 @@ describeHealth model =
     if model.hp > (model.maxHp // 2) then
       "hurt"
     else
-      "injured"
+      "badly hurt"
 
 engage : Model -> Model
 engage model =
@@ -99,8 +98,3 @@ engage model =
 disengage : Model -> Model
 disengage model =
   { model | engaged = False }
-
--- VIEW
---view : Model -> Svg.Svg a
---view model =
---  Graphics.render (String.fromChar model.glyph) model.position

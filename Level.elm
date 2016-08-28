@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, turnCreature, moveCreatures, injureCreature, purge, collectCoin, isBlocked, isCoin, isCrystal, isEntrance, creatureAt, entitiesAt, playerSees, liberateCrystal)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -134,10 +134,10 @@ hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
   List.member point model.viewed
 
-isBlocked : Point -> Level -> Bool
-isBlocked position model =
-  isWall position model ||
-  isCreature position model
+--isBlocked : Point -> Level -> Bool
+--isBlocked position model =
+--  isWall position model ||
+--  isCreature position model
   --isDoor position model
 
 isAlive livingThing =
@@ -242,14 +242,19 @@ playerSees pt model =
   else
     { model | viewed = pt :: model.viewed }
 
-turnCreature : Creature.Model -> Direction -> Level -> Level
-turnCreature creature direction model =
-  let
-    creatures' =
-      model.creatures
-      |> List.map (\c -> if c == creature then c |> Creature.turn direction else c)
-  in
-    { model | creatures = creatures' }
+--turnCreature : Creature.Model -> Direction -> Level -> Level
+--turnCreature creature direction model =
+--  let
+--    creatures' =
+--      model.creatures
+--      |> List.map (\c -> 
+--        if c.id == creature.id then 
+--          c |> Creature.turn direction 
+--        else 
+--          c)
+--  in
+--    Debug.log ("Creature turns " ++ (toString direction))
+--    { model | creatures = creatures' }
 
 moveCreatures : Warrior.Model -> Level -> (Level, List Event, Warrior.Model)
 moveCreatures player model =
@@ -258,28 +263,49 @@ moveCreatures player model =
 
 creatureSteps : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 creatureSteps creature (model, events, player) =
-  (model, events, player)
-  |> creatureMoves creature
-  |> creatureAttacks creature
+  let distance = Point.distance player.position creature.position in
+  if distance < 8 || creature.engaged then
+    (model |> creatureEngages player creature, events, player)
+    --|> creatureSeesPlayer creature
+    |> stepCreature creature
+  else
+    (model, events, player)
 
-creatureMoves : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
-creatureMoves creature (model, events, player) =
-  if canCreatureStep creature player model then
-    let
-      creature' =
-        Creature.step creature
+stepCreature : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
+stepCreature creature (model, events, player) =
+  if (model |> canCreatureStep creature player) then
+    (model |> creatureMoves creature, events, player)
+  else
+    (model, events, player)
+    |> creatureAttacks creature
 
-      creatures' =
-        model.creatures
-        |> List.map (\c -> if c.id == creature.id then creature' else c)
-    in
-      Debug.log ("Creature moves: " ++ (Creature.describe creature) ++ "(" ++ (toString creature.id) ++ ")")
-      ({ model | creatures = creatures' }
-      , events
-      , player
-      )
-   else
-     (model, events, player)
+creatureEngages : Warrior.Model -> Creature.Model -> Level -> Level
+creatureEngages warrior creature model =
+  let
+    direction =
+      (Util.simpleDirectionBetween creature.position warrior.position)
+      |> Direction.invert
+
+    creatures' =
+      model.creatures
+      |> List.map (\c -> 
+        if c.id == creature.id then 
+           c 
+           |> Creature.engage  
+           |> Creature.turn direction
+        else c)
+  in
+    { model | creatures = creatures' }
+            --|> turnCreature creature direction
+
+creatureMoves : Creature.Model -> Level -> Level
+creatureMoves creature model =
+  let
+    creatures' =
+      model.creatures
+      |> List.map (\c -> if c.id == creature.id then c |> Creature.step else c)
+  in
+      { model | creatures = creatures' }
 
 creatureAttacks : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 creatureAttacks creature (model, events, player) =
@@ -325,9 +351,11 @@ canCreatureStep creature player model =
       player.position == next
 
     blocked =
-      (isBlocked next model)
+      isPlayer ||
+      (model |> isWall next) ||
+      (model |> isCreature next)
   in
-    not (isPlayer || blocked)
+    not blocked
 
 injureCreature : Creature.Model -> Int -> Level -> Level
 injureCreature creature amount model =
@@ -335,7 +363,7 @@ injureCreature creature amount model =
     creatures' =
       model.creatures
       |> List.map (\c ->
-        if c == creature then
+        if c.id == creature.id then
            c
            |> Creature.injure amount
            |> Creature.engage
@@ -440,8 +468,6 @@ connectRooms' (a, b) model =
       [(xOverlapStart)..(xOverlapEnd)]
 
     sampleOverlap = \overlap ->
-      --overlap |> List.head |> Maybe.withDefault -1
-      --overlap |> List.head |> Maybe.withDefault (Debug.crash)
        Util.getAt overlap ((a.height ^ 31 + b.origin.x) % (max 1 (List.length overlap - 1)))
        |> Maybe.withDefault -1
 
@@ -635,8 +661,8 @@ dropCoins model =
               origin
 
     path' =
-      model
-      |> path up down
+      --model
+      path up down (\pt -> isWall pt model)
       |> Maybe.withDefault []
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
@@ -660,18 +686,17 @@ spawnCreatures rooms model =
     creatures' =
       rooms
       |> List.map Room.center
-      |> List.indexedMap (\n pt -> Creature.createMonkey n pt)
+      |> List.indexedMap (\n pt -> Creature.createRat n pt)
   in
     { model | creatures = creatures' }
 
 -- pathfinding
-path : Point -> Point -> Level -> Maybe (List Point)
-path dst src model =
-  Path.find dst src (movesFrom model)
+path : Point -> Point -> (Point -> Bool) -> Maybe (List Point)
+path dst src blocked =
+  Path.find dst src (movesFrom blocked)
 
-movesFrom : Level -> Point -> List (Point, Direction)
-movesFrom model point =
+movesFrom : (Point -> Bool) ->  Point -> List (Point, Direction)
+movesFrom blocked point =
   Direction.directions
   |> List.map (\direction -> (Point.slide direction point, direction))
-  |> List.filter ((\p -> not (isBlocked p model)) << fst)
-
+  |> List.filter ((\p -> not (blocked p)) << fst)

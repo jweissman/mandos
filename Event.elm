@@ -1,4 +1,4 @@
-module Event exposing (Event, describe, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, ascend, descend, crystalTaken, hallsEscaped)
+module Event exposing (Event, describe, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, ascend, descend, crystalTaken, hallsEscaped, isEnemyKill)
 
 import Creature
 
@@ -16,6 +16,7 @@ type Event
   | Ascend Int
   | CrystalTaken
   | HallsEscaped
+  --| CreatureEngaged Creature.Model
 
 -- ctors
 awaken =
@@ -52,6 +53,12 @@ hallsEscaped =
   HallsEscaped
 
 -- helpers
+isEnemyKill event =
+  case event of
+    KillEnemy _ -> True
+    _ -> False
+
+
 describe : Event -> String
 describe event =
   case event of
@@ -62,7 +69,7 @@ describe event =
       "You find a glittering golden coin."
 
     EnemyEngaged enemy ->
-      (Creature.describe enemy) ++ " engages you!"
+      "You see that the " ++ (Creature.describe enemy) ++ " engages you!"
 
     AttackEnemy enemy dmg -> 
       "You attack " ++ (Creature.describe enemy) ++ " for " ++ (toString dmg) ++ " damage."

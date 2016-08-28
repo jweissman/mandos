@@ -20,7 +20,6 @@ type alias Model =
   , attack : Int
   , defense : Int
   , steps : Int
-  --, dead : Bool
   }
 
 
@@ -28,10 +27,10 @@ type alias Model =
 
 init : Point -> Model
 init point =
-  { hp = 10
-  , maxHp = 10
+  { hp = 20
+  , maxHp = 20
   , direction = North
-  , position = point -- {x=5, y=5}
+  , position = point
   , gold = 0
   , attack = 3
   , defense = 1

@@ -2,6 +2,8 @@ module Engine exposing (Engine, init, view, enter, clickAt, hoverAt, tick, handl
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction(..))
+import Path
+
 import World
 import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
@@ -79,26 +81,25 @@ tick time model =
   case model.followPath of
     Nothing ->
       if model.auto then
-        model 
+        model
         |> playerExplores
       else
         model
 
     Just path ->
-      model 
+      model
       |> playerFollowsPath
 
-autorogue model = 
+autorogue model =
   { model | auto = True }
 
 moveCreatures model =
-  --model
   let
-    world = 
+    world =
       model.world
 
     (dungeon', events, player') =
-      world.dungeon 
+      world.dungeon
       |> Dungeon.moveCreatures world.player world.depth
 
     world' =
@@ -117,7 +118,7 @@ playerSteps direction model =
       (World.playerSteps direction model.world)
   in
     { model | world = world' }
-            |> moveCreatures
+            --|> moveCreatures
             |> resetFollow
             |> resetAuto
 
@@ -150,13 +151,18 @@ hoverAt position model =
 
     maybeEntity =
       if List.member point (model.world.illuminated) then
-        --model.world.illuminated
         World.entitiesAt point model.world
         |> List.reverse
         |> List.head
       else
+        let
+          entities' =
+            model.world
+            |> World.entitiesAt point
+            |> List.filter (not << Entity.isCreature)
+        in
         if List.member point (World.viewed model.world) then
-          case (World.entitiesAt point model.world |> List.reverse |> List.head) of
+          case (entities' |> List.reverse |> List.head) of
             Just entity ->
               Just (Entity.memory entity)
             Nothing ->
@@ -177,8 +183,8 @@ hoverAt position model =
             playerPos =
               model.world.player.position
 
-            accessible =
-              (not (World.isBlocked entityPos model.world))
+            --accessible =
+            --  (not (World.isBlocked entityPos model.world))
 
             alreadyHovering =
               case model.hover of
@@ -187,15 +193,15 @@ hoverAt position model =
                 Nothing -> False
 
           in
-            if accessible then
+            --if accessible then
                if alreadyHovering || not (model.followPath == Nothing) then
                  model.hoverPath
                else
-                 model.world
-                 |> World.path entityPos playerPos
-                 |> Maybe.withDefault []
-            else
-              []
+                 --model.world
+                 Path.seek entityPos playerPos (\pt -> List.member pt (World.walls model.world))
+                 --|> Maybe.withDefault []
+            --else
+            --  []
     in
       { model | hover = maybeEntity
               , hoverPath = pathToEntity
@@ -235,10 +241,11 @@ playerFollowsPath model =
             onPath =
               nextStep == (playerPos |> slide direction)
           in
+             -- && (World.canPlayerStep direction model.world) 
             if onPath then
               ({model | followPath = List.tail path
                       , world = world
-              }) |> moveCreatures
+              }) -- |> moveCreatures
             else
               model
               |> resetFollow
@@ -254,11 +261,31 @@ playerExplores model =
     byDistanceFromPlayer =
       (\c -> Point.distance playerPos c)
 
+    (explored,unexplored) =
+      World.exploration model.world
+
+    frontier =
+      explored
+      |> List.filter (\pt -> 
+        List.any (\pt' -> 
+          Point.isAdjacent pt pt') unexplored)
+
+    visibleCreatures =
+      (World.creatures model.world)
+      |> List.map .position
+      |> List.filter (\pt -> List.member pt (explored))
+
     destSources =
       if model.world.crystalTaken then
         World.upstairs model.world ++ World.entrances model.world
       else
-        World.downstairs model.world ++ World.crystals model.world
+        if List.length visibleCreatures > 0 then
+          visibleCreatures
+        else
+          if List.length frontier > 0 then 
+            frontier 
+          else
+            World.downstairs model.world ++ World.crystals model.world
 
     maybeDest =
       destSources
@@ -270,10 +297,16 @@ playerExplores model =
         Nothing ->
           Nothing
 
-        Just coin ->
-          model.world
-          |> World.path coin playerPos
-
+        Just dest ->
+          let 
+            path' = 
+              Path.seek dest playerPos (\pt -> 
+                List.member pt (World.walls model.world))
+          in
+            if List.length path' == 0 then
+              Nothing
+            else
+              Just path'
   in
     { model | followPath = path }
 
@@ -302,8 +335,6 @@ view model =
               "You remember seeing " ++ (Entity.describe e) ++ " here."
             _ ->
               "You see " ++ (Entity.describe entity) ++ "."
-          --(toString (Entity.position entity)) ++ " You see " ++ 
-          --(Entity.describe entity) ++ "."
 
     note =
       Graphics.render debugMsg {x=15,y=1} "white"

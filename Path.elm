@@ -1,4 +1,4 @@
-module Path exposing (find, findBy)
+module Path exposing (seek, find, findBy)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -8,8 +8,21 @@ import Util
 -- bfs impl
 
 type alias PathSegment = (Point, Direction)
-
+--type alias Discriminator = (Point -> Bool)
 --type alias Path = List Point
+
+seek : Point -> Point -> (Point -> Bool) -> (List Point)
+seek dst src blocked =
+  find dst src (movesFrom blocked)
+  |> Maybe.withDefault []
+
+movesFrom : (Point -> Bool) ->  Point -> List PathSegment
+movesFrom blocked point =
+  Direction.directions
+  |> List.map (\direction -> (Point.slide direction point, direction))
+  |> List.filter ((\p -> not (blocked p)) << fst)
+
+---
 
 find : Point -> Point -> (Point -> List PathSegment) -> Maybe (List Point)
 find dst src moves =

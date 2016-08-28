@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, turnCreature, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal)
 
 import Warrior
 import Creature
@@ -23,7 +23,7 @@ type alias Dungeon = List Level
 
 generate : Int -> Random.Generator Dungeon
 generate depth =
-  Random.list depth (Random.map Level.fromRooms (Room.generate 1000))
+  Random.list depth (Random.map Level.fromRooms (Room.generate 100))
 
 prepare : Dungeon -> Dungeon
 prepare model =
@@ -75,9 +75,9 @@ moveCreatures player depth model =
     --Debug.log "MOVE CRITTERS"
     (model', events, player')
 
-turnCreature : Creature.Model -> Direction -> Int -> Dungeon -> Dungeon
-turnCreature creature direction depth model =
-  model |> apply (Level.turnCreature creature direction) depth
+--turnCreature : Creature.Model -> Direction -> Int -> Dungeon -> Dungeon
+--turnCreature creature direction depth model =
+--  model |> apply (Level.turnCreature creature direction) depth
 
 injureCreature : Creature.Model -> Int -> Int -> Dungeon -> Dungeon
 injureCreature creature amount depth model =
