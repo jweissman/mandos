@@ -7,5 +7,5 @@ levelCount = 10
 
 viewScale = 18
 
-viewWidth = 80
+viewWidth = 100
 viewHeight = 60

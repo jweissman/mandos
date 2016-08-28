@@ -215,8 +215,8 @@ stateView model =
 
     Death ->
         Engine.view model.engine ++ 
-        [ Graphics.hero "YOU DIED!" {x=25, y=15} -- "lightgreen"
-        , Graphics.render ((toString steps) ++ " steps taken") {x=34, y=26} "white"
+        [ Graphics.hero "YOU DIED!" {x=23, y=15} -- "lightgreen"
+        , Graphics.render ((toString steps) ++ " steps taken") {x=34, y=25} "white"
         , Graphics.render ((toString kills) ++ " kills") {x=34, y=26} "white"
         ]
 

@@ -1,4 +1,4 @@
-module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, isCreature)
+module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, imaginary, isCreature)
 
 
 import Point exposing (Point)
@@ -26,6 +26,7 @@ type Entity = Monster Creature.Model
             | Memory Entity
             | Entrance Bool Point
             | Crystal Bool Point
+            | Imaginary Entity
 
 -- constructors
 wall point =
@@ -60,6 +61,9 @@ crystal taken pt =
 
 entrance open pt =
   Entrance open pt
+
+imaginary entity =
+  Imaginary entity
 
 isCreature entity =
   case entity of
@@ -100,6 +104,9 @@ describe entity =
 
     Memory entity ->
       "You saw " ++ (describe entity) ++ " here"
+
+    Imaginary entity ->
+      "You imagine there might be " ++ (describe entity) ++ " here"
       
     Crystal taken _ ->
       if taken then
@@ -146,7 +153,10 @@ color entity =
       "yellow"
 
     Memory _ ->
-      "darkblue"
+      "rgba(80,80,120,0.4)"
+
+    Imaginary _ ->
+      "green"
 
     Crystal taken _ ->
       if taken then "gray" else "white"
@@ -181,14 +191,17 @@ position entity =
     StairsDown point ->
       point
 
-    Memory entity ->
-      position entity
-
     Crystal _ pt ->
       pt
 
     Entrance _ pt ->
       pt
+
+    Memory entity ->
+      position entity
+
+    Imaginary entity ->
+      position entity
 
 glyph : Entity -> String
 glyph entity =
@@ -218,6 +231,9 @@ glyph entity =
       "<"
     
     Memory e ->
+      glyph e
+
+    Imaginary e ->
       glyph e
 
     Entrance _ _ ->

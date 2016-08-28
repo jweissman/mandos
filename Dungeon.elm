@@ -72,12 +72,7 @@ moveCreatures player depth model =
       model |> List.indexedMap (\n level' ->
         if n == depth then level else level')
   in
-    --Debug.log "MOVE CRITTERS"
     (model', events, player')
-
---turnCreature : Creature.Model -> Direction -> Int -> Dungeon -> Dungeon
---turnCreature creature direction depth model =
---  model |> apply (Level.turnCreature creature direction) depth
 
 injureCreature : Creature.Model -> Int -> Int -> Dungeon -> Dungeon
 injureCreature creature amount depth model =
@@ -96,6 +91,6 @@ purge depth model =
 
 --purge' model = model |> apply' Level.purge
 
-playerSees : Point -> Int -> Dungeon -> Dungeon
-playerSees pt depth model =
-  model |> apply (Level.playerSees pt) depth
+playerSees : List Point -> Int -> Dungeon -> Dungeon
+playerSees pts depth model =
+  model |> apply (Level.playerSees pts) depth

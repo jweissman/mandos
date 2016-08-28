@@ -8,9 +8,15 @@ import Configuration
 
 import Random
 
+type RoomType = EmptyRoom
+              | TreasureHoard
+              --| MonsterCamp
+              --| DragonLair
+
 type alias Room = { origin : Point
                   , width : Int
                   , height: Int
+                  --, kind : RoomType
                   }
 
 generate : Int -> Random.Generator (List Room)
@@ -50,15 +56,15 @@ create point width height =
 
 overlaps : Room -> Room -> Bool
 overlaps a b =
-  overlapsY 0 a b && overlapsX 0 a b
+  overlapsY -1 a b && overlapsX -1 a b
  
 overlapsRelevantDirection : Int -> Room -> Room -> Bool
 overlapsRelevantDirection n a b =
   case directionBetween a b of
-    North -> overlapsX n a b
-    South -> overlapsX n a b
-    East  -> overlapsY n a b
-    West  -> overlapsY n a b
+    North -> overlapsX n a b --&& not (overlapsY n a b)
+    South -> overlapsX n a b --&& not (overlapsY n a b)
+    East  -> overlapsY n a b --&& not (overlapsX n a b)
+    West  -> overlapsY n a b --&& not (overlapsX n a b)
     _ -> False
 
 overlapsY n a b =
@@ -141,6 +147,7 @@ canConnect a b =
 
 network : List Room -> Maybe (Graph Room)
 network rooms =
+  -- would think this shoudl filter unconnectable rooms!!
   Graph.tree distance canConnect rooms
 
 directionBetween : Room -> Room -> Direction

@@ -39,6 +39,7 @@ type alias Model =
   , illuminated : List Point
   , crystalTaken : Bool
   , hallsEscaped : Bool
+  , showMap : Bool
   }
 
 -- INIT
@@ -53,7 +54,9 @@ init =
   , illuminated = []
   , crystalTaken = False
   , hallsEscaped = False
+  , showMap = False
   }
+
 
 level : Model -> Level
 level model =
@@ -64,27 +67,12 @@ viewed : Model -> List Point
 viewed model =
   let lvl = (level model) in
   lvl.viewed
-  --|> Level.viewed
 
 exploration : Model -> (List Point, List Point)
 exploration model =
   let v = viewed model in
-  model |> floors |> List.partition (\p -> List.member p v)
-
---explored : Model -> List Point
---explored model = 
---  model 
---  |> floors
---  |> List.filter (\pt -> 
---    (List.member pt (viewed model)))
---
---unexplored : Model -> List Point
---unexplored model =
---  --let lvl = (level model) in
---  model 
---  |> floors
---  |> List.filter (\pt -> 
---    not (List.member pt (viewed model)))
+  ((model |> floors) ++ (model |> walls))
+  |> List.partition (\p -> List.member p v)
 
 walls : Model -> List Point
 walls model =
@@ -132,16 +120,11 @@ crystals model =
 
 origin = {x=0,y=0}
 
--- PREDICATES
+-- PREDICATES/QUERIES
 
 isPlayer : Point -> Model -> Bool
 isPlayer position model =
   model.player.position == position
-
---isBlocked : Point -> Model -> Bool
---isBlocked move model =
---  level model
---  |> Level.isBlocked move
 
 entitiesAt : Point -> Model -> List Entity
 entitiesAt pt model =
@@ -356,13 +339,16 @@ playerViewsField model =
     locations =
       model |> illuminate source
 
-    dungeon =
-      locations
-      |> List.foldr (\location -> Dungeon.playerSees location model.depth) model.dungeon
+    --dungeon =
+      --|> List.foldr (\location -> Dungeon.playerSees location model.depth) model.dungeon
+
   in
-    { model | dungeon = dungeon
-            , illuminated = locations
-    }
+    --if locations == model.illuminated then
+    --  model
+    --else
+      { model | dungeon = model.dungeon |> Dungeon.playerSees locations model.depth
+              , illuminated = locations -- |> Util.uniqueBy Point.code
+      }
 
 illuminate : Point -> Model -> List Point
 illuminate source model =
@@ -393,10 +379,25 @@ view model =
       |> List.map (Entity.memory)
       |> List.filter (\pt -> not (List.member pt litEntities))
 
+    --(explored, unexplored) = 
+    --  exploration model
+
+    --unexploredEntities =
+    --  unexplored
+    --  |> List.concatMap (\pt -> entitiesAt pt model)
+    --  |> List.map (Entity.imaginary)
+
     entities =
-      memoryEntities ++
-      litEntities ++
-      [Entity.player model.player]
+      --if model.showMap then
+      --  memoryEntities ++
+      --  unexploredEntities ++
+
+      --  litEntities ++
+      --  [Entity.player model.player]
+      --else
+        memoryEntities ++
+        litEntities ++
+        [Entity.player model.player]
 
     entityViews =
       List.map (Entity.view) entities

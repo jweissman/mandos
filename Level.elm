@@ -21,11 +21,14 @@ type alias Level = { walls : List Point
                    , doors : List Point
                    , coins : List Point
                    , creatures : List Creature.Model
-                   , viewed : List Point
                    , downstairs : Maybe Point
                    , upstairs : Maybe Point
                    , crystal : Maybe (Point, Bool)
                    , entrance : Maybe (Point, Bool)
+
+                   , rooms : List Room
+
+                   , viewed : List Point
                    }
 
 -- INIT
@@ -41,7 +44,7 @@ init =
   , downstairs = Nothing --origin
   , crystal = Nothing
   , entrance = Nothing
-
+  , rooms = []
   , viewed = []
   }
 
@@ -52,6 +55,7 @@ finalize depth model =
   model
   |> finalizeEntrance depth
   |> finalizeCrystal depth
+  |> spawnCreatures depth -- rooms
 
 finalizeEntrance depth model =
   if depth == 0 then
@@ -203,7 +207,7 @@ entitiesAt point model =
     crystal =
       if isCrystal point model then
         case model.crystal of
-          Nothing -> 
+          Nothing ->
             Nothing
           Just (pt,taken) ->
             Just (Entity.crystal taken point)
@@ -235,26 +239,17 @@ creatureAt pt model =
 
 -- HELPERS (for update)
 
-playerSees : Point -> Level -> Level
-playerSees pt model =
-  if List.member pt model.viewed then
-    model
-  else
-    { model | viewed = pt :: model.viewed }
+playerSees : List Point -> Level -> Level
+playerSees pts model =
+  let 
+    pts' =
+      pts 
+      |> List.filter (\pt -> not (List.member pt model.viewed))
 
---turnCreature : Creature.Model -> Direction -> Level -> Level
---turnCreature creature direction model =
---  let
---    creatures' =
---      model.creatures
---      |> List.map (\c -> 
---        if c.id == creature.id then 
---          c |> Creature.turn direction 
---        else 
---          c)
---  in
---    Debug.log ("Creature turns " ++ (toString direction))
---    { model | creatures = creatures' }
+    viewed' = 
+      pts' ++ model.viewed
+  in
+    { model | viewed = viewed' }
 
 moveCreatures : Warrior.Model -> Level -> (Level, List Event, Warrior.Model)
 moveCreatures player model =
@@ -264,46 +259,59 @@ moveCreatures player model =
 creatureSteps : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 creatureSteps creature (model, events, player) =
   let distance = Point.distance player.position creature.position in
-  if distance < 8 || creature.engaged then
+  if distance < 5 || creature.engaged then
     (model |> creatureEngages player creature, events, player)
-    --|> creatureSeesPlayer creature
     |> stepCreature creature
   else
     (model, events, player)
 
 stepCreature : Creature.Model -> (Level, List Event, Warrior.Model) -> (Level, List Event, Warrior.Model)
 stepCreature creature (model, events, player) =
-  if (model |> canCreatureStep creature player) then
-    (model |> creatureMoves creature, events, player)
-  else
-    (model, events, player)
+    ((model |> creatureMoves creature player), events, player)
     |> creatureAttacks creature
+
+canCreatureStep creature player model =
+  let
+    next =
+      creature.position
+      |> Point.slide creature.direction
+
+    isPlayer =
+      player.position == next
+
+    blocked =
+      isPlayer ||
+      (model |> isWall next) ||
+      (model |> isCreature next)
+  in
+    not blocked
 
 creatureEngages : Warrior.Model -> Creature.Model -> Level -> Level
 creatureEngages warrior creature model =
   let
-    direction =
-      (Util.simpleDirectionBetween creature.position warrior.position)
-      |> Direction.invert
-
     creatures' =
       model.creatures
-      |> List.map (\c -> 
-        if c.id == creature.id then 
-           c 
-           |> Creature.engage  
-           |> Creature.turn direction
-        else c)
+      |> List.map (\c ->
+        if c.id == creature.id then
+           c
+           |> Creature.engage
+           |> Creature.turn --direction
+               ((Util.simpleDirectionBetween c.position warrior.position)
+               |> Direction.invert)
+        else c
+      )
   in
     { model | creatures = creatures' }
-            --|> turnCreature creature direction
 
-creatureMoves : Creature.Model -> Level -> Level
-creatureMoves creature model =
+creatureMoves : Creature.Model -> Warrior.Model -> Level -> Level
+creatureMoves creature player model =
   let
     creatures' =
       model.creatures
-      |> List.map (\c -> if c.id == creature.id then c |> Creature.step else c)
+      |> List.map (\c -> 
+        if c.id == creature.id && (model |> canCreatureStep c player) then -- model
+          c |> Creature.step 
+        else c)
   in
       { model | creatures = creatures' }
 
@@ -341,21 +349,6 @@ playerDies (model, events, player) =
   else
     (model, events, player)
 
-canCreatureStep creature player model =
-  let
-    next =
-      creature.position
-      |> Point.slide creature.direction
-
-    isPlayer =
-      player.position == next
-
-    blocked =
-      isPlayer ||
-      (model |> isWall next) ||
-      (model |> isCreature next)
-  in
-    not blocked
 
 injureCreature : Creature.Model -> Int -> Level -> Level
 injureCreature creature amount model =
@@ -414,15 +407,14 @@ fromRooms roomCandidates =
       |> Room.filterOverlaps
   in
     init -- depth
-    |> extrudeRooms rooms
     |> connectRooms rooms
-    |> spawnCreatures rooms
+    --|> extrudeRooms -- rooms
     |> extrudeStairwells --depth
     |> dropCoins
 
-extrudeRooms : List Room -> Level -> Level
-extrudeRooms rooms model =
-  rooms
+extrudeRooms : Level -> Level
+extrudeRooms model =
+  model.rooms
   |> List.foldr extrudeRoom model
 
 extrudeRoom : Room -> Level -> Level
@@ -439,15 +431,15 @@ connectRooms rooms model =
   let
     maybeNetwork =
       Room.network rooms
-
-    model' =
-      model
-
   in
     case maybeNetwork of
       Just graph ->
-        graph
-        |> Graph.fold connectRooms' model
+        let 
+          model' = 
+            ({ model | rooms = Graph.listNodes graph } 
+            |> extrudeRooms) 
+        in
+          graph |> Graph.fold connectRooms' model'
 
       Nothing ->
         model
@@ -680,15 +672,30 @@ dropCoins model =
   in
     { model | coins = model.coins ++ coins' }
 
-spawnCreatures : List Room -> Level -> Level
-spawnCreatures rooms model =
+spawnCreatures : Int -> Level -> Level
+spawnCreatures depth model =
   let
+    creature =
+      creatureForDepth depth
+
     creatures' =
-      rooms
+      model.rooms
       |> List.map Room.center
-      |> List.indexedMap (\n pt -> Creature.createRat n pt)
+      |> List.indexedMap (\n pt -> creature n pt)
   in
     { model | creatures = creatures' }
+
+creatureForDepth : Int -> (Int -> Point -> Creature.Model)
+creatureForDepth depth =
+  if depth < 3 then
+     Creature.createRat
+  else
+    if depth < 6 then
+      Creature.createMonkey
+    else
+      Creature.createBandit
+
+
 
 -- pathfinding
 path : Point -> Point -> (Point -> Bool) -> Maybe (List Point)

@@ -43,9 +43,14 @@ init point =
 
 step : Direction -> Model -> Model
 step direction model =
-  { model | position = model.position |> slide direction
+  let model' = { model | position = model.position |> slide direction
           , steps = model.steps + 1
           }
+  in
+    if model.steps % 10 == 0 then
+      model' |> heal 1
+    else
+      model'
 
 takeDamage : Int -> Model -> Model
 takeDamage amount model =
@@ -54,6 +59,11 @@ takeDamage amount model =
 enrich : Int -> Model -> Model
 enrich amount model =
   { model | gold = model.gold + amount }
+
+heal : Int -> Model -> Model
+heal amount model =
+  { model | hp = min model.maxHp (model.hp + 1) }
+
 
 -- VIEW
 --view : Model -> Svg.Svg a

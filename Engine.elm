@@ -25,6 +25,7 @@ type alias Engine =
   , hoverPath : List Point
   , followPath : Maybe (List Point)
   , auto : Bool
+  , telepathy : Bool
   }
 
 init : Engine
@@ -34,6 +35,7 @@ init =
   , hoverPath = []
   , followPath = Nothing
   , auto = False
+  , telepathy = False
   }
 
 enter : Dungeon -> Engine -> Engine
@@ -67,14 +69,16 @@ enter dungeon model =
 
 handleKeypress : Char -> Engine -> Engine
 handleKeypress keyChar model =
+  let reset = (resetFollow << resetAuto << moveCreatures) in
   model |> case keyChar of
-    'k' -> playerSteps North
-    'l' -> playerSteps East
-    'j' -> playerSteps South
-    'h' -> playerSteps West
+    'k' -> reset << playerSteps North -- << reset
+    'l' -> reset << playerSteps East --<< reset
+    'j' -> reset << playerSteps South --<< reset
+    'h' -> reset << playerSteps West --<< reset
     'x' -> playerExplores
     'a' -> autorogue
-    _ -> (resetFollow << resetAuto)
+    't' -> telepath
+    _ -> reset -- (resetFollow << resetAuto)
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
@@ -93,6 +97,16 @@ tick time model =
 autorogue model =
   { model | auto = True }
 
+telepath model =
+  if model.telepathy then
+  { model | telepathy = False }
+  else
+  Debug.log "TELEPATH"
+  { model | telepathy = True }
+
+
+
+
 moveCreatures model =
   let
     world =
@@ -104,7 +118,7 @@ moveCreatures model =
 
     world' =
       { world | dungeon = dungeon'
-              , events = world.events ++ events
+              , events = world.events ++ List.reverse events
               , player = player'
       }
 
@@ -113,14 +127,7 @@ moveCreatures model =
     { model | world = world' }
 
 playerSteps direction model =
-  let
-    world' =
-      (World.playerSteps direction model.world)
-  in
-    { model | world = world' }
-            --|> moveCreatures
-            |> resetFollow
-            |> resetAuto
+  { model | world = model.world |> World.playerSteps direction }
 
 resetHover : Engine -> Engine
 resetHover model =
@@ -168,7 +175,12 @@ hoverAt position model =
             Nothing ->
               Nothing
         else
-          Nothing
+          if model.telepathy then
+             World.entitiesAt point model.world
+             |> List.map (Entity.imaginary)
+             |> List.head
+          else
+            Nothing
 
     pathToEntity =
       case maybeEntity of
@@ -232,20 +244,18 @@ playerFollowsPath model =
               model.world.player.position
 
             direction =
-              (Util.directionBetween nextStep model.world.player.position)
-
-            world =
-              model.world
-              |> World.playerSteps direction
+              (Util.directionBetween nextStep playerPos)
 
             onPath =
               nextStep == (playerPos |> slide direction)
+
+            followPath' =
+              List.tail path
           in
-             -- && (World.canPlayerStep direction model.world) 
             if onPath then
-              ({model | followPath = List.tail path
-                      , world = world
-              }) -- |> moveCreatures
+              ({model | followPath = followPath' })
+              |> playerSteps direction
+              |> moveCreatures
             else
               model
               |> resetFollow
@@ -262,13 +272,15 @@ playerExplores model =
       (\c -> Point.distance playerPos c)
 
     (explored,unexplored) =
-      World.exploration model.world
+      --World.exploration model.world
+      let v = (World.viewed model.world) in
+      ((model.world |> World.floors)) -- ++ (model |> walls))
+      |> List.partition (\p -> List.member p v)
 
     frontier =
       explored
-      |> List.filter (\pt -> 
-        List.any (\pt' -> 
-          Point.isAdjacent pt pt') unexplored)
+      |> List.filter (\pt ->
+        List.any (\pt' -> Point.isAdjacent pt pt') unexplored)
 
     visibleCreatures =
       (World.creatures model.world)
@@ -322,7 +334,9 @@ view model =
         Just path -> path
 
     worldView =
-      World.view { world | debugPath = path }
+      World.view { world | debugPath = path
+                         , showMap = model.telepathy 
+                       }
 
     debugMsg =
       case model.hover of
@@ -333,6 +347,8 @@ view model =
           case entity of
             Entity.Memory e ->
               "You remember seeing " ++ (Entity.describe e) ++ " here."
+            Entity.Imaginary e ->
+              "You imagine there to be " ++ (Entity.describe e) ++ " here."
             _ ->
               "You see " ++ (Entity.describe entity) ++ "."
 
