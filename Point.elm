@@ -1,87 +1,135 @@
-module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code, perimeter, isAdjacent)
+module Point exposing (Point, x, y, slide, describe, distance, random, randomWithOffset, code, perimeter, grid, isAdjacent, towards, towards', adjacent)
 
 import Direction exposing (Direction(..), directions)
 
 import Random
 
-type alias Point =
-  { x : Int
-  , y : Int
-  }
+type alias Point = ( Int, Int )
+
+x (x',_) = x'
+y (_,y') = y'
+
+adjacent : Point -> List Point
+adjacent pt =
+  Direction.directions
+  |> List.map (\dir -> pt |> slide dir)
 
 isAdjacent a b =
-  Direction.directions
-  |> List.any (\dir -> slide dir a == b)
+  adjacent a 
+  |> List.member b
 
 slide : Direction -> Point -> Point
-slide direction point =
+slide direction (x,y) =
   case direction of
     North ->
-      { point | y = point.y - 1 }
+      (x, y - 1)
 
     South ->
-      { point | y = point.y + 1 }
+      (x, y + 1)
 
     West  ->
-      { point | x = point.x - 1 }
+      (x - 1, y)
 
     East  ->
-      { point | x = point.x + 1 }
+      (x + 1, y)
 
     Northeast ->
-      point
+      (x,y)
       |> slide North
       |> slide East
 
     Northwest ->
-      point
+      (x,y)
       |> slide North
       |> slide West
 
     Southeast ->
-      point
+      (x,y)
       |> slide South
       |> slide East
 
     Southwest ->
-      point
+      (x,y)
       |> slide South
       |> slide West
 
 describe : Point -> String
-describe point =
-  "(" ++ (toString point.x) ++ ", " ++ (toString point.y) ++ ")"
+describe (x,y) =
+  "(" ++ (toString x) ++ ", " ++ (toString y) ++ ")"
 
 distance : Point -> Point -> Float
-distance a b =
+distance (ax,ay) (bx,by) =
   let
     dx =
-      toFloat (a.x - b.x)
+      toFloat (ax - bx)
 
     dy =
-      toFloat (a.y - b.y)
+      toFloat (ay - by)
   in
     sqrt( (dx*dx) + (dy*dy) )
 
 random : Int -> Int -> Random.Generator Point
 random width height =
-  Random.map2 (\x y -> {x=x,y=y}) (Random.int 0 width) (Random.int 0 height)
+  Random.map2 (\x y -> (x,y)) (Random.int 0 width) (Random.int 0 height)
 
 
 randomWithOffset : Point -> Int -> Int -> Random.Generator Point
-randomWithOffset {x,y} width height =
-  Random.map2 (\x' y' -> {x=x+x',y=y+y'}) (Random.int 0 width) (Random.int 0 height)
+randomWithOffset (x,y) width height =
+  Random.map2 (\x' y' -> (x+x',y+y')) (Random.int 0 width) (Random.int 0 height)
 
 code : Point -> Int
-code {x,y} =
+code (x,y) =
   (x * 10000) + y
 
-
 perimeter : Point -> Int -> Int -> List Point
-perimeter {x,y} width height =
-  List.map (\x' -> {x=x+x',y=y}) [0..width] ++
-  List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
-  List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
-  List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
+perimeter (x,y) width height =
+  List.map (\x' -> (x+x',y)) [0..width] ++
+  List.map (\x' -> (x+x',y+height)) [0..width] ++
+  List.map (\y' -> (x,y+y')) [0..height] ++
+  List.map (\y' -> (x+width,y+y')) [0..height]
+
+grid (x,y) width height =
+  List.concatMap (\y' ->
+    List.map (\x' -> (x+x',y+y')) [0..(width)]
+  ) [0..(height)]
+
+
+-- move util directionBetween back here as `towards`...?
+-- towards : Point -> Point -> Direction
+towards : Point -> Point -> Direction
+towards (ax,ay) (bx,by) =
+  if (ax > bx) && (ay > by) then
+     Southeast
+  else
+    if (ax < bx) && (ay > by) then
+      Southwest
+    else
+      if (ax > bx) && (ay < by) then
+        Northeast
+      else
+        if (ax < bx) && (ay < by) then
+          Northwest
+        else
+          towards' (ax,ay) (bx,by)
+
+towards' : Point -> Point -> Direction
+towards' (ax,ay) (bx,by) =
+  let
+    dx =
+      abs (ax - bx)
+    dy =
+      abs (ay - by)
+
+  in
+    if dx > dy then
+      if (ax > bx) then
+        East
+      else
+        West
+    else
+      if (ay > by) then
+        South
+      else
+        North
 
 

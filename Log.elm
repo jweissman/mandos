@@ -6,8 +6,6 @@ import Event exposing (Event)
 import Html
 import Graphics
 import Svg 
---exposing (text')
---import Svg.Attributes exposing (x,y,fontSize,fontFamily)
 
 -- MODEL
 type alias Model = List Event
@@ -16,7 +14,7 @@ type alias Model = List Event
 init : Model
 init = [ Event.awaken ]
 
-origin = {x = 1, y = 35}
+origin = (1,35)
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
@@ -36,5 +34,5 @@ view model =
 
 logLineView : Int -> String -> Svg.Svg a
 logLineView idx note =
-  Graphics.render note { origin | y=origin.y+1+idx } ("#" ++ (toString (7-idx)) ++ "808" ++ (toString (7-idx)) ++ "8")
-  --text' [ x "15", y (toString (3+idx)), fontSize "1", fontFamily "Courier" ] [ Html.text note ]
+  let (ox,oy) = origin in
+  Graphics.render note (ox,oy+1+idx) ("#" ++ (toString (7-idx)) ++ "808" ++ (toString (7-idx)) ++ "8")

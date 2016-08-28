@@ -77,7 +77,7 @@ finalizeCrystal depth model =
   else
     model
 
-origin = {x=0,y=0}
+origin = (0,0)
 
 -- QUERY
 
@@ -138,11 +138,6 @@ hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
   List.member point model.viewed
 
---isBlocked : Point -> Level -> Bool
---isBlocked position model =
---  isWall position model ||
---  isCreature position model
-  --isDoor position model
 
 isAlive livingThing =
   livingThing.hp > 0
@@ -241,12 +236,12 @@ creatureAt pt model =
 
 playerSees : List Point -> Level -> Level
 playerSees pts model =
-  let 
+  let
     pts' =
-      pts 
+      pts
       |> List.filter (\pt -> not (List.member pt model.viewed))
 
-    viewed' = 
+    viewed' =
       pts' ++ model.viewed
   in
     { model | viewed = viewed' }
@@ -296,7 +291,7 @@ creatureEngages warrior creature model =
            c
            |> Creature.engage
            |> Creature.turn --direction
-               ((Util.simpleDirectionBetween c.position warrior.position)
+               ((Point.towards c.position warrior.position)
                |> Direction.invert)
         else c
       )
@@ -308,9 +303,9 @@ creatureMoves creature player model =
   let
     creatures' =
       model.creatures
-      |> List.map (\c -> 
+      |> List.map (\c ->
         if c.id == creature.id && (model |> canCreatureStep c player) then -- model
-          c |> Creature.step 
+          c |> Creature.step
         else c)
   in
       { model | creatures = creatures' }
@@ -434,12 +429,13 @@ connectRooms rooms model =
   in
     case maybeNetwork of
       Just graph ->
-        let 
-          model' = 
-            ({ model | rooms = Graph.listNodes graph } 
-            |> extrudeRooms) 
+        let
+          model' =
+            ({ model | rooms = Graph.listNodes graph }
+            |> extrudeRooms)
         in
-          graph |> Graph.fold connectRooms' model'
+          graph
+          |> Graph.fold connectRooms' model'
 
       Nothing ->
         model
@@ -447,27 +443,33 @@ connectRooms rooms model =
 connectRooms' : (Room,Room) -> Level -> Level
 connectRooms' (a, b) model =
   let
+    (ax,ay) = 
+      a.origin
+
+    (bx,by) = 
+      b.origin
+
     direction =
       Direction.invert (Room.directionBetween a b)
 
     xOverlapStart =
-      (max a.origin.x b.origin.x) + 1
+      (max ax bx) + 1
 
     xOverlapEnd =
-      (min (a.origin.x+a.width) (b.origin.x+b.width)) - 1
+      (min (ax+a.width) (bx+b.width)) - 1
 
     xOverlapRange =
       [(xOverlapStart)..(xOverlapEnd)]
 
     sampleOverlap = \overlap ->
-       Util.getAt overlap ((a.height ^ 31 + b.origin.x) % (max 1 (List.length overlap - 1)))
+       Util.getAt overlap ((a.height ^ 31 + bx) % (max 1 (List.length overlap - 1)))
        |> Maybe.withDefault -1
 
     yOverlapStart =
-      (max a.origin.y b.origin.y) + 1
+      (max ay by) + 1
 
     yOverlapEnd =
-      (min (a.origin.y+a.height) (b.origin.y+b.height)) - 1
+      (min (ay+a.height) (by+b.height)) - 1
 
     yOverlapRange =
       [(yOverlapStart)..(yOverlapEnd)]
@@ -475,16 +477,16 @@ connectRooms' (a, b) model =
     startPosition =
       case direction of
         North ->
-          Just {x=(sampleOverlap xOverlapRange), y=a.origin.y}
+          Just ((sampleOverlap xOverlapRange), ay)
 
         South ->
-          Just {x=(sampleOverlap xOverlapRange), y=a.origin.y+a.height}
+          Just ((sampleOverlap xOverlapRange), ay+a.height)
 
         East ->
-          Just {x=a.origin.x+a.width, y=(sampleOverlap yOverlapRange)}
+          Just (ax+a.width, (sampleOverlap yOverlapRange))
 
         West ->
-          Just {x=a.origin.x, y=(sampleOverlap yOverlapRange)}
+          Just (ax, (sampleOverlap yOverlapRange))
 
         _ ->
           Nothing
@@ -559,7 +561,7 @@ extrudeStairwells model =
     (up, down) =
       candidates
       |> List.map2 (,) (List.reverse candidates)
-      |> List.filter (\(a,b) -> not (a.x == b.x && a.y == b.y))
+      |> List.filter (\(a,b) -> not (a == b))
       |> List.sortBy (\(a,b) -> Point.distance a b)
       |> List.reverse
       |> List.head
@@ -653,9 +655,9 @@ dropCoins model =
               origin
 
     path' =
-      --model
-      path up down (\pt -> isWall pt model)
-      |> Maybe.withDefault []
+      Path.seek up down (not << (\pt -> isWall pt model))
+      --path up down (\pt -> isWall pt model)
+      --|> Maybe.withDefault []
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
       |> List.tail |> Maybe.withDefault []
@@ -696,14 +698,13 @@ creatureForDepth depth =
       Creature.createBandit
 
 
-
 -- pathfinding
-path : Point -> Point -> (Point -> Bool) -> Maybe (List Point)
-path dst src blocked =
-  Path.find dst src (movesFrom blocked)
-
-movesFrom : (Point -> Bool) ->  Point -> List (Point, Direction)
-movesFrom blocked point =
-  Direction.directions
-  |> List.map (\direction -> (Point.slide direction point, direction))
-  |> List.filter ((\p -> not (blocked p)) << fst)
+--path : Point -> Point -> (Point -> Bool) -> Maybe (List Point)
+--path dst src blocked =
+--  Path.find dst src (movesFrom blocked)
+--
+--movesFrom : (Point -> Bool) ->  Point -> List (Point, Direction)
+--movesFrom blocked point =
+--  Direction.directions
+--  |> List.map (\direction -> (Point.slide direction point, direction))
+--  |> List.filter ((\p -> not (blocked p)) << fst)

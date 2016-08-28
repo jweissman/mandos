@@ -4,51 +4,51 @@ import Point exposing (Point)
 import Path
 
 line : Point -> Point -> List Point
-line src dst =
+line (ax,ay) (bx,by) =
   let
     dy =
-      toFloat (dst.y - src.y)
+      toFloat (by - ay)
 
     dx =
-      toFloat (dst.x - src.x)
+      toFloat (bx - ax)
   in
     if dx == 0 then
-      vline src.x src.y dst.y
+      vline ax ay by
     else if dy == 0 then
-      hline src.y src.x dst.x
+      hline ay ax bx
     else
-      line' src dst (dx,dy) 
+      line' (ax,ay) (bx,by) (dx,dy) 
 
 vline x y0 y1 =
   if y1 < y0 then List.reverse (vline x y1 y0) else
-  List.map (\y -> {x=x,y=y}) [y0..y1]
+  List.map (\y -> (x,y)) [y0..y1]
     
 hline y x0 x1 =
   if x1 < x0 then List.reverse (hline y x1 x0) else
-  List.map (\x -> {x=x,y=y}) [x0..x1]
+  List.map (\x -> (x,y)) [x0..x1]
 
-line' src dst (dx,dy) =
+line' (ax,ay) (bx,by) (dx,dy) =
   if abs dx > abs dy then
     let 
       f = \x -> 
-        slope * toFloat (x - src.x) 
+        slope * toFloat (x - ax) 
 
       slope = 
         dy / dx
     in
-      if src.x > dst.x then (List.reverse (line dst src)) else
-      [(src.x)..(dst.x)]
-      |> List.map (\x -> {x=x, y=round (f x) + src.y})
+      if ax > bx then (List.reverse (line (bx,by) (ax,ay))) else
+      [(ax)..(bx)]
+      |> List.map (\x -> (x, round (f x) + ay))
   else
     let 
       f = \y -> 
-        slope * toFloat (y - src.y)
+        slope * toFloat (y - ay)
           
       slope = 
         dx / dy
     in
-      if src.y > dst.y then (List.reverse (line dst src)) else
-      [(src.y)..(dst.y)]
-      |> List.map (\y -> {x=round (f y) + src.x, y=y})
+      if ay > by then (List.reverse (line (bx,by) (ax,ay))) else
+      [(ay)..(by)]
+      |> List.map (\y -> (round (f y) + ax, y))
 
 

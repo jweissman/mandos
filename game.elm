@@ -178,7 +178,16 @@ box viewModel =
 stateView model = 
   let 
     hero = 
-      Graphics.hero "MANDOS" {x=27,y=10} 
+      Graphics.hero "MANDOS" (27,10)
+
+    jumbo = 
+      Graphics.jumbo "@" (30,30)
+
+    anyKey =
+      Graphics.hero "press any key" (14, 20) -- "lightgreen"
+
+    trademark =
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (22, 34) "darkgray"
 
     steps =
       model.engine.world.player.steps
@@ -190,34 +199,34 @@ stateView model =
   in 
   case model.state of
     Splash ->
-      [ Graphics.jumbo "@" {x=30,y=30}
+      [ jumbo
       , hero
-      ,Graphics.render "Press any key to start..." {x=32, y=15} "lightgreen"
-      ,Graphics.render "A Deep Cerulean Experience" {x=32, y=34} "darkgray"
+      , anyKey
+      , trademark
       ]
 
     Generating ->
-      [ Graphics.jumbo "@" {x=30,y=30}
+      [ jumbo
       , hero
-      ,Graphics.render "Generating world, please wait..." {x=32, y=15} "lightgreen"
-      ,Graphics.render "(This may take a little while!)" {x=32, y=20} "white"
+      ,Graphics.render "Generating world, please wait..." (32, 15) "lightgreen"
+      ,Graphics.render "(This may take a little while!)" (32, 20) "white"
       ]
 
     Victory ->
       Engine.view model.engine
       ++ [
-        Graphics.hero "YOU WON!" {x=26, y=15} -- "lightgreen"
-      , Graphics.render "Congratulations!" {x=34, y=20} "white"
-      , Graphics.render "You escaped the Halls of Mandos!" {x=31, y=22} "white"
-        , Graphics.render ((toString steps) ++ " steps taken") {x=34, y=25} "white"
-        , Graphics.render ((toString kills) ++ " kills") {x=34, y=26} "white"
+        Graphics.hero "YOU WON!" (26, 15) -- "lightgreen"
+      , Graphics.render "Congratulations!" (34, 20) "white"
+      , Graphics.render "You escaped the Halls of Mandos!" (31, 22) "white"
+        , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
+        , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
       ]
 
     Death ->
         Engine.view model.engine ++ 
-        [ Graphics.hero "YOU DIED!" {x=23, y=15} -- "lightgreen"
-        , Graphics.render ((toString steps) ++ " steps taken") {x=34, y=25} "white"
-        , Graphics.render ((toString kills) ++ " kills") {x=34, y=26} "white"
+        [ Graphics.hero "YOU DIED!" (23, 15) -- "lightgreen"
+        , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
+        , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
         ]
 
     Playing ->

@@ -53,7 +53,7 @@ enter dungeon model =
     startPos =
       case (Dungeon.levelAt 0 dungeon').entrance of
         Just (pt,_) -> pt
-        Nothing -> {x=10,y=10}
+        Nothing -> (10,10)
 
     player' =
       { player | position = startPos }
@@ -146,11 +146,11 @@ resetAuto model =
 screenToCoordinate : Mouse.Position -> Point
 screenToCoordinate {x,y} =
   let scale = Configuration.viewScale in
-  { x = x//scale
-  , y = (y//scale)+1 -- ignore top bar ...
-  }
+  ( x//scale
+  , (y//scale)+1 -- ignore top bar ...
+  )
 
-hoverAt : Point -> Engine -> Engine
+hoverAt : Mouse.Position -> Engine -> Engine
 hoverAt position model =
   let
     point =
@@ -195,9 +195,6 @@ hoverAt position model =
             playerPos =
               model.world.player.position
 
-            --accessible =
-            --  (not (World.isBlocked entityPos model.world))
-
             alreadyHovering =
               case model.hover of
                 Just entity' ->
@@ -205,22 +202,17 @@ hoverAt position model =
                 Nothing -> False
 
           in
-            --if accessible then
-               if alreadyHovering || not (model.followPath == Nothing) then
-                 model.hoverPath
-               else
-                 --model.world
-                 Path.seek entityPos playerPos (\pt -> List.member pt (World.walls model.world))
-                 --|> Maybe.withDefault []
-            --else
-            --  []
+            if alreadyHovering || not (model.followPath == Nothing) then
+              model.hoverPath
+            else
+              Path.seek entityPos playerPos (\pt -> List.member pt (World.walls model.world))
     in
       { model | hover = maybeEntity
               , hoverPath = pathToEntity
       }
 
-clickAt : Point -> Engine -> Engine
-clickAt point model =
+clickAt : Mouse.Position -> Engine -> Engine
+clickAt _ model =
   case model.followPath of
     Nothing ->
       { model | followPath = Just model.hoverPath }
@@ -244,7 +236,7 @@ playerFollowsPath model =
               model.world.player.position
 
             direction =
-              (Util.directionBetween nextStep playerPos)
+              (Point.towards nextStep playerPos)
 
             onPath =
               nextStep == (playerPos |> slide direction)
@@ -353,7 +345,7 @@ view model =
               "You see " ++ (Entity.describe entity) ++ "."
 
     note =
-      Graphics.render debugMsg {x=15,y=1} "white"
+      Graphics.render debugMsg (20,1) "rgba(160,160,160,0.6)"
 
     --bgStyle = [
     --  ( "background-color", "#280828"

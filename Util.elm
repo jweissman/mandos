@@ -1,44 +1,8 @@
-module Util exposing (directionBetween, simpleDirectionBetween, minBy, uniqueBy, getAt, takeWhile, takeWhile')
+module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile')
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Set exposing (Set)
-
-directionBetween : Point -> Point -> Direction
-directionBetween a b =
-  if (a.x > b.x) && (a.y > b.y) then
-     Southeast
-  else
-    if (a.x < b.x) && (a.y > b.y) then
-      Southwest
-    else
-      if (a.x > b.x) && (a.y < b.y) then
-        Northeast
-      else
-        if (a.x < b.x) && (a.y < b.y) then
-          Northwest
-        else
-          simpleDirectionBetween a b
-
-simpleDirectionBetween : Point -> Point -> Direction
-simpleDirectionBetween a b =
-  let
-    dx =
-      abs (a.x - b.x)
-    dy =
-      abs (a.y - b.y)
-
-  in
-    if dx > dy then
-      if (a.x > b.x) then
-        East
-      else
-        West
-    else
-      if (a.y > b.y) then
-        South
-      else
-        North
 
 -- helpers from list extras
 minBy : (a -> comparable) -> List a -> Maybe a

@@ -48,7 +48,7 @@ init =
   {
     dungeon = []
   , depth = 0
-  , player = Warrior.init {x=0,y=0}
+  , player = Warrior.init origin
   , events = Log.init
   , debugPath = []
   , illuminated = []
@@ -118,7 +118,7 @@ crystals model =
     Just (pt,_) -> [pt]
     Nothing -> []
 
-origin = {x=0,y=0}
+origin = (0,0)
 
 -- PREDICATES/QUERIES
 
@@ -354,7 +354,7 @@ illuminate : Point -> Model -> List Point
 illuminate source model =
   let
     perimeter =
-      Point.perimeter {x=1,y=1} Configuration.viewWidth Configuration.viewHeight
+      Point.perimeter (1,1) Configuration.viewWidth Configuration.viewHeight
 
     blockers =
       (walls model)
@@ -430,7 +430,7 @@ infoView model =
       String.join "  |  " [ gold, hp, level ]
 
   in
-     Graphics.render message {x=0,y=1} "green"
+     Graphics.render message (0,1) "green"
 
 highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
@@ -453,5 +453,5 @@ highlightCells cells =
         in
           (highlightCell a targetColor) :: tail
 
-highlightCell {x,y} color =
-  Graphics.render "@" {x=x,y=y} color
+highlightCell (x,y) color =
+  Graphics.render "@" (x,y) color

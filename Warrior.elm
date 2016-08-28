@@ -64,9 +64,3 @@ heal : Int -> Model -> Model
 heal amount model =
   { model | hp = min model.maxHp (model.hp + 1) }
 
-
--- VIEW
---view : Model -> Svg.Svg a
---view model =
-  --Entity.render model
-  --Graphics.render "@" model.position
