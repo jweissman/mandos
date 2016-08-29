@@ -2,7 +2,7 @@ module Configuration exposing (levelCount, tickInterval, viewScale, viewWidth, v
 
 import Time exposing (Time, millisecond)
 
-tickInterval = 60*millisecond
+tickInterval = 30*millisecond
 levelCount = 10
 
 viewScale = 18

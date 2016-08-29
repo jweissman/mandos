@@ -3,19 +3,16 @@ module Engine exposing (Engine, init, view, enter, clickAt, hoverAt, tick, handl
 import Point exposing (Point, slide)
 import Direction exposing (Direction(..))
 import Path
-
 import World
 import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
 import Configuration
-
-
 import Mouse
 import Util
 import Time
-
 import Graphics
 
+import Set exposing (Set)
 import Svg exposing (svg, rect, text')
 import Svg.Attributes exposing (viewBox, width, height, x, y, fontSize, fontFamily)
 import Svg.Events
@@ -102,7 +99,7 @@ telepath model =
   if model.telepathy then
   { model | telepathy = False }
   else
-  Debug.log "TELEPATH"
+  --Debug.log "TELEPATH"
   { model | telepathy = True }
 
 
@@ -240,7 +237,7 @@ pathToEntity entity model =
     if alreadyHovering || not (model.followPath == Nothing) then
       model.hoverPath
     else
-      Path.seek entityPos playerPos (\pt -> List.member pt (World.walls model.world))
+      Path.seek entityPos playerPos (\pt -> Set.member pt (World.walls model.world))
 
 
 clickAt : Mouse.Position -> Engine -> Engine
@@ -300,6 +297,7 @@ playerExplores model =
       let v = (World.viewed model.world) in
       model.world 
       |> World.floors
+      |> Set.toList
       |> List.partition (\p -> List.member p v)
 
     frontier =
@@ -338,7 +336,7 @@ playerExplores model =
           let 
             path' = 
               Path.seek dest playerPos (\pt -> 
-                List.member pt (World.walls model.world))
+                Set.member pt (World.walls model.world))
           in
             if List.length path' == 0 then
               Nothing

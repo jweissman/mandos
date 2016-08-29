@@ -64,13 +64,14 @@ viewed model =
 exploration : Model -> (List Point, List Point)
 exploration model =
   let v = viewed model in
-  ((model |> floors) ++ (model |> walls))
+  Set.union (model |> floors) (model |> walls)
+  |> Set.toList
   |> List.partition (\p -> List.member p v)
 
-walls : Model -> List Point
+walls : Model -> Set Point
 walls model =
   (level model).walls
-  |> Set.toList
+  --|> Set.toList
 
 coins : Model -> List Point
 coins model =
@@ -81,15 +82,15 @@ creatures : Model -> List Creature.Model
 creatures model =
   (level model).creatures
 
-doors : Model -> List Point
+doors : Model -> Set Point
 doors model =
   (level model).doors
-  |> Set.toList
+  --|> Set.toList
 
-floors : Model -> List Point
+floors : Model -> Set Point
 floors model =
   (level model).floors
-  |> Set.toList
+  --|> Set.toList
 
 upstairs : Model -> List Point
 upstairs model =
@@ -163,7 +164,7 @@ canPlayerStep direction model =
       model.player.position
       |> slide direction
   in
-    not ( Level.isCreature move (level model) || List.member move (walls model))
+    not ( Level.isCreature move (level model) || Set.member move (walls model))
 --    not (isBlockedForPlayer move model)
 
 --isBlockedForPlayer : Point -> Model -> Bool
@@ -355,7 +356,7 @@ illuminate source model =
       |> Set.toList
 
     blockers =
-      (walls model) ++ (doors model)
+      Set.union (walls model) (doors model)
 
   in
     source
