@@ -15,6 +15,7 @@ import Util
 import Time
 
 import Graphics
+
 import Svg exposing (svg, rect, text')
 import Svg.Attributes exposing (viewBox, width, height, x, y, fontSize, fontFamily)
 import Svg.Events
@@ -152,64 +153,95 @@ screenToCoordinate {x,y} =
 
 hoverAt : Mouse.Position -> Engine -> Engine
 hoverAt position model =
+  --model
   let
     point =
       (screenToCoordinate position)
 
-    maybeEntity =
-      if List.member point (model.world.illuminated) then
-        World.entitiesAt point model.world
-        |> List.reverse
-        |> List.head
-      else
-        let
-          entities' =
-            model.world
-            |> World.entitiesAt point
-            |> List.filter (not << Entity.isCreature)
-        in
-        if List.member point (World.viewed model.world) then
-          case (entities' |> List.reverse |> List.head) of
-            Just entity ->
-              Just (Entity.memory entity)
-            Nothing ->
-              Nothing
-        else
-          if model.telepathy then
-             World.entitiesAt point model.world
-             |> List.map (Entity.imaginary)
-             |> List.head
-          else
-            Nothing
+    isLit =
+      List.member point (model.world.illuminated)
 
-    pathToEntity =
+    wasLit =
+      List.member point (World.viewed model.world)
+  in
+    if isLit then
+      model |> seeEntityAt point
+    else
+      if wasLit then
+        model |> rememberEntityAt point
+      else
+        model
+
+seeEntityAt point model =
+  let
+    entities = 
+      World.entitiesAt point model.world
+
+    maybeEntity =
+      entities
+      |> List.reverse
+      |> List.head
+
+    path' =
       case maybeEntity of
         Nothing ->
           []
 
         Just entity ->
-          let
-            entityPos =
-              Entity.position entity
+          model |> pathToEntity entity
 
-            playerPos =
-              model.world.player.position
+  in
+      { model | hover = maybeEntity
+              , hoverPath = path'
+      }
 
-            alreadyHovering =
-              case model.hover of
-                Just entity' ->
-                  entity' == entity
-                Nothing -> False
+rememberEntityAt point model =
+  let
+    entity = 
+      World.entitiesAt point model.world
+      |> List.filter (not << Entity.isCreature)
+      |> List.reverse
+      |> List.head
 
-          in
-            if alreadyHovering || not (model.followPath == Nothing) then
-              model.hoverPath
-            else
-              Path.seek entityPos playerPos (\pt -> List.member pt (World.walls model.world))
+    maybeEntity =
+      case entity of
+         Just entity' ->
+           Just (Entity.memory entity')
+         Nothing ->
+           Nothing
+            
+    path' =
+      case maybeEntity of
+        Nothing ->
+          []
+
+        Just entity ->
+          model |> pathToEntity entity
     in
       { model | hover = maybeEntity
-              , hoverPath = pathToEntity
+              , hoverPath = path'
       }
+
+pathToEntity entity model =
+  let
+    entityPos =
+      Entity.position entity
+
+    playerPos =
+      model.world.player.position
+
+    alreadyHovering =
+      case model.hover of
+        Just entity' ->
+          entity' == entity
+        Nothing -> False
+
+  in
+    if alreadyHovering || not (model.followPath == Nothing) then
+      model.hoverPath
+    else
+      Path.seek entityPos playerPos (\pt -> List.member pt (World.walls model.world))
+
 
 clickAt : Mouse.Position -> Engine -> Engine
 clickAt _ model =
@@ -253,7 +285,8 @@ playerFollowsPath model =
               |> resetFollow
               |> resetHover
 
--- auto-assign follow path
+--viewed model = World.viewed model.world
+
 playerExplores : Engine -> Engine
 playerExplores model =
   let
@@ -264,9 +297,9 @@ playerExplores model =
       (\c -> Point.distance playerPos c)
 
     (explored,unexplored) =
-      --World.exploration model.world
       let v = (World.viewed model.world) in
-      ((model.world |> World.floors)) -- ++ (model |> walls))
+      model.world 
+      |> World.floors
       |> List.partition (\p -> List.member p v)
 
     frontier =
@@ -314,7 +347,9 @@ playerExplores model =
   in
     { model | followPath = path }
 
-view : Engine -> List (Svg.Svg a) -- Html Msg
+-- VIEW
+
+view : Engine -> List (Svg.Svg a)
 view model =
   let
     world =
@@ -346,15 +381,5 @@ view model =
 
     note =
       Graphics.render debugMsg (20,1) "rgba(160,160,160,0.6)"
-
-    --bgStyle = [
-    --  ( "background-color", "#280828"
-    --  )
-    --]
-
   in
     worldView ++ [note]
-    --Html.div [ style bgStyle ] [
-    --  Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-      --svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
-    --]

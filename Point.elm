@@ -3,6 +3,7 @@ module Point exposing (Point, x, y, slide, describe, distance, random, randomWit
 import Direction exposing (Direction(..), directions)
 
 import Random
+import Set exposing (Set)
 
 type alias Point = ( Int, Int )
 
@@ -81,17 +82,22 @@ code : Point -> Int
 code (x,y) =
   (x * 10000) + y
 
-perimeter : Point -> Int -> Int -> List Point
+perimeter : Point -> Int -> Int -> Set Point
 perimeter (x,y) width height =
+  let ls =
   List.map (\x' -> (x+x',y)) [0..width] ++
   List.map (\x' -> (x+x',y+height)) [0..width] ++
   List.map (\y' -> (x,y+y')) [0..height] ++
   List.map (\y' -> (x+width,y+y')) [0..height]
+  in
+    Set.fromList ls
 
+grid : Point -> Int -> Int -> Set Point
 grid (x,y) width height =
   List.concatMap (\y' ->
     List.map (\x' -> (x+x',y+y')) [0..(width)]
   ) [0..(height)]
+  |> Set.fromList
 
 
 -- move util directionBetween back here as `towards`...?

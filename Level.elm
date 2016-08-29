@@ -1,5 +1,6 @@
 module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal)
 
+
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Room exposing (Room)
@@ -14,12 +15,15 @@ import Creature
 import Event exposing (Event)
 import Entity exposing (Entity)
 
+import Set exposing (Set)
+
+
 -- TYPE
 
-type alias Level = { walls : List Point
-                   , floors : List Point
-                   , doors : List Point
-                   , coins : List Point
+type alias Level = { walls : Set Point
+                   , floors : Set Point
+                   , doors : Set Point
+                   , coins : Set Point
                    , creatures : List Creature.Model
                    , downstairs : Maybe Point
                    , upstairs : Maybe Point
@@ -27,7 +31,6 @@ type alias Level = { walls : List Point
                    , entrance : Maybe (Point, Bool)
 
                    , rooms : List Room
-
                    , viewed : List Point
                    }
 
@@ -35,11 +38,11 @@ type alias Level = { walls : List Point
 
 init : Level
 init =
-  { walls = []
-  , floors = []
-  , doors = []
+  { walls = Set.empty
+  , floors = Set.empty
+  , doors = Set.empty
+  , coins = Set.empty
   , creatures = []
-  , coins = []
   , upstairs = Nothing --origin
   , downstairs = Nothing --origin
   , crystal = Nothing
@@ -83,23 +86,23 @@ origin = (0,0)
 
 isWall : Point -> Level -> Bool
 isWall pt model =
-  List.any (\pos -> pos == pt) model.walls
+  Set.member pt model.walls
 
 isCoin : Point -> Level -> Bool
 isCoin pt model =
-  List.any (\pos -> pos == pt) model.coins
+  Set.member pt model.coins
 
 isCreature : Point -> Level -> Bool
 isCreature pt model =
-  List.any (\pos -> pos == pt) (List.map .position model.creatures)
+  List.member pt (List.map .position model.creatures)
 
 isDoor : Point -> Level -> Bool
 isDoor pt model =
-  List.any (\p -> p == pt) model.doors
+  Set.member pt model.doors
 
 isFloor : Point -> Level -> Bool
-isFloor position model =
-  List.any (\p -> p == position) model.floors
+isFloor pt model =
+  Set.member pt model.floors
 
 isStairsUp : Point -> Level -> Bool
 isStairsUp position model =
@@ -137,7 +140,6 @@ isCrystal position model =
 hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
   List.member point model.viewed
-
 
 isAlive livingThing =
   livingThing.hp > 0
@@ -242,9 +244,9 @@ playerSees pts model =
       |> List.filter (\pt -> not (List.member pt model.viewed))
 
     viewed' =
-      pts' ++ model.viewed
+      model.viewed
   in
-    { model | viewed = viewed' }
+    { model | viewed = viewed' ++ pts' }
 
 moveCreatures : Warrior.Model -> Level -> (Level, List Event, Warrior.Model)
 moveCreatures player model =
@@ -379,7 +381,7 @@ collectCoin pt model =
   let
     coins' =
       model.coins
-      |> List.filter (not << (\c -> c == pt))
+      |> Set.remove pt -- (not << (\c -> c == pt))
   in
     { model | coins = coins' }
 
@@ -401,10 +403,9 @@ fromRooms roomCandidates =
       roomCandidates
       |> Room.filterOverlaps
   in
-    init -- depth
+    init
     |> connectRooms rooms
-    --|> extrudeRooms -- rooms
-    |> extrudeStairwells --depth
+    |> extrudeStairwells
     |> dropCoins
 
 extrudeRooms : Level -> Level
@@ -415,11 +416,11 @@ extrudeRooms model =
 extrudeRoom : Room -> Level -> Level
 extrudeRoom room model =
   let
-      (walls,floors) =
-        Room.layout room
+    (walls,floors) =
+      Room.layout room
   in
-     { model | walls  = model.walls ++ walls
-             , floors = model.floors ++ floors }
+    { model | walls  = Set.union model.walls walls
+            , floors = Set.union model.floors floors }
 
 connectRooms : List Room -> Level -> Level
 connectRooms rooms model =
@@ -443,10 +444,10 @@ connectRooms rooms model =
 connectRooms' : (Room,Room) -> Level -> Level
 connectRooms' (a, b) model =
   let
-    (ax,ay) = 
+    (ax,ay) =
       a.origin
 
-    (bx,by) = 
+    (bx,by) =
       b.origin
 
     direction =
@@ -501,12 +502,11 @@ connectRooms' (a, b) model =
 
 extrudeCorridor : Int -> Point -> Direction -> Level -> Level
 extrudeCorridor depth pt dir model =
-  extrudeCorridor' pt dir depth model
-
-extrudeCorridor' pt dir depth model =
+--  extrudeCorridor' pt dir depth model
+--extrudeCorridor' pt dir depth model =
   let
     model' =
-      { model | floors = pt :: model.floors  }
+      { model | floors = Set.insert pt model.floors  }
               |> addWallsAround pt
               |> removeWall pt
 
@@ -514,20 +514,21 @@ extrudeCorridor' pt dir depth model =
       Point.slide dir pt
 
     foundFloor =
-      (List.any (\pt' -> pt' == pt) model.floors)
+      model |> isFloor pt
+      --(List.any (\pt' -> pt' == pt) model.floors)
   in
     if foundFloor || depth < 0 then
       model'
       |> emplaceDoor (pt |> Point.slide (Direction.invert dir))
     else
       model'
-      |> extrudeCorridor' (pt |> Point.slide dir) dir (depth-1)
+      |> extrudeCorridor (depth-1) (pt |> Point.slide dir) dir
 
 
 -- doors
 emplaceDoor : Point -> Level -> Level
 emplaceDoor pt model =
-  { model | doors = pt :: model.doors }
+  { model | doors = Set.insert pt model.doors }
           |> removeWall pt
 
 -- stairs
@@ -538,7 +539,7 @@ extrudeStairwells model =
     adjacentToFloor = (\pt ->
         (Direction.cardinalDirections
         |> List.map (\direction -> Point.slide direction pt)
-        |> List.filter (\pt' -> List.member pt' (model.floors))
+        |> List.filter (\pt' -> Set.member pt' (model.floors))
         |> List.length) == 1
       )
 
@@ -555,8 +556,9 @@ extrudeStairwells model =
 
     candidates =
       model.walls
-      |> List.filter adjacentToFloor
-      |> List.filter adjacentToTwoWalls
+      |> Set.filter adjacentToFloor
+      |> Set.filter adjacentToTwoWalls
+      |> Set.toList
 
     (up, down) =
       candidates
@@ -600,34 +602,38 @@ emplaceEntrance point model =
           |> removeWall point
 
 removeWall pt model =
-  let
-    walls' =
-      model.walls |> List.filterMap (\pt' ->
-        if not (pt == pt') then Just pt' else Nothing)
-  in
-  { model | walls = walls' }
+  --let
+  --  walls' =
+  --    model.walls |> List.filterMap (\pt' ->
+  --      if not (pt == pt') then Just pt' else Nothing)
+  --in
+  { model | walls = Set.remove pt model.walls }
 
 removeFloor pt model =
-  let
-    floors' =
-      model.floors
-      |> List.filterMap (\pt' ->
-        if not (pt == pt') then Just pt' else Nothing)
-  in
-  { model | floors = floors' }
+  --let
+  --  floors' =
+  --    model.floors
+  --    |> List.filterMap (\pt' ->
+  --      if not (pt == pt') then Just pt' else Nothing)
+  --in
+  { model | floors = Set.remove pt model.floors }
 
 addWallsAround pt model =
   let
     newWalls =
       Direction.directions
       |> List.map (\d -> Point.slide d pt)
-      |> List.filter (\wall ->
-        not
-          (model.floors |> List.any (\floor' -> wall == floor')) ||
-          (model.walls |> List.any (\wall' -> wall == wall'))
+      |> Set.fromList
+      |> Set.filter (\wall ->
+        not (
+          (model |> isFloor wall) --||
+          --(model |> isWall)
+        )
+          --(model.floors |> List.any (\floor' -> wall == floor')) ||
+          --(model.walls |> List.any (\wall' -> wall == wall'))
       )
   in
-     { model | walls = newWalls ++ model.walls }
+     { model | walls = Set.union newWalls model.walls }
 
 dropCoins : Level -> Level
 dropCoins model =
@@ -672,7 +678,7 @@ dropCoins model =
     coins' =
       path' |> everyN (List.length path' // 3)
   in
-    { model | coins = model.coins ++ coins' }
+    { model | coins = Set.fromList coins' }
 
 spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =

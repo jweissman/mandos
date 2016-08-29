@@ -2,31 +2,24 @@ module World exposing (Model, init, view, playerSteps, floors, walls, coins, dow
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
-
---import Bresenham
 import Optics
-
 import Warrior
 import Creature
 import Entity exposing (Entity)
 import Room exposing (Room)
-
 import Dungeon exposing (Dungeon)
-
 import Level exposing (Level)
 import Path
-
 import Log
 import Event exposing (..)
-
 import Util
 import Configuration
 
+import Set exposing (Set)
 import String
 import Html
 import Graphics
 import Svg
-
 import Random
 
 type alias Model =
@@ -77,10 +70,12 @@ exploration model =
 walls : Model -> List Point
 walls model =
   (level model).walls
+  |> Set.toList
 
 coins : Model -> List Point
 coins model =
   (level model).coins
+  |> Set.toList
 
 creatures : Model -> List Creature.Model
 creatures model =
@@ -89,10 +84,12 @@ creatures model =
 doors : Model -> List Point
 doors model =
   (level model).doors
+  |> Set.toList
 
 floors : Model -> List Point
 floors model =
   (level model).floors
+  |> Set.toList
 
 upstairs : Model -> List Point
 upstairs model =
@@ -355,14 +352,15 @@ illuminate source model =
   let
     perimeter =
       Point.perimeter (1,1) Configuration.viewWidth Configuration.viewHeight
+      |> Set.toList
 
     blockers =
-      (walls model)
-      ++ (doors model)
+      (walls model) ++ (doors model)
 
   in
     source
     |> Optics.illuminate perimeter blockers
+    
 
 -- VIEW
 view : Model -> List (Svg.Svg a)

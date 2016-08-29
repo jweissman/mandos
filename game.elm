@@ -184,10 +184,10 @@ stateView model =
       Graphics.jumbo "@" (30,30)
 
     anyKey =
-      Graphics.hero "press any key" (14, 20) -- "lightgreen"
+      Graphics.render "press any key to play" (33, 20) "lightgreen"
 
     trademark =
-      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (22, 34) "darkgray"
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 34) "darkgray"
 
     steps =
       model.engine.world.player.steps

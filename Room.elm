@@ -7,6 +7,7 @@ import Util
 import Configuration
 
 import Random
+import Set exposing (Set)
 
 type RoomType = EmptyRoom
               | TreasureHoard
@@ -27,7 +28,7 @@ generate' : Random.Generator Room
 generate' =
   let
     maxRoomSize = 
-      16
+      9
 
     vWidth =
       Configuration.viewWidth // 2
@@ -36,10 +37,10 @@ generate' =
       Configuration.viewHeight // 2
 
     width =
-      Random.int 3 maxRoomSize
+      Random.int 6 maxRoomSize
 
     height =
-      Random.int 3 maxRoomSize
+      Random.int 4 maxRoomSize
 
     origin =
       Point.randomWithOffset (3,4) (vWidth-maxRoomSize) (vHeight-maxRoomSize)
@@ -106,7 +107,7 @@ isRight n a b =
   bx + b.width < ax - n
 
 -- return a tuple of two lists of points -- (walls, list of points in floors)
-layout : Room -> (List Point, List Point)
+layout : Room -> (Set Point, Set Point)
 layout {origin,width,height} =
   layout' origin width height
 
