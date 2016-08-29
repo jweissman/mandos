@@ -10,5 +10,8 @@ this is a learning elm project but i'd also like the code to be clear and well-f
 
   - [x] event log
   - [x] auto-explore
-  - [ ] map generation
-
+  - [x] map generation
+  - [x] field of vision
+  - [x] combat
+  - [ ] quests
+  - [ ] items

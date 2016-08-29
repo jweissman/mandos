@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, moveCreatures, turnCreature, injureCreature, collectCoin, purge, levelAt)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal)
 
 import Warrior
 import Creature
@@ -25,6 +25,10 @@ generate : Int -> Random.Generator Dungeon
 generate depth =
   Random.list depth (Random.map Level.fromRooms (Room.generate 1000))
 
+prepare : Dungeon -> Dungeon
+prepare model =
+  model |> List.indexedMap Level.finalize
+
 -- HELPERS
 
 levelAt : Int -> Dungeon -> Level
@@ -46,15 +50,17 @@ apply f depth model =
 
 apply' : (Level -> a) -> Int -> Dungeon -> a
 apply' f depth model =
-  --model
-  --|> levelAt depth
-  --|> f
-  f (levelAt depth model) -- |> f
+  f (levelAt depth model)
 
 collectCoin : Point -> Int -> Dungeon -> Dungeon
 collectCoin pt depth model =
-  model 
+  model
   |> apply (Level.collectCoin pt) depth
+
+liberateCrystal : Int -> Dungeon -> Dungeon
+liberateCrystal depth model =
+  model
+  |> apply (Level.liberateCrystal) depth
 
 moveCreatures : Warrior.Model -> Int -> Dungeon -> (Dungeon, List Event, Warrior.Model)
 moveCreatures player depth model =
@@ -67,10 +73,6 @@ moveCreatures player depth model =
         if n == depth then level else level')
   in
     (model', events, player')
-
-turnCreature : Creature.Model -> Direction -> Int -> Dungeon -> Dungeon
-turnCreature creature direction depth model =
-  model |> apply (Level.turnCreature creature direction) depth
 
 injureCreature : Creature.Model -> Int -> Int -> Dungeon -> Dungeon
 injureCreature creature amount depth model =
@@ -86,3 +88,9 @@ purge depth model =
         if n == depth then level else level')
   in
     (model', events)
+
+--purge' model = model |> apply' Level.purge
+
+playerSees : List Point -> Int -> Dungeon -> Dungeon
+playerSees pts depth model =
+  model |> apply (Level.playerSees pts) depth

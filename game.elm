@@ -1,17 +1,12 @@
 import Direction exposing (Direction(..))
-import Point exposing (Point, slide)
-
-import Warrior
+import Engine exposing (Engine)
 import World
---import Bfs
-import Creature
-import Log
+import Dungeon exposing (Dungeon)
+import Entity exposing (Entity)
 import Graphics
 
-import Entity exposing (Entity)
-import Dungeon exposing (Dungeon)
-import Util
-import Path exposing (Path)
+import Configuration
+import Event
 
 import Char
 import Task
@@ -19,6 +14,7 @@ import Keyboard exposing (KeyCode)
 import Mouse
 import Random
 import Time exposing (Time, millisecond)
+import String
 
 import Html exposing (Html)
 import Html.App as App
@@ -38,33 +34,28 @@ main =
   }
 
 -- MODEL
-type alias Model =
-  { world : World.Model
-  , hover : Maybe Entity
-  , hoverPath : List Point
-  , followPath : Maybe (List Point)
-  , auto : Bool
+
+type GameState = Splash | Generating | Playing | Death | Victory
+
+type alias Model = 
+  { engine : Engine
+  , state : GameState
+  , generationUnderway : Bool
   }
 
 -- INIT
 init : (Model, Cmd Msg)
-init =
-  (
-    { world = World.init
-    , hover = Nothing
-    , hoverPath = []
-    , followPath = Nothing
-    , auto = False
-    }
-    , Random.generate MapMsg (Dungeon.generate 10)
-  )
+init = ( { engine = Engine.init, state = Splash, generationUnderway = False  }, Cmd.none ) -- generate )
+
+generate : Cmd Msg
+generate =
+  Random.generate MapMsg (Dungeon.generate Configuration.levelCount)
 
 -- TYPES
 type Msg
   = KeyMsg KeyCode
   | HoverMsg Mouse.Position
   | ClickMsg Mouse.Position
-  | WorldMsg World.Msg
   | TickMsg Time
   | MapMsg Dungeon
 
@@ -73,232 +64,76 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
     MapMsg dungeon ->
-      let
-        world =
-          model.world
-
-        player =
-          world.player
-
-        --floors =
-        --  (Dungeon.levelAt 0 dungeon).floors
-          --World.floors world'
-
-        player' =
-          { player | position = (Dungeon.levelAt 0 dungeon).upstairs } --(List.head floors |> Maybe.withDefault {x=5,y=5}) }
-
-        world' =
-          { world | dungeon = dungeon
-                  , depth = 0
-                  , player = player'
-          }
-      in
-      ({ model | world = world' }, Cmd.none)
-
-    WorldMsg subMsg ->
-      let
-        world =
-          model.world
-          |> World.update subMsg
-      in
-        ({ model | world = world }, Cmd.none)
+      ({ model | engine = (model.engine |> Engine.enter dungeon) 
+               , state = Playing
+      }, Cmd.none)
 
     ClickMsg position ->
-      (model |> clickAt position, Cmd.none)
+      ({ model | engine = (model.engine |> Engine.clickAt position) }, Cmd.none)
 
     HoverMsg position ->
-      (model |> hoverAt position, Cmd.none)
+      ({ model | engine = (model.engine |> Engine.hoverAt position) }, Cmd.none)
 
     TickMsg time ->
-      case model.followPath of
-        Nothing ->
-          if model.auto then
-            (model |> playerExplores, Cmd.none)
-          else
-            (model, Cmd.none)
+      case model.state of
+        Playing ->
+          ({ model | engine = (model.engine |> Engine.tick time) }
+           |> inferState
+         , Cmd.none)
 
-        Just path ->
-          --let 
-          --  cmds = World.turnCreaturesCommand model.world WorldMsg 
-          --in
-          (model |> playerFollowsPath, Cmd.none) -- cmds)
+        Generating ->
+          if model.generationUnderway then
+             (model, Cmd.none)
+          else
+             (model, generate)
+
+        _ -> (model, Cmd.none)
 
     KeyMsg keyCode ->
-      let
-        keyChar =
-          (Char.fromCode keyCode)
+      case model.state of
+        Splash -> 
+          ({model | state = Generating}, Cmd.none)
 
-        --turnCreatureCommands =
-        --  World.turnCreaturesCommand model.world WorldMsg
-      in
-        (model
-         |> handleKeypress keyChar
-         --|> moveCreatures
-         |> resetHover
-        , Cmd.none) -- turnCreatureCommands)
+        Death -> 
+          ({model | state = Splash, engine = Engine.init}, Cmd.none)
 
-handleKeypress : Char -> Model -> Model
-handleKeypress keyChar model =
-  model |> case keyChar of
-    'k' -> playerSteps North
-    'l' -> playerSteps East
-    'j' -> playerSteps South
-    'h' -> playerSteps West
-    'x' -> playerExplores
-    'a' -> autorogue
-    _ -> (resetFollow << resetAuto)
+        Victory -> 
+          ({model | state = Splash, engine = Engine.init}, Cmd.none)
 
-autorogue model = 
-  { model | auto = True }
+        Generating -> 
+          (model, Cmd.none)
 
-playerSteps direction model =
-  let 
-    world = 
-      (World.playerSteps direction model.world) 
-  in
-    { model | world = world } 
-    |> resetFollow 
-    |> resetAuto
+        Playing ->
+          let 
+            keyChar = 
+              Char.fromCode keyCode
 
-resetHover : Model -> Model
-resetHover model =
-  { model | hoverPath = []
-          , hover = Nothing }
-
-resetFollow : Model -> Model
-resetFollow model =
-  { model | followPath = Nothing }
-
-resetAuto : Model -> Model
-resetAuto model =
-  { model | auto = False }
-
-hoverAt : Point -> Model -> Model
-hoverAt position model =
-  let
-    point =
-      (screenToCoordinate position)
-
-    maybeEntity =
-      World.entityAt point model.world
-
-    pathToEntity =
-      case maybeEntity of
-        Nothing ->
-          []
-
-        Just entity ->
-          let
-            entityPos =
-              Entity.position entity
-
-            playerPos =
-              model.world.player.position
-
-            accessible =
-              (not (World.isBlocked entityPos model.world))
-
-            alreadyHovering =
-              case model.hover of
-                Just entity' ->
-                  entity' == entity
-                Nothing -> False
-
+            engine' =
+              model.engine
+              |> Engine.handleKeypress keyChar
+              |> Engine.resetHover
           in
-            if accessible then
-               if alreadyHovering || not (model.followPath == Nothing) then
-                 model.hoverPath
-               else
-                 model.world
-                 |> World.path entityPos playerPos -- (\pos -> (entityPos == pos))
-                 |> Maybe.withDefault []
-            else
-              []
-    in
-      { model | hover = maybeEntity
-              , hoverPath = pathToEntity
-         }
+            ({ model | engine = engine' } |> inferState, Cmd.none)
 
-
-
-clickAt : Point -> Model -> Model
-clickAt point model =
-  case model.followPath of
-    Nothing ->
-      { model | followPath = Just model.hoverPath }
-    Just path ->
-      model
-
-playerFollowsPath : Model -> Model
-playerFollowsPath model =
-  case model.followPath of
-    Nothing -> model
-    Just path ->
-      case (List.head path) of
-        Nothing ->
-          model
-          |> resetHover
-          |> resetFollow
-
-        Just nextStep ->
-          let
-            playerPos =
-              model.world.player.position
-
-            direction =
-              (Util.directionBetween nextStep model.world.player.position) 
-
-            world = 
-              model.world 
-              |> World.playerSteps direction
-
-            (dungeon', events, player') =
-              world.dungeon 
-              |> Dungeon.moveCreatures world.player world.depth
-
-            world' =
-              { world | dungeon = dungeon'
-                      , events = world.events ++ events
-                      , player = player'
-              }
-          in
-            if (nextStep == (playerPos |> slide direction)) then
-              ({model | followPath = List.tail path
-                      , world = world
-              })
-              --|> Dungeon.moveCreatures
-            else
-              model
-              |> resetFollow
-              |> resetHover
-
--- auto-assign follow path
-playerExplores : Model -> Model
-playerExplores model =
+inferState : Model -> Model
+inferState model =
   let
-    playerPos =
-      model.world.player.position
+    won =
+      model.engine.world.hallsEscaped
 
-    byDistanceFromPlayer =
-      (\c -> Point.distance playerPos c)
+    died =
+      model.engine.world.player.hp < 1
 
-    maybeCoin =
-      World.coins model.world --0.coins
-      |> List.sortBy byDistanceFromPlayer
-      |> List.head
-
-    path =
-      case maybeCoin of
-        Nothing ->
-          Nothing
-
-        Just coin ->
-          --Bfs.bfs playerPos (\p -> p == coin) model.world
-          model.world
-          |> World.path coin playerPos -- (\pos -> (entityPos == pos))
-
+    state' =
+      if won then 
+        Victory 
+      else
+        if died then
+          Death
+        else
+          Playing
   in
-    { model | followPath = path } -- |> playerFollowsPath
+   { model | state = state' }
 
 -- SUBS
 subscriptions : Model -> Sub Msg
@@ -307,50 +142,92 @@ subscriptions model =
     [ Mouse.moves HoverMsg
     , Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
-    , Time.every (150*millisecond) TickMsg
+    , Time.every Configuration.tickInterval TickMsg
     ]
 
 -- VIEW
 view : Model -> Html Msg
 view model =
   let
-    world =
-      model.world
-
-    path =
-      case model.followPath of
-        Nothing -> model.hoverPath
-        Just path -> path
-
-    worldView =
-      World.view { world | debugPath = path }
-
-    debugMsg =
-      case model.hover of
-        Nothing ->
-          "You aren't looking at anything in particular."
-
-        Just entity ->
-          (toString (Entity.position entity)) ++ " You see " ++ (Entity.describe entity) ++ "."
-
-    note =
-      Graphics.render debugMsg {x=15,y=1} "white"
-
     bgStyle = [
       ( "background-color", "#280828"
       )
     ]
-
   in
-    --Html.body [ style bgStyle ] [
-      Html.div [ style bgStyle ] [
-        Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-        , svg [ viewBox "0 0 60 40", width "1200px", height "800px" ] (worldView ++ [note])
-      ]
-    --]
+    Html.div [ style bgStyle ] 
+    [ Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
+    , box (stateView model) --svg [ box ] (stateView model)
+    ]
 
-screenToCoordinate : Mouse.Position -> Point
-screenToCoordinate {x,y} =
-  { x = x//20
-  , y = (y//20)+1
-  }
+box viewModel =
+  let 
+    scale = 
+      Configuration.viewScale 
+    height' =
+      Configuration.viewHeight
+    width' =
+      Configuration.viewWidth
+    dims =
+      [0,0,width',height']
+      |> List.map toString
+      |> String.join " "
+      --"0 0 " ++ (toString width) ++ " "
+  in
+    svg [ viewBox dims, width ((toString (width'*scale)) ++ "px"), height ((toString (height'*scale)) ++ "px") ] viewModel
+
+stateView model = 
+  let 
+    hero = 
+      Graphics.hero "MANDOS" (27,10)
+
+    jumbo = 
+      Graphics.jumbo "@" (30,30)
+
+    anyKey =
+      Graphics.render "press any key to play" (33, 20) "lightgreen"
+
+    trademark =
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 34) "darkgray"
+
+    steps =
+      model.engine.world.player.steps
+
+    kills =
+      model.engine.world.events
+      |> List.filter Event.isEnemyKill
+      |> List.length
+  in 
+  case model.state of
+    Splash ->
+      [ jumbo
+      , hero
+      , anyKey
+      , trademark
+      ]
+
+    Generating ->
+      [ jumbo
+      , hero
+      ,Graphics.render "Generating world, please wait..." (32, 15) "lightgreen"
+      ,Graphics.render "(This may take a little while!)" (32, 20) "white"
+      ]
+
+    Victory ->
+      Engine.view model.engine
+      ++ [
+        Graphics.hero "YOU WON!" (26, 15) -- "lightgreen"
+      , Graphics.render "Congratulations!" (34, 20) "white"
+      , Graphics.render "You escaped the Halls of Mandos!" (31, 22) "white"
+        , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
+        , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
+      ]
+
+    Death ->
+        Engine.view model.engine ++ 
+        [ Graphics.hero "YOU DIED!" (23, 15) -- "lightgreen"
+        , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
+        , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
+        ]
+
+    Playing ->
+      Engine.view model.engine

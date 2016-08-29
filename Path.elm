@@ -1,4 +1,4 @@
-module Path exposing (Path, find, findBy)
+module Path exposing (seek, find, findBy)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -6,18 +6,34 @@ import Direction exposing (Direction)
 import Util
 
 -- bfs impl
-type alias Path = List Point
 
-find : Point -> Point -> (Point -> List (Point, Direction)) -> Maybe Path
+type alias PathSegment = (Point, Direction)
+--type alias Discriminator = (Point -> Bool)
+--type alias Path = List Point
+
+seek : Point -> Point -> (Point -> Bool) -> (List Point)
+seek dst src blocked =
+  find dst src (movesFrom blocked)
+  |> Maybe.withDefault []
+
+movesFrom : (Point -> Bool) ->  Point -> List PathSegment
+movesFrom blocked point =
+  Direction.directions
+  |> List.map (\direction -> (Point.slide direction point, direction))
+  |> List.filter ((\p -> not (blocked p)) << fst)
+
+---
+
+find : Point -> Point -> (Point -> List PathSegment) -> Maybe (List Point)
 find dst src moves =
   findBy (\pt -> pt == dst) moves src
 
-findBy : (Point -> Bool) -> (Point -> List (Point, Direction)) -> Point -> Maybe Path
+findBy : (Point -> Bool) -> (Point -> List PathSegment) -> Point -> Maybe (List Point)
 findBy predicate moves source =
-  find' [] [] source predicate moves 100
+  findBy' [] [] source predicate moves 100
 
-find' : List (Point, Direction) -> List (Point, Direction) -> Point -> (Point -> Bool) -> (Point -> List (Point, Direction)) -> Int -> Maybe Path
-find' visited frontier source predicate moves depth =
+findBy' : List PathSegment -> List PathSegment -> Point -> (Point -> Bool) -> (Point -> List PathSegment) -> Int -> Maybe (List Point)
+findBy' visited frontier source predicate moves depth =
   if depth < 0 then
     Nothing
   else
@@ -38,7 +54,7 @@ find' visited frontier source predicate moves depth =
         Nothing ->
           if List.length frontier == 0 then
             let frontier' = moves source in
-              find' visited frontier' source predicate moves (depth-1)
+              findBy' visited frontier' source predicate moves (depth-1)
           else
             let
               visitedPositions =
@@ -54,11 +70,11 @@ find' visited frontier source predicate moves depth =
                 (visited ++ frontier)
             in
               if List.length frontier > 0 then
-                find' newVisited (newFrontier) source predicate moves (depth-1)
+                findBy' newVisited (newFrontier) source predicate moves (depth-1)
               else
                 Nothing
 
-constructPath : List (Point, Direction) -> Point -> Point -> Path
+constructPath : List PathSegment -> Point -> Point -> List Point
 constructPath visited source destination =
   let
     isDestination = \pt ->
@@ -83,3 +99,7 @@ constructPath visited source destination =
                |> slide (Direction.invert direction)
            in
              [destination] ++ (constructPath visited source newDest)
+
+
+---
+

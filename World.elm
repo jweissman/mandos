@@ -1,28 +1,25 @@
-module World exposing (Model, Msg, init, update, view, playerSteps, turnCreaturesCommand, isBlocked, entityAt, floors, coins, path)
+module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, exploration, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
-
+import Optics
 import Warrior
 import Creature
 import Entity exposing (Entity)
 import Room exposing (Room)
-
 import Dungeon exposing (Dungeon)
-
 import Level exposing (Level)
-import Path exposing (Path)
-
+import Path
 import Log
 import Event exposing (..)
-
 import Util
+import Configuration
 
+import Set exposing (Set)
 import String
 import Html
 import Graphics
 import Svg
-
 import Random
 
 type alias Model =
@@ -32,6 +29,10 @@ type alias Model =
   , player : Warrior.Model
   , events : Log.Model
   , debugPath : List Point
+  , illuminated : List Point
+  , crystalTaken : Bool
+  , hallsEscaped : Bool
+  , showMap : Bool
   }
 
 -- INIT
@@ -40,23 +41,41 @@ init =
   {
     dungeon = []
   , depth = 0
-  , player = Warrior.init {x=0,y=0}
+  , player = Warrior.init origin
   , events = Log.init
   , debugPath = []
+  , illuminated = []
+  , crystalTaken = False
+  , hallsEscaped = False
+  , showMap = False
   }
+
 
 level : Model -> Level
 level model =
   Util.getAt model.dungeon model.depth
   |> Maybe.withDefault Level.init
 
+viewed : Model -> List Point
+viewed model =
+  let lvl = (level model) in
+  lvl.viewed
+
+exploration : Model -> (List Point, List Point)
+exploration model =
+  let v = viewed model in
+  ((model |> floors) ++ (model |> walls))
+  |> List.partition (\p -> List.member p v)
+
 walls : Model -> List Point
 walls model =
   (level model).walls
+  |> Set.toList
 
 coins : Model -> List Point
 coins model =
   (level model).coins
+  |> Set.toList
 
 creatures : Model -> List Creature.Model
 creatures model =
@@ -65,59 +84,58 @@ creatures model =
 doors : Model -> List Point
 doors model =
   (level model).doors
+  |> Set.toList
 
 floors : Model -> List Point
 floors model =
   (level model).floors
+  |> Set.toList
 
-upstairs : Model -> Point
+upstairs : Model -> List Point
 upstairs model =
-  (level model).upstairs
+  case (level model).upstairs of
+    Just pt -> [pt]
+    Nothing -> []
 
-downstairs : Model -> Point
+downstairs : Model -> List Point
 downstairs model =
-  (level model).downstairs
+  case (level model).downstairs of
+    Just pt -> [pt]
+    Nothing -> []
 
--- PREDICATES
+entrances : Model -> List Point
+entrances model =
+  case (level model).entrance of
+    Just (pt,_) -> [pt]
+    Nothing -> []
+
+crystals : Model -> List Point
+crystals model =
+  case (level model).crystal of
+    Just (pt,_) -> [pt]
+    Nothing -> []
+
+origin = (0,0)
+
+-- PREDICATES/QUERIES
 
 isPlayer : Point -> Model -> Bool
 isPlayer position model =
   model.player.position == position
 
-isBlocked : Point -> Model -> Bool
-isBlocked move model =
-  level model
-  |> Level.isBlocked move
-
-entityAt : Point -> Model -> Maybe Entity
-entityAt pt model =
-  level model
-  |> Level.entityAt pt model.player
-
--- UPDATE
-type Msg = TurnCreature Creature.Model Direction
-
-update : Msg -> Model -> Model
-update message model =
-  case message of
-    TurnCreature creature direction ->
-      { model | dungeon = model.dungeon
-                          |> Dungeon.turnCreature creature direction model.depth }
-
--- command ctors
--- todo change to something deterministic??
-turnCreaturesCommand : Model -> (Msg -> a) -> Cmd a
-turnCreaturesCommand model superMsg =
+entitiesAt : Point -> Model -> List Entity
+entitiesAt pt model =
   let
-    commands =
-      (creatures model)
-      |> List.map (\creature -> turnCreatureRandomly superMsg creature)
-  in
-    Cmd.batch commands
+    player =
+      if model.player.position == pt then
+        [Entity.player model.player]
+      else
+        []
 
-turnCreatureRandomly : (Msg -> a) -> Creature.Model -> Cmd a
-turnCreatureRandomly superMsg creature =
-  Random.generate (\dir -> superMsg (TurnCreature creature dir)) Direction.random
+    entities =
+      Level.entitiesAt pt (level model)
+  in
+    entities ++ player
 
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
@@ -128,9 +146,11 @@ playerSteps direction model =
   else
     model
     |> playerMoves direction
+    |> playerAscendsOrDescends
+    |> playerViewsField
     |> playerCollectsCoins
-    |> playerAscendsOrDescends --direction
-    --|> playerDescends --direction
+    |> playerLiberatesCrystal
+    |> playerEscapesHall
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
@@ -143,7 +163,11 @@ canPlayerStep direction model =
       model.player.position
       |> slide direction
   in
-    not (isBlocked move model)
+    not ( Level.isCreature move (level model) || List.member move (walls model))
+--    not (isBlockedForPlayer move model)
+
+--isBlockedForPlayer : Point -> Model -> Bool
+--isBlockedForPlayer pt model =
 
 playerCollectsCoins : Model -> Model
 playerCollectsCoins model =
@@ -164,6 +188,41 @@ playerCollectsCoins model =
                 , dungeon = dungeon'
                 , events  = model.events ++ [event]
         }
+
+playerLiberatesCrystal : Model -> Model
+playerLiberatesCrystal model =
+  let
+    isCrystal =
+      level model
+      |> Level.isCrystal model.player.position
+
+    dungeon' =
+      model.dungeon
+      |> Dungeon.liberateCrystal model.depth
+  in
+    if model.crystalTaken || (not isCrystal) then
+      model
+    else
+      let event = Event.crystalTaken in
+      { model | crystalTaken = True
+              , dungeon = dungeon'
+              , events = model.events ++ [event]
+      }
+
+playerEscapesHall : Model -> Model
+playerEscapesHall model =
+  let
+    isEntrance =
+      level model
+      |> Level.isEntrance model.player.position
+  in
+    if model.crystalTaken && isEntrance then
+      let event = Event.hallsEscaped in
+      { model | hallsEscaped = True
+              , events = model.events ++ [event]
+      }
+    else
+      model
 
 playerAttacks : Direction -> Model -> Model
 playerAttacks direction model =
@@ -222,46 +281,121 @@ removeDeceasedCreatures model =
 
 playerAscendsOrDescends : Model -> Model
 playerAscendsOrDescends model =
-  let 
-    playerPos = 
+  let
+    playerPos =
       model.player.position
   in
-    if playerPos == (downstairs model) then
-      let
-        player =
-          model.player
-
-        model' =
-          { model | depth = model.depth + 1 }
-
-        player' =
-          { player | position = (upstairs model') } 
-       in
-          Debug.log "DESCEND!"
-         { model' | player = player' }
+    if List.member playerPos (downstairs model) && model.depth < ((List.length model.dungeon) - 1) then
+      model |> playerDescends
     else
-      if playerPos == (upstairs model) && model.depth > 0 then
-        let
-          player =
-            model.player
-
-          model' =
-            { model | depth = model.depth - 1 }
-
-          player' =
-            { player | position = (downstairs model') } 
-         in
-           Debug.log "ASCEND!"
-           { model' | player = player' }
+      if List.member playerPos (upstairs model) && model.depth > 0 then
+        model |> playerAscends
       else
         model
+
+playerAscends : Model -> Model
+playerAscends model =
+  let
+    player =
+      model.player
+
+    model' =
+      { model | depth = model.depth - 1 }
+
+    player' =
+      { player | position = (downstairs model') |> List.head |> Maybe.withDefault origin }
+
+    events' =
+      model.events ++ [Event.ascend (model.depth-1)]
+  in
+    { model' | player = player' }
+
+playerDescends : Model -> Model
+playerDescends model =
+  let
+    player =
+      model.player
+
+    model' =
+      { model | depth = model.depth + 1 }
+
+    player' =
+      { player | position = (upstairs model') |> List.head |> Maybe.withDefault origin }
+
+    events' =
+      model.events ++ [Event.descend (model.depth+1)]
+  in
+    { model' | player = player', events = events' }
+
+playerViewsField : Model -> Model
+playerViewsField model =
+  let
+    source =
+      model.player.position
+
+    locations =
+      model |> illuminate source
+
+    --dungeon =
+      --|> List.foldr (\location -> Dungeon.playerSees location model.depth) model.dungeon
+
+  in
+    --if locations == model.illuminated then
+    --  model
+    --else
+      { model | dungeon = model.dungeon |> Dungeon.playerSees locations model.depth
+              , illuminated = locations -- |> Util.uniqueBy Point.code
+      }
+
+illuminate : Point -> Model -> List Point
+illuminate source model =
+  let
+    perimeter =
+      Point.perimeter (1,1) Configuration.viewWidth Configuration.viewHeight
+      |> Set.toList
+
+    blockers =
+      (walls model) ++ (doors model)
+
+  in
+    source
+    |> Optics.illuminate perimeter blockers
+    
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
 view model =
   let
+    litEntities =
+      model.illuminated
+      |> List.concatMap (\pt -> entitiesAt pt model)
+
+    memoryEntities =
+      (viewed model)
+      |> List.concatMap (\pt -> entitiesAt pt model)
+      |> List.filter (not << Entity.isCreature)
+      |> List.map (Entity.memory)
+      |> List.filter (\pt -> not (List.member pt litEntities))
+
+    --(explored, unexplored) = 
+    --  exploration model
+
+    --unexploredEntities =
+    --  unexplored
+    --  |> List.concatMap (\pt -> entitiesAt pt model)
+    --  |> List.map (Entity.imaginary)
+
     entities =
-      listEntities model
+      --if model.showMap then
+      --  memoryEntities ++
+      --  unexploredEntities ++
+
+      --  litEntities ++
+      --  [Entity.player model.player]
+      --else
+        memoryEntities ++
+        litEntities ++
+        [Entity.player model.player]
 
     entityViews =
       List.map (Entity.view) entities
@@ -292,9 +426,9 @@ infoView model =
 
     message =
       String.join "  |  " [ gold, hp, level ]
-      --gold ++ "  |  " ++ hp
+
   in
-     Graphics.render message {x=0,y=1} "green"
+     Graphics.render message (0,1) "green"
 
 highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
@@ -317,57 +451,5 @@ highlightCells cells =
         in
           (highlightCell a targetColor) :: tail
 
-highlightCell {x,y} color =
-  Graphics.render "@" {x=x,y=y} color
-
-
--- view help..
-
-listEntities : Model -> List Entity
-listEntities model =
-  let
-    walls' =
-      List.map Entity.wall (walls model)
-
-    floors' =
-      List.map Entity.floor (floors model)
-
-    coins' =
-      List.map Entity.coin (coins model)
-
-    creatures' =
-      List.map Entity.monster (creatures model)
-
-    doors' =
-      List.map Entity.door (doors model)
-
-    upstairs' =
-      --if (model.depth == 0) then
-      Entity.upstairs (upstairs model)
-      --else
-      --  Entity.upstairs (upstairs model)
-
-    downstairs' =
-      Entity.downstairs (downstairs model)
-
-    player' =
-      Entity.player model.player
-  in
-    walls' ++
-    floors' ++
-    doors' ++
-    coins' ++
-    creatures' ++
-    [upstairs', downstairs', player']
-
-
--- util
-path : Point -> Point -> Model -> Maybe Path
-path dst src model =
-  Path.find dst src (movesFrom model)
-
-movesFrom : Model -> Point -> List (Point, Direction)
-movesFrom model point =
-  Direction.directions
-  |> List.map (\direction -> (slide direction point, direction))
-  |> List.filter ((\p -> not (isBlocked p model)) << fst)
+highlightCell (x,y) color =
+  Graphics.render "@" (x,y) color

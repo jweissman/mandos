@@ -39,14 +39,14 @@ adjective species =
     Snake  -> "wild"
     Tiger  -> "savage"
     Dragon -> "cruel"
-    Monkey -> "vicious"
+    Monkey -> "angry"
 
 hp : Species -> Int
 hp species =
   case species of
-    Rat -> 10
-    Snake -> 20
-    Monkey -> 35
-    Bandit -> 50
-    Tiger -> 100
-    Dragon -> 200
+    Rat -> 3
+    Snake -> 5
+    Monkey -> 8
+    Bandit -> 10
+    Tiger -> 16
+    Dragon -> 50

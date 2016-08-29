@@ -1,15 +1,23 @@
-module Room exposing (Room, generate, overlaps, layout, filterOverlaps, network, directionBetween, distance)
+module Room exposing (Room, generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Graph exposing (Graph)
 import Util
+import Configuration
 
 import Random
+import Set exposing (Set)
+
+type RoomType = EmptyRoom
+              | TreasureHoard
+              --| MonsterCamp
+              --| DragonLair
 
 type alias Room = { origin : Point
                   , width : Int
                   , height: Int
+                  --, kind : RoomType
                   }
 
 generate : Int -> Random.Generator (List Room)
@@ -19,14 +27,24 @@ generate n =
 generate' : Random.Generator Room
 generate' =
   let
+    maxRoomSize = 
+      9
+
+    vWidth =
+      Configuration.viewWidth // 2
+
+    vHeight =
+      Configuration.viewHeight // 2
+
     width =
-      Random.int 3 12 
+      Random.int 6 maxRoomSize
 
     height =
-      Random.int 4 6
+      Random.int 4 maxRoomSize
 
     origin =
-      Point.randomWithOffset {x=3,y=4} 26 14
+      Point.randomWithOffset (3,4) (vWidth-maxRoomSize) (vHeight-maxRoomSize)
+
   in
     Random.map3 create origin width height
 
@@ -39,15 +57,15 @@ create point width height =
 
 overlaps : Room -> Room -> Bool
 overlaps a b =
-  overlapsY 0 a b && overlapsX 0 a b
+  overlapsY -1 a b && overlapsX -1 a b
  
 overlapsRelevantDirection : Int -> Room -> Room -> Bool
 overlapsRelevantDirection n a b =
   case directionBetween a b of
-    North -> overlapsX n a b
-    South -> overlapsX n a b
-    East  -> overlapsY n a b
-    West  -> overlapsY n a b
+    North -> overlapsX n a b --&& not (overlapsY n a b)
+    South -> overlapsX n a b --&& not (overlapsY n a b)
+    East  -> overlapsY n a b --&& not (overlapsX n a b)
+    West  -> overlapsY n a b --&& not (overlapsX n a b)
     _ -> False
 
 overlapsY n a b =
@@ -58,37 +76,48 @@ overlapsX n a b =
 
 isAbove : Int -> Room -> Room -> Bool
 isAbove n a b =
-  a.origin.y + a.height < b.origin.y - n
+  let 
+    (_,ay) = a.origin 
+    (_,by) = b.origin
+  in
+  ay + a.height < by - n
 
 isBelow : Int -> Room -> Room -> Bool
 isBelow n a b =
-  b.origin.y + b.height < a.origin.y - n
+  let 
+    (_,ay) = a.origin 
+    (_,by) = b.origin
+  in
+  by + b.height < ay - n
 
 isLeft  : Int -> Room -> Room -> Bool
 isLeft n a b =
-  a.origin.x + a.width < b.origin.x - n
+  let 
+    (ax,_) = a.origin 
+    (bx,_) = b.origin
+  in
+  ax + a.width < bx - n
 
 isRight : Int -> Room -> Room -> Bool
 isRight n a b =
-  b.origin.x + b.width < a.origin.x - n
+  let 
+    (ax,_) = a.origin 
+    (bx,_) = b.origin
+  in
+  bx + b.width < ax - n
 
 -- return a tuple of two lists of points -- (walls, list of points in floors)
-layout : Room -> (List Point, List Point)
+layout : Room -> (Set Point, Set Point)
 layout {origin,width,height} =
   layout' origin width height
 
-layout' {x,y} width height =
+layout' (x,y) width height =
   let
     walls =
-      List.map (\x' -> {x=x+x',y=y}) [0..width] ++
-      List.map (\x' -> {x=x+x',y=y+height}) [0..width] ++
-      List.map (\y' -> {x=x,y=y+y'}) [0..height] ++
-      List.map (\y' -> {x=x+width,y=y+y'}) [0..height]
+      Point.perimeter (x,y) width height
 
     floors =
-      List.concatMap (\y' ->
-        List.map (\x' -> {x=x+x',y=y+y'}) [1..(width-1)]
-      ) [1..(height-1)]
+      Point.grid (x+1,y+1) (width-2) (height-2)
   in
     (walls,floors)
 
@@ -115,9 +144,8 @@ filterOverlaps rooms =
 
 center : Room -> Point
 center {origin,width,height} =
-  { x = origin.x + width
-  , y = origin.y + height
-  }
+  let (x,y) = origin in
+  ( x + width // 2 , y + height // 2 )
 
 distance : Room -> Room -> Float
 distance a b =
@@ -129,8 +157,9 @@ canConnect a b =
 
 network : List Room -> Maybe (Graph Room)
 network rooms =
+  -- would think this shoudl filter unconnectable rooms!!
   Graph.tree distance canConnect rooms
 
 directionBetween : Room -> Room -> Direction
 directionBetween a b =
-  Util.simpleDirectionBetween (center a) (center b)
+  Point.towards' (center a) (center b)

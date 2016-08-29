@@ -1,4 +1,4 @@
-module Entity exposing (Entity, view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs)
+module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, imaginary, isCreature)
 
 
 import Point exposing (Point)
@@ -13,6 +13,8 @@ import Svg
 
 type Orientation = Up | Down
 
+type Accessible = Open | Closed 
+
 type Entity = Monster Creature.Model
             | Player Warrior.Model
             | Wall Point
@@ -21,6 +23,10 @@ type Entity = Monster Creature.Model
             | Door Point
             | StairsUp Point
             | StairsDown Point
+            | Memory Entity
+            | Entrance Bool Point
+            | Crystal Bool Point
+            | Imaginary Entity
 
 -- constructors
 wall point =
@@ -46,6 +52,26 @@ upstairs point =
 
 downstairs point =
   StairsDown point
+
+memory entity =
+  Memory entity
+
+crystal taken pt =
+  Crystal taken pt
+
+entrance open pt =
+  Entrance open pt
+
+imaginary entity =
+  Imaginary entity
+
+isCreature entity =
+  case entity of
+    Monster _ -> 
+      True
+  
+    _ ->
+      False
 
 -- helpers
 
@@ -76,6 +102,24 @@ describe entity =
     StairsDown _ ->
       "a downward-curving staircase"
 
+    Memory entity ->
+      "You saw " ++ (describe entity) ++ " here"
+
+    Imaginary entity ->
+      "You imagine there might be " ++ (describe entity) ++ " here"
+      
+    Crystal taken _ ->
+      if taken then
+        "a pedestal where the Crystal was"
+      else
+        "the shimmering Crystal"
+
+    Entrance open _ ->
+      if open then
+        "an open heavy metal gateway and daylight beyond"
+      else
+        "a closed heavy metal gateway"
+
 -- view
 view : Entity -> Svg.Svg a
 view entity =
@@ -85,13 +129,13 @@ color : Entity -> String
 color entity =
   case entity of
     Monster _ ->
-      "darkgrey"
+      "grey"
 
     Player _ ->
       "white"
 
     Wall _ ->
-      "darkgrey"
+      "grey"
 
     Coin _ ->
       "gold"
@@ -108,7 +152,17 @@ color entity =
     StairsDown _ ->
       "yellow"
 
-    
+    Memory _ ->
+      "rgba(80,80,120,0.4)"
+
+    Imaginary _ ->
+      "green"
+
+    Crystal taken _ ->
+      if taken then "gray" else "white"
+
+    Entrance open _ ->
+      if open then "green" else "red"
 
 position : Entity -> Point.Point
 position entity =
@@ -137,7 +191,17 @@ position entity =
     StairsDown point ->
       point
 
+    Crystal _ pt ->
+      pt
 
+    Entrance _ pt ->
+      pt
+
+    Memory entity ->
+      position entity
+
+    Imaginary entity ->
+      position entity
 
 glyph : Entity -> String
 glyph entity =
@@ -152,10 +216,10 @@ glyph entity =
       "#"
 
     Coin _ ->
-      "."
+      "*"
 
     Floor _ ->
-      " "
+      "."
 
     Door _ ->
       "+"
@@ -165,4 +229,15 @@ glyph entity =
 
     StairsDown _ ->
       "<"
+    
+    Memory e ->
+      glyph e
 
+    Imaginary e ->
+      glyph e
+
+    Entrance _ _ ->
+      "∞" 
+
+    Crystal _ _ ->
+      "∆"

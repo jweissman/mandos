@@ -1,4 +1,4 @@
-module Graph exposing (Graph, map, fold, minimumBy, match, node, edge, nodeWithEdges, tree)
+module Graph exposing (Graph, map, fold, minimumBy, match, node, edge, nodeWithEdges, tree, listNodes)
 import Util
 
 type Graph a = Node a (List (Graph a))
@@ -18,6 +18,10 @@ map f (Node n ns) =
 mapNodes : (Graph a -> Graph a) -> Graph a -> Graph a
 mapNodes f (Node n ns) =
   f (Node n (List.map (mapNodes f) ns))
+
+listNodes : Graph a -> List a
+listNodes (Node n ns) =
+  n :: (List.concatMap (listNodes) ns)
 
 -- fold over edges
 fold : ((a,a) -> b -> b) -> b -> Graph a -> b
@@ -45,7 +49,7 @@ joinMatching n node' trialNode =
     trialNode
 
 connect' : Graph a -> Graph a -> Graph a
-connect' (Node n ns) n' = 
+connect' (Node n ns) n' =
   Node n (n' :: ns)
 
 nodeValue : Graph a -> a
@@ -55,26 +59,8 @@ nodeValue (Node n _) = n
 
 minimumBy : (a -> comparable) -> Graph a -> Graph a
 minimumBy f graph =
-  let
-    (Node n edges) =
-      graph
-
-    restMinDist =
-      f (nodeValue minRest)
-
-    minEdges =
-      edges
-      |> List.map (minimumBy f)
-
-    minRest =
-      minEdges
-      |> Util.minBy (\n' -> f (nodeValue n'))
-      |> Maybe.withDefault graph
-  in
-   if (f n) < restMinDist  then
-     graph
-   else
-     minRest
+  minimumWhere f (\_ -> True) graph
+  |> Maybe.withDefault (graph)
 
 -- minimum by a comparator, filtered by a bool
 minimumWhere : (a -> comparable) -> (a -> Bool) -> Graph a -> Maybe (Graph a)
@@ -82,7 +68,6 @@ minimumWhere f pred graph =
   let
     (Node n edges) =
       graph
-
 
     minEdges =
       edges
@@ -172,6 +157,7 @@ tree' f pred graph ls =
             case closestNode of
               Just closest ->
                 graph |> edge (nodeValue closest) (elem)
+
               Nothing ->
                 graph
         in

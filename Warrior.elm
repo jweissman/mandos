@@ -20,7 +20,6 @@ type alias Model =
   , attack : Int
   , defense : Int
   , steps : Int
-  --, dead : Bool
   }
 
 
@@ -28,10 +27,10 @@ type alias Model =
 
 init : Point -> Model
 init point =
-  { hp = 10
-  , maxHp = 10
+  { hp = 20
+  , maxHp = 20
   , direction = North
-  , position = point -- {x=5, y=5}
+  , position = point
   , gold = 0
   , attack = 3
   , defense = 1
@@ -44,9 +43,14 @@ init point =
 
 step : Direction -> Model -> Model
 step direction model =
-  { model | position = model.position |> slide direction
+  let model' = { model | position = model.position |> slide direction
           , steps = model.steps + 1
           }
+  in
+    if model.steps % 10 == 0 then
+      model' |> heal 1
+    else
+      model'
 
 takeDamage : Int -> Model -> Model
 takeDamage amount model =
@@ -56,8 +60,7 @@ enrich : Int -> Model -> Model
 enrich amount model =
   { model | gold = model.gold + amount }
 
--- VIEW
---view : Model -> Svg.Svg a
---view model =
-  --Entity.render model
-  --Graphics.render "@" model.position
+heal : Int -> Model -> Model
+heal amount model =
+  { model | hp = min model.maxHp (model.hp + 1) }
+
