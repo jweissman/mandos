@@ -202,6 +202,7 @@ stateView model =
       [ jumbo
       , hero
       , anyKey
+      --, Graphics.render "YOU NEED CHROME (FIREFOX IS NO USE HERE)" (35, 15) "red"
       , trademark
       ]
 

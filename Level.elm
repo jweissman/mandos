@@ -602,20 +602,9 @@ emplaceEntrance point model =
           |> removeWall point
 
 removeWall pt model =
-  --let
-  --  walls' =
-  --    model.walls |> List.filterMap (\pt' ->
-  --      if not (pt == pt') then Just pt' else Nothing)
-  --in
   { model | walls = Set.remove pt model.walls }
 
 removeFloor pt model =
-  --let
-  --  floors' =
-  --    model.floors
-  --    |> List.filterMap (\pt' ->
-  --      if not (pt == pt') then Just pt' else Nothing)
-  --in
   { model | floors = Set.remove pt model.floors }
 
 addWallsAround pt model =
@@ -624,14 +613,7 @@ addWallsAround pt model =
       Direction.directions
       |> List.map (\d -> Point.slide d pt)
       |> Set.fromList
-      |> Set.filter (\wall ->
-        not (
-          (model |> isFloor wall) --||
-          --(model |> isWall)
-        )
-          --(model.floors |> List.any (\floor' -> wall == floor')) ||
-          --(model.walls |> List.any (\wall' -> wall == wall'))
-      )
+      |> Set.filter (\wall -> not ( (model |> isFloor wall)))
   in
      { model | walls = Set.union newWalls model.walls }
 
@@ -662,8 +644,6 @@ dropCoins model =
 
     path' =
       Path.seek up down (not << (\pt -> isWall pt model))
-      --path up down (\pt -> isWall pt model)
-      --|> Maybe.withDefault []
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
       |> List.tail |> Maybe.withDefault []
@@ -676,8 +656,9 @@ dropCoins model =
           head :: (everyN n rest)
 
     coins' =
-      path' |> everyN (List.length path' // 3)
+      path' |> everyN (4) --List.length path' // 3)
   in
+
     { model | coins = Set.fromList coins' }
 
 spawnCreatures : Int -> Level -> Level

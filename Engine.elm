@@ -11,6 +11,7 @@ import Mouse
 import Util
 import Time
 import Graphics
+import Quest exposing (Quest)
 
 import Set exposing (Set)
 import Svg exposing (svg, rect, text')
@@ -24,6 +25,7 @@ type alias Engine =
   , followPath : Maybe (List Point)
   , auto : Bool
   , telepathy : Bool
+  , quests : List Quest
   }
 
 init : Engine
@@ -34,6 +36,7 @@ init =
   , followPath = Nothing
   , auto = False
   , telepathy = False
+  , quests = [ Quest.findCrystal ]
   }
 
 enter : Dungeon -> Engine -> Engine
@@ -65,21 +68,48 @@ enter dungeon model =
   ({ model | world = world' |> World.playerViewsField
    })
 
+illuminate : Engine -> Engine
+illuminate model =
+  { model | world = World.playerViewsField model.world }
+
 handleKeypress : Char -> Engine -> Engine
 handleKeypress keyChar model =
-  let reset = (resetFollow << resetAuto << moveCreatures) in
-  model |> case keyChar of
-    'k' -> reset << playerSteps North -- << reset
-    'l' -> reset << playerSteps East --<< reset
-    'j' -> reset << playerSteps South --<< reset
-    'h' -> reset << playerSteps West --<< reset
-    'x' -> playerExplores
-    'a' -> autorogue
-    't' -> telepath
-    _ -> reset -- (resetFollow << resetAuto)
+  let 
+    reset = (
+      resetFollow << 
+      resetAuto << 
+      illuminate << 
+      moveCreatures
+    ) 
+  in
+    model |> case keyChar of
+      'a' -> autorogue
+      'h' -> reset << playerSteps West
+      'j' -> reset << playerSteps South
+      'k' -> reset << playerSteps North
+      'l' -> reset << playerSteps East
+      't' -> telepath
+      'x' -> playerExplores
+      _ -> reset
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
+  model 
+  |> followPaths
+  |> updateQuests 
+
+updateQuests : Engine -> Engine
+updateQuests model =
+  -- check if we've unlocked any quests...
+  let
+    quests' =
+      model.quests
+      |> Quest.unlocked model.world
+  in
+    { model | quests = quests' ++ model.quests }
+
+followPaths : Engine -> Engine
+followPaths model =
   case model.followPath of
     Nothing ->
       if model.auto then
@@ -97,13 +127,10 @@ autorogue model =
 
 telepath model =
   if model.telepathy then
-  { model | telepathy = False }
+    { model | telepathy = False }
   else
-  --Debug.log "TELEPATH"
-  { model | telepathy = True }
-
-
-
+    --Debug.log "TELEPATH!"
+    { model | telepathy = True }
 
 moveCreatures model =
   let
@@ -167,11 +194,14 @@ hoverAt position model =
       if wasLit then
         model |> rememberEntityAt point
       else
-        model
+        if model.telepathy then
+          model |> imagineEntityAt point
+        else
+          model
 
 seeEntityAt point model =
   let
-    entities = 
+    entities =
       World.entitiesAt point model.world
 
     maybeEntity =
@@ -194,7 +224,7 @@ seeEntityAt point model =
 
 rememberEntityAt point model =
   let
-    entity = 
+    entity =
       World.entitiesAt point model.world
       |> List.filter (not << Entity.isCreature)
       |> List.reverse
@@ -206,7 +236,7 @@ rememberEntityAt point model =
            Just (Entity.memory entity')
          Nothing ->
            Nothing
-            
+
     path' =
       case maybeEntity of
         Nothing ->
@@ -218,6 +248,33 @@ rememberEntityAt point model =
       { model | hover = maybeEntity
               , hoverPath = path'
       }
+
+
+imagineEntityAt point model =
+  let
+    entity =
+      World.entitiesAt point model.world
+      |> List.reverse
+      |> List.head
+
+    maybeEntity =
+      case entity of
+        Just entity' ->
+          Just (Entity.imaginary entity')
+        Nothing ->
+          Nothing
+
+    path' =
+      case maybeEntity of
+        Nothing ->
+          []
+
+        Just entity ->
+          model |> pathToEntity entity
+  in
+    { model | hover = maybeEntity
+            , hoverPath = path' 
+    }
 
 pathToEntity entity model =
   let
@@ -277,6 +334,7 @@ playerFollowsPath model =
               ({model | followPath = followPath' })
               |> playerSteps direction
               |> moveCreatures
+              |> illuminate
             else
               model
               |> resetFollow
@@ -295,7 +353,7 @@ playerExplores model =
 
     (explored,unexplored) =
       let v = (World.viewed model.world) in
-      model.world 
+      model.world
       |> World.floors
       |> Set.toList
       |> List.partition (\p -> List.member p v)
@@ -317,8 +375,8 @@ playerExplores model =
         if List.length visibleCreatures > 0 then
           visibleCreatures
         else
-          if List.length frontier > 0 then 
-            frontier 
+          if List.length frontier > 0 then
+            frontier
           else
             World.downstairs model.world ++ World.crystals model.world
 
@@ -333,9 +391,9 @@ playerExplores model =
           Nothing
 
         Just dest ->
-          let 
-            path' = 
-              Path.seek dest playerPos (\pt -> 
+          let
+            path' =
+              Path.seek dest playerPos (\pt ->
                 Set.member pt (World.walls model.world))
           in
             if List.length path' == 0 then
@@ -360,7 +418,7 @@ view model =
 
     worldView =
       World.view { world | debugPath = path
-                         , showMap = model.telepathy 
+                         , showMap = model.telepathy
                        }
 
     debugMsg =
@@ -379,5 +437,40 @@ view model =
 
     note =
       Graphics.render debugMsg (20,1) "rgba(160,160,160,0.6)"
+
+    quests =
+      questJournalView (1,35) model --.quests) -- |> List.filter (not << (Quest.completed model.world)))
+      --(Graphics.render "QUESTS" (25,35) "grey") ::
+      --(model.quests
+      --|> List.filter (not << (Quest.completed model.world))
+      --|> List.indexedMap (\idx q ->
+      --  Graphics.render (Quest.describe q) (25,36+idx) "white"))
   in
-    worldView ++ [note]
+    worldView ++ quests ++ [note]
+
+
+questJournalView : Point -> Engine -> List (Svg.Svg a)
+questJournalView (x,y) model = 
+  let
+    quests =
+      model.quests
+
+    completed =
+      quests
+      |> List.filter (Quest.completed model.world)
+
+    active =
+      quests
+      |> List.filter (not << (Quest.completed model.world))
+
+    title =
+      (Graphics.render "QUESTS" (x,y) "grey")
+  in
+    title ::
+      (questGroupView (x,y+1) active "[ ]" "lightgrey") ++
+      (questGroupView (x,y+1+(List.length active)) completed "[x]" "darkgrey")
+
+questGroupView (x,y) quests prefix color =
+  (quests
+  |> List.indexedMap (\idx q ->
+    Graphics.render (prefix ++ " " ++ Quest.describe q) (x,y+1+idx) color))

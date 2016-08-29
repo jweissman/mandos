@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, exploration, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures)
+module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -60,13 +60,6 @@ viewed : Model -> List Point
 viewed model =
   let lvl = (level model) in
   lvl.viewed
-
-exploration : Model -> (List Point, List Point)
-exploration model =
-  let v = viewed model in
-  Set.union (model |> floors) (model |> walls)
-  |> Set.toList
-  |> List.partition (\p -> List.member p v)
 
 walls : Model -> Set Point
 walls model =
@@ -148,7 +141,7 @@ playerSteps direction model =
     model
     |> playerMoves direction
     |> playerAscendsOrDescends
-    |> playerViewsField
+    --|> playerViewsField
     |> playerCollectsCoins
     |> playerLiberatesCrystal
     |> playerEscapesHall
@@ -356,12 +349,14 @@ illuminate source model =
       |> Set.toList
 
     blockers =
-      Set.union (walls model) (doors model)
+      (creatures model)
+      |> List.map .position
+      |> Set.fromList
+      |> Set.union (Set.union (walls model) (doors model))
 
   in
     source
     |> Optics.illuminate perimeter blockers
-    
 
 -- VIEW
 view : Model -> List (Svg.Svg a)
@@ -369,20 +364,30 @@ view model =
   let
     litEntities =
       model.illuminated
-      |> List.concatMap (\pt -> entitiesAt pt model)
+      --|> List.map (\pt -> entitiesAt pt model)
+      |> List.concatMap (\pt -> 
+        case (entitiesAt pt model) |> List.reverse |> List.head of
+          Nothing -> []
+          Just e -> [e]
+        )
 
     memoryEntities =
       (viewed model)
-      |> List.concatMap (\pt -> entitiesAt pt model)
+      |> List.concatMap (\pt -> 
+        case (entitiesAt pt model) |> List.reverse |> List.head of
+          Nothing -> []
+          Just e -> [e]
+        )
       |> List.filter (not << Entity.isCreature)
       |> List.map (Entity.memory)
       |> List.filter (\pt -> not (List.member pt litEntities))
 
-    --(explored, unexplored) = 
-    --  exploration model
+    --viewed' = (viewed model)
 
     --unexploredEntities =
-    --  unexplored
+    --  Set.union (model |> floors) (model |> walls)
+    --  |> Set.filter (\pt -> not (List.member pt viewed'))
+    --  |> Set.toList
     --  |> List.concatMap (\pt -> entitiesAt pt model)
     --  |> List.map (Entity.imaginary)
 
@@ -390,7 +395,6 @@ view model =
       --if model.showMap then
       --  memoryEntities ++
       --  unexploredEntities ++
-
       --  litEntities ++
       --  [Entity.player model.player]
       --else

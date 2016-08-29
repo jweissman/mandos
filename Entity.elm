@@ -11,9 +11,9 @@ import Svg
 
 -- types
 
-type Orientation = Up | Down
-
-type Accessible = Open | Closed 
+--type Orientation = Up | Down
+--
+--type Accessible = Open | Closed 
 
 type Entity = Monster Creature.Model
             | Player Warrior.Model
