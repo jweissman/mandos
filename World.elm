@@ -359,13 +359,21 @@ illuminate source model =
     |> Optics.illuminate perimeter blockers
 
 -- VIEW
-view : Model -> List (Svg.Svg a)
-view model =
+listInvisibleEntities : Model -> List Entity
+listInvisibleEntities model =
+  let viewed' = (viewed model) in
+  Set.union (model |> floors) (model |> walls)
+  |> Set.filter (\pt -> not (List.member pt viewed'))
+  |> Set.toList
+  |> List.concatMap (\pt -> entitiesAt pt model)
+  |> List.map (Entity.imaginary)
+
+listEntities : Model -> List Entity
+listEntities model =
   let
     litEntities =
       model.illuminated
-      --|> List.map (\pt -> entitiesAt pt model)
-      |> List.concatMap (\pt -> 
+      |> List.concatMap (\pt ->
         case (entitiesAt pt model) |> List.reverse |> List.head of
           Nothing -> []
           Just e -> [e]
@@ -373,7 +381,7 @@ view model =
 
     memoryEntities =
       (viewed model)
-      |> List.concatMap (\pt -> 
+      |> List.concatMap (\pt ->
         case (entitiesAt pt model) |> List.reverse |> List.head of
           Nothing -> []
           Just e -> [e]
@@ -382,26 +390,23 @@ view model =
       |> List.map (Entity.memory)
       |> List.filter (\pt -> not (List.member pt litEntities))
 
-    --viewed' = (viewed model)
+  in
+    if model.showMap then
+      memoryEntities ++
+      (listInvisibleEntities model) ++
+      litEntities ++
+      [Entity.player model.player]
+    else
+      memoryEntities ++
+      litEntities ++
+      [Entity.player model.player]
 
-    --unexploredEntities =
-    --  Set.union (model |> floors) (model |> walls)
-    --  |> Set.filter (\pt -> not (List.member pt viewed'))
-    --  |> Set.toList
-    --  |> List.concatMap (\pt -> entitiesAt pt model)
-    --  |> List.map (Entity.imaginary)
-
+view : Model -> List (Svg.Svg a)
+view model =
+  let
     entities =
-      --if model.showMap then
-      --  memoryEntities ++
-      --  unexploredEntities ++
-      --  litEntities ++
-      --  [Entity.player model.player]
-      --else
-        memoryEntities ++
-        litEntities ++
-        [Entity.player model.player]
-
+      listEntities model
+      
     entityViews =
       List.map (Entity.view) entities
 

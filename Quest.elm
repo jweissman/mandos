@@ -1,15 +1,25 @@
-module Quest exposing (Quest, completed, describe, findCrystal, escape, goal, unlocked)
+module Quest exposing (Quest, completed, describe, findCrystal, escape, goal, unlocked, coreCampaign)
 
 import World
 
-type Goal = FindCrystal
+type Goal = FindWeapon
+          --| FindArmor
+          --| FindAlly
+          | FindCrystal
           | Escape
 
 type Quest = Quest Goal (List Quest)
 
---type Quest = Quest { goal : Goal
---                   , unlocks : (List Quest)
---                   }
+coreCampaign : List Quest
+coreCampaign =
+  [ findWeapon
+  --, findArmor
+  --, findAlly
+  ]
+
+findWeapon : Quest
+findWeapon =
+  Quest FindWeapon [ findCrystal ]
 
 findCrystal : Quest
 findCrystal =
@@ -19,13 +29,15 @@ escape : Quest
 escape =
   Quest Escape []
 
-
 goal : Quest -> Goal
 goal (Quest goal' _) = goal'
 
 describe : Quest -> String
 describe (Quest goal _) =
   case goal of
+    FindWeapon ->
+      "Get a weapon"
+
     FindCrystal ->
       "Seek the Crystal of Time"
 
@@ -41,6 +53,8 @@ completed world (Quest goal _) =
     Escape ->
       world.hallsEscaped
 
+    FindWeapon ->
+      False
 
 unlocked : World.Model -> List Quest -> List Quest
 unlocked world quests =
@@ -52,14 +66,8 @@ unlocked world quests =
     unlocked' =
       completed'
       |> List.concatMap (\(Quest _ unlocks) -> unlocks)
-      |> List.filter (\(Quest goal' _) -> 
+      |> List.filter (\(Quest goal' _) ->
         not (List.member goal' (List.map goal quests)))
 
   in
     unlocked'
-
---findCrystal =
---  FindCrystal
---
---escape =
---  Escape

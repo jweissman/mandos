@@ -1,4 +1,4 @@
-module Direction exposing (Direction(..), random, describe, invert, directions, cardinalDirections) --, between)
+module Direction exposing (Direction(..), random, describe, invert, directions, cardinalDirections)
 
 import Random
 

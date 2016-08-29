@@ -36,7 +36,7 @@ init =
   , followPath = Nothing
   , auto = False
   , telepathy = False
-  , quests = [ Quest.findCrystal ]
+  , quests = Quest.coreCampaign --[ Quest.findCrystal ]
   }
 
 enter : Dungeon -> Engine -> Engine

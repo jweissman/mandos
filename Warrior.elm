@@ -2,12 +2,7 @@ module Warrior exposing (Model, init, step, takeDamage, enrich)
 
 import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
-
---import Entity
-
-import Graphics
-import Svg
-import Html exposing (Html)
+--import Weapon exposing (Weapon)
 
 -- MODEL
 
@@ -20,6 +15,7 @@ type alias Model =
   , attack : Int
   , defense : Int
   , steps : Int
+  --, weapon : Maybe Weapon
   }
 
 
