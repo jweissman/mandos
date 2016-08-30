@@ -2,9 +2,9 @@ module Log exposing (Model, init, view)
 
 import Creature
 import Event exposing (Event)
-
-import Html
+import Point exposing (Point)
 import Graphics
+
 import Svg 
 
 -- MODEL
@@ -14,17 +14,17 @@ type alias Model = List Event
 init : Model
 init = [ Event.awaken ]
 
-origin = (15,35)
+-- origin = (15,35)
 
 -- VIEW
-view : Model -> List (Svg.Svg a)
-view model =
+view : Point -> Model -> List (Svg.Svg a)
+view origin model =
   let
     notes =
       List.take 5 (List.reverse (List.map Event.describe model))
 
     logLines =
-      List.indexedMap logLineView notes
+      List.indexedMap (logLineView origin) notes
 
     header =
       Graphics.render "EVENTS" origin "grey"
@@ -32,7 +32,7 @@ view model =
   in
     [header] ++ logLines
 
-logLineView : Int -> String -> Svg.Svg a
-logLineView idx note =
+logLineView : Point -> Int -> String -> Svg.Svg a
+logLineView origin idx note =
   let (ox,oy) = origin in
-  Graphics.render note (ox,oy+1+idx) ("#" ++ (toString (7-idx)) ++ "808" ++ (toString (7-idx)) ++ "8")
+  Graphics.render note (ox,oy+1+idx) ("#" ++ (toString (9-idx)) ++ "808" ++ (toString (9-idx)) ++ "8")

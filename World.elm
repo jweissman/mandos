@@ -418,50 +418,24 @@ view model =
     entityViews =
       List.map (Entity.view) entities
 
-    log =
-      Log.view model.events
+    --log =
+    --  Log.view model.events
 
-    info =
-      infoView model
+    --info =
+    --  infoView model
 
     highlight =
       highlightCells model.debugPath
 
     playerCard =
-      playerCardView model.player
+      Warrior.cardView (60,8) model.player
 
   in
-    entityViews ++ log ++ [info, playerCard] ++ highlight
-
-infoView : Model -> Svg.Svg a
-infoView model =
-  let
-    level =
-      "LEVEL: " ++ toString model.depth
-
-    gold =
-      "GOLD: " ++ toString model.player.gold
-
-    hp =
-      "HP: " ++ toString model.player.hp ++ "/" ++ toString model.player.maxHp
-
-    message =
-      String.join "  |  " [ gold, hp, level ]
-
-  in
-     Graphics.render message (0,1) "green"
-
-playerCardView : Warrior.Model -> Svg.Svg a
-playerCardView model =
-  let
-    wielding =
-      "WEAPON: " ++
-      case model.weapon of
-        Nothing -> "(none)"
-        Just weapon ->
-          Weapon.describe weapon
-  in
-    Graphics.render wielding (55, 1) "white"
+    entityViews
+    ++ highlight
+    --++ log
+    --++ [info]
+    --++ playerCard
 
 highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =

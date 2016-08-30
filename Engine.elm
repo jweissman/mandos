@@ -7,13 +7,17 @@ import World
 import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
 import Configuration
-import Mouse
 import Util
-import Time
 import Graphics
+import Warrior
 import Quest exposing (Quest)
+import Journal
+import Log
+import Status
 
 import Set exposing (Set)
+import Time
+import Mouse
 import Svg exposing (svg, rect, text')
 import Svg.Attributes exposing (viewBox, width, height, x, y, fontSize, fontFamily)
 import Svg.Events
@@ -74,7 +78,7 @@ illuminate model =
 
 handleKeypress : Char -> Engine -> Engine
 handleKeypress keyChar model =
-  let 
+  let
     reset = (
       resetFollow << 
       resetAuto << 
@@ -419,7 +423,7 @@ view model =
     worldView =
       World.view { world | debugPath = path
                          , showMap = model.telepathy
-                       }
+                         }
 
     debugMsg =
       case model.hover of
@@ -439,38 +443,22 @@ view model =
       Graphics.render debugMsg (20,1) "rgba(160,160,160,0.6)"
 
     quests =
-      questJournalView (1,35) model --.quests) -- |> List.filter (not << (Quest.completed model.world)))
-      --(Graphics.render "QUESTS" (25,35) "grey") ::
-      --(model.quests
-      --|> List.filter (not << (Quest.completed model.world))
-      --|> List.indexedMap (\idx q ->
-      --  Graphics.render (Quest.describe q) (25,36+idx) "white"))
+      Journal.view (55,2) model.world model.quests
+
+    character =
+      Warrior.cardView (55, 6 + (List.length model.quests)) model.world.player
+
+    log =
+      Log.view (2, 35) model.world.events
+
+    status =
+      Status.view (0,1) model.world
+
+    rightBar =
+      quests 
+      ++ character 
+      ++ log
   in
-    worldView ++ quests ++ [note]
-
-
-questJournalView : Point -> Engine -> List (Svg.Svg a)
-questJournalView (x,y) model = 
-  let
-    quests =
-      model.quests
-
-    completed =
-      quests
-      |> List.filter (Quest.completed model.world)
-
-    active =
-      quests
-      |> List.filter (not << (Quest.completed model.world))
-
-    title =
-      (Graphics.render "QUESTS" (x,y) "grey")
-  in
-    title ::
-      (questGroupView (x,y+1) active "[ ]" "lightgrey") ++
-      (questGroupView (x,y+1+(List.length active)) completed "[x]" "darkgrey")
-
-questGroupView (x,y) quests prefix color =
-  (quests
-  |> List.indexedMap (\idx q ->
-    Graphics.render (prefix ++ " " ++ Quest.describe q) (x,y+1+idx) color))
+    worldView 
+    ++ [status, note]
+    ++ rightBar

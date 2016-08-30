@@ -1,8 +1,7 @@
 module Weapon exposing (Weapon, woodenSword, damage, describe)
 
-type Material = Iron
-              | Wood
-              | Steel
+import Material exposing (Material)
+import String
 
 type Family = Sword
             | Axe
@@ -15,31 +14,30 @@ type alias Weapon =
 woodenSword : Weapon
 woodenSword =
   { family   = Sword
-  , material = Wood
+  , material = Material.wood
   }
 
 damage : Weapon -> Int
-damage weapon =
-  round ((baseDamage weapon.family) * (materialMultiplier weapon.material))
+damage {family,material} =
+  let multiplier = (Material.strength material) in
+  round (baseDamage family * multiplier)
 
 describe : Weapon -> String
-describe weapon =
-  case weapon.family of
+describe {family,material} =
+  ["a", Material.describe material, describeFamily family ] 
+  |> String.join " "
+
+describeFamily : Family -> String
+describeFamily family =
+  case family of
     Sword -> 
-      "a sword"
+      "sword"
 
     Axe ->
-      "an axe"
+      "axe"
 
 baseDamage : Family -> Float
 baseDamage family =
   case family of
-    Sword -> 3
-    Axe -> 4
-
-materialMultiplier : Material -> Float
-materialMultiplier material =
-  case material of
-    Wood  -> 0.3
-    Iron  -> 1.0
-    Steel -> 1.75
+    Sword -> 7
+    Axe -> 10
