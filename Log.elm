@@ -15,13 +15,14 @@ init : Model
 init = [ Event.awaken ]
 
 -- origin = (15,35)
+maxEntries = 9
 
 -- VIEW
 view : Point -> Model -> List (Svg.Svg a)
 view origin model =
   let
     notes =
-      List.take 5 (List.reverse (List.map Event.describe model))
+      List.take maxEntries (List.reverse (List.map Event.describe model))
 
     logLines =
       List.indexedMap (logLineView origin) notes

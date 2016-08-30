@@ -14,6 +14,7 @@ import Quest exposing (Quest)
 import Journal
 import Log
 import Status
+import Item
 
 import Set exposing (Set)
 import Time
@@ -372,17 +373,32 @@ playerExplores model =
       |> List.map .position
       |> List.filter (\pt -> List.member pt (explored))
 
+    visibleCoins =
+      (World.coins model.world)
+      |> List.filter (\pt -> List.member pt (explored))
+
+    visibleItems =
+      (World.items model.world)
+      |> List.map Item.position
+      |> List.filter (\pt -> List.member pt (explored))
+
     destSources =
-      if model.world.crystalTaken then
-        World.upstairs model.world ++ World.entrances model.world
+      if List.length visibleCreatures > 0 then
+        visibleCreatures
       else
-        if List.length visibleCreatures > 0 then
-          visibleCreatures
+        if List.length visibleCoins > 0 then
+          visibleCoins
         else
-          if List.length frontier > 0 then
-            frontier
+          if List.length visibleItems > 0 then
+            visibleItems
           else
-            World.downstairs model.world ++ World.crystals model.world
+            if model.world.crystalTaken then
+              World.upstairs model.world ++ World.entrances model.world
+            else
+              if List.length frontier > 0 then
+                frontier
+              else
+                World.downstairs model.world ++ World.crystals model.world
 
     maybeDest =
       destSources
@@ -440,7 +456,7 @@ view model =
               "You see " ++ (Entity.describe entity) ++ "."
 
     note =
-      Graphics.render debugMsg (20,1) "rgba(160,160,160,0.6)"
+      Graphics.render debugMsg (25,1) "rgba(160,160,160,0.6)"
 
     quests =
       Journal.view (55,2) model.world model.quests

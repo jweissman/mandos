@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures)
+module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures, items)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -14,7 +14,7 @@ import Log
 import Event exposing (..)
 import Util
 import Configuration
-import Weapon
+import Item exposing (Item)
 
 import Set exposing (Set)
 import String
@@ -75,6 +75,10 @@ coins model =
 creatures : Model -> List Creature.Model
 creatures model =
   (level model).creatures
+
+items : Model -> List Item
+items model =
+  (level model).items
 
 doors : Model -> Set Point
 doors model =
@@ -366,6 +370,15 @@ illuminate source model =
     source
     |> Optics.illuminate perimeter blockers
 
+lastSingleton : List a -> List a
+lastSingleton ls =
+  case (ls |> List.reverse |> List.head) of
+    Nothing -> 
+      []
+
+    Just e ->
+      [e]
+
 -- VIEW
 listInvisibleEntities : Model -> List Entity
 listInvisibleEntities model =
@@ -373,7 +386,7 @@ listInvisibleEntities model =
   Set.union (model |> floors) (model |> walls)
   |> Set.filter (\pt -> not (List.member pt viewed'))
   |> Set.toList
-  |> List.concatMap (\pt -> entitiesAt pt model)
+  |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
   |> List.map (Entity.imaginary)
 
 listEntities : Model -> List Entity
@@ -381,19 +394,11 @@ listEntities model =
   let
     litEntities =
       model.illuminated
-      |> List.concatMap (\pt ->
-        case (entitiesAt pt model) |> List.reverse |> List.head of
-          Nothing -> []
-          Just e -> [e]
-        )
+      |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
 
     memoryEntities =
       (viewed model)
-      |> List.concatMap (\pt ->
-        case (entitiesAt pt model) |> List.reverse |> List.head of
-          Nothing -> []
-          Just e -> [e]
-        )
+      |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
       |> List.filter (not << Entity.isCreature)
       |> List.map (Entity.memory)
       |> List.filter (\pt -> not (List.member pt litEntities))

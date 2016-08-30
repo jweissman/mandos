@@ -11,7 +11,7 @@ view : Point -> World.Model -> Svg.Svg a
 view (x,y) model =
   let
     mandos =
-      "MANDOS v0.1"
+      "| MANDOS v0.1"
 
     level =
       "LEVEL: " ++ toString model.depth

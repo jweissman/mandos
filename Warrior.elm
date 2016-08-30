@@ -42,6 +42,7 @@ init point =
   , armor = Nothing
   }
 
+power : Model -> Int
 power model =
   case model.weapon of 
     Nothing -> 
@@ -49,7 +50,7 @@ power model =
     Just weapon ->
       model.attack + (Weapon.damage weapon)
 
-
+resistance : Model -> Int
 resistance model =
   case model.armor of
     Nothing ->
@@ -110,15 +111,15 @@ cardView (x,y) model =
           Armor.describe armor
 
     strength =
-      toString model.attack
+      toString (power model)
 
-    resistance =
-      toString model.defense
+    resist =
+      toString (resistance model)
   in
     [ Graphics.render "EQUIPMENT" (x, y) "darkgray"
     , Graphics.render ("WEAPON: " ++ wielding) (x, y+2) "lightgray"
-    , Graphics.render ("ARMOR: " ++ wearing) (x, y+3) "lightgray"
+    , Graphics.render (" ARMOR: " ++ wearing) (x, y+3) "lightgray"
     , Graphics.render "STATS" (x, y+7) "darkgray"
-    , Graphics.render ("POWER: " ++ strength) (x, y+9) "lightgray"
-    , Graphics.render ("RESISTANCE: " ++ resistance) (x, y+10) "lightgray"
+    , Graphics.render ("  STRENGTH: " ++ strength) (x, y+9) "lightgray"
+    , Graphics.render ("RESISTANCE: " ++ resist) (x, y+10) "lightgray"
     ]

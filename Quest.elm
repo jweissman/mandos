@@ -3,7 +3,7 @@ module Quest exposing (Quest, completed, describe, findCrystal, escape, goal, un
 import World
 
 type Goal = FindWeapon
-          --| FindArmor
+          | FindArmor
           --| FindAlly
           | FindCrystal
           | Escape
@@ -12,14 +12,15 @@ type Quest = Quest Goal (List Quest)
 
 coreCampaign : List Quest
 coreCampaign =
-  [ findWeapon
-  --, findArmor
-  --, findAlly
-  ]
+  [ findWeapon ]
 
 findWeapon : Quest
 findWeapon =
-  Quest FindWeapon [ findCrystal ]
+  Quest FindWeapon [ findArmor ]
+
+findArmor : Quest
+findArmor =
+  Quest FindArmor [ findCrystal ]
 
 findCrystal : Quest
 findCrystal =
@@ -38,6 +39,9 @@ describe (Quest goal _) =
     FindWeapon ->
       "Get a weapon"
 
+    FindArmor ->
+      "Put on some armor"
+
     FindCrystal ->
       "Seek the Crystal of Time"
 
@@ -54,7 +58,10 @@ completed world (Quest goal _) =
       world.hallsEscaped
 
     FindWeapon ->
-      not (world.player.weapon == Nothing) --False
+      not (world.player.weapon == Nothing)
+
+    FindArmor ->
+      not (world.player.armor == Nothing)
 
 unlocked : World.Model -> List Quest -> List Quest
 unlocked world quests =
