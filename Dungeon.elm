@@ -1,20 +1,17 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal, removeItem)
 
 import Warrior
 import Creature
 import Point exposing (Point)
-
 import Room exposing (Room)
 import Graph
-
 import Direction exposing (Direction(..))
-
 import Level exposing (Level)
 import Event exposing (Event)
+import Util
+import Item exposing (Item)
 
 import Random
-import Util
-
 -- TYPE
 
 type alias Dungeon = List Level
@@ -56,6 +53,11 @@ collectCoin : Point -> Int -> Dungeon -> Dungeon
 collectCoin pt depth model =
   model
   |> apply (Level.collectCoin pt) depth
+
+removeItem : Item -> Int -> Dungeon -> Dungeon
+removeItem item depth model =
+  model
+  |> apply (Level.removeItem item) depth
 
 liberateCrystal : Int -> Dungeon -> Dungeon
 liberateCrystal depth model =

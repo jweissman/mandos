@@ -35,7 +35,7 @@ adjective : Species -> String
 adjective species =
   case species of
     Bandit -> "ruthless"
-    Rat    -> "dirty"
+    Rat    -> "vicious"
     Snake  -> "wild"
     Tiger  -> "savage"
     Dragon -> "cruel"
@@ -44,9 +44,9 @@ adjective species =
 hp : Species -> Int
 hp species =
   case species of
-    Rat -> 3
-    Snake -> 5
-    Monkey -> 8
-    Bandit -> 10
-    Tiger -> 16
-    Dragon -> 50
+    Rat -> 2
+    Snake -> 4
+    Monkey -> 5
+    Bandit -> 7
+    Tiger -> 10
+    Dragon -> 16

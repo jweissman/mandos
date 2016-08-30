@@ -54,7 +54,7 @@ completed world (Quest goal _) =
       world.hallsEscaped
 
     FindWeapon ->
-      False
+      not (world.player.weapon == Nothing) --False
 
 unlocked : World.Model -> List Quest -> List Quest
 unlocked world quests =

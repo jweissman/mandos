@@ -1,6 +1,7 @@
-module Event exposing (Event, describe, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, ascend, descend, crystalTaken, hallsEscaped, isEnemyKill)
+module Event exposing (Event, describe, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, ascend, descend, crystalTaken, hallsEscaped, isEnemyKill, pickupItem)
 
 import Creature
+import Item exposing (Item)
 
 -- TYPES
 
@@ -16,7 +17,7 @@ type Event
   | Ascend Int
   | CrystalTaken
   | HallsEscaped
-  --| CreatureEngaged Creature.Model
+  | PickupItem Item
 
 -- ctors
 awaken =
@@ -52,32 +53,34 @@ crystalTaken =
 hallsEscaped =
   HallsEscaped
 
+pickupItem item =
+  PickupItem item
+
 -- helpers
 isEnemyKill event =
   case event of
     KillEnemy _ -> True
     _ -> False
 
-
 describe : Event -> String
 describe event =
   case event of
-    Awaken -> 
+    Awaken ->
       "You awaken in the Timeless Halls of Mandos..."
 
-    PickupCoin -> 
+    PickupCoin ->
       "You find a glittering golden coin."
 
     EnemyEngaged enemy ->
       "You see that the " ++ (Creature.describe enemy) ++ " engages you!"
 
-    AttackEnemy enemy dmg -> 
+    AttackEnemy enemy dmg ->
       "You attack " ++ (Creature.describe enemy) ++ " for " ++ (toString dmg) ++ " damage."
 
-    KillEnemy enemy -> 
+    KillEnemy enemy ->
       "You slay " ++ (Creature.describe enemy) ++ "!"
 
-    DefendEnemy enemy dmg -> 
+    DefendEnemy enemy dmg ->
       "You are attacked by " ++ (Creature.describe enemy) ++ " for " ++ (toString dmg) ++ " damage."
 
     Death ->
@@ -95,3 +98,5 @@ describe event =
     HallsEscaped ->
       "The doors swing open and you emerge into daylight...!"
 
+    PickupItem item ->
+      "You pick up " ++ (Item.describe item)

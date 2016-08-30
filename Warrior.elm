@@ -1,8 +1,10 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich)
+module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, computeDamageAgainst)
 
 import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
---import Weapon exposing (Weapon)
+
+import Weapon exposing (Weapon)
+import Item exposing (Item(..), ItemKind(..))
 
 -- MODEL
 
@@ -15,7 +17,7 @@ type alias Model =
   , attack : Int
   , defense : Int
   , steps : Int
-  --, weapon : Maybe Weapon
+  , weapon : Maybe Weapon
   }
 
 
@@ -31,6 +33,7 @@ init point =
   , attack = 3
   , defense = 1
   , steps = 0
+  , weapon = Nothing
   }
 
 -- UPDATE
@@ -48,6 +51,15 @@ step direction model =
     else
       model'
 
+computeDamageAgainst : Int -> Model -> Int
+computeDamageAgainst defense model =
+  case model.weapon of
+    Nothing -> 
+      max 1 (model.attack - defense)
+
+    Just weapon ->
+      max 1 (model.attack + (Weapon.damage weapon) - defense)
+
 takeDamage : Int -> Model -> Model
 takeDamage amount model =
   { model | hp = model.hp - amount }
@@ -60,3 +72,8 @@ heal : Int -> Model -> Model
 heal amount model =
   { model | hp = min model.maxHp (model.hp + 1) }
 
+collectsItem : Item -> Model -> Model
+collectsItem (Item _ kind) model =
+  case kind of
+    Arm weapon -> -- autoequip, no inv for now
+      { model | weapon = Just weapon }

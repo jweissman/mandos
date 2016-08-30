@@ -14,6 +14,7 @@ import Log
 import Event exposing (..)
 import Util
 import Configuration
+import Weapon
 
 import Set exposing (Set)
 import String
@@ -141,8 +142,8 @@ playerSteps direction model =
     model
     |> playerMoves direction
     |> playerAscendsOrDescends
-    --|> playerViewsField
     |> playerCollectsCoins
+    |> playerCollectsItems
     |> playerLiberatesCrystal
     |> playerEscapesHall
 
@@ -182,6 +183,19 @@ playerCollectsCoins model =
                 , dungeon = dungeon'
                 , events  = model.events ++ [event]
         }
+
+playerCollectsItems : Model -> Model
+playerCollectsItems model =
+  case (level model) |> Level.itemAt (model.player.position) of
+    Nothing ->
+      model
+
+    Just item ->
+      let event = Event.pickupItem item in
+      { model | player  = Warrior.collectsItem item model.player
+              , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
+              , events  = model.events ++ [ event ]
+      }
 
 playerLiberatesCrystal : Model -> Model
 playerLiberatesCrystal model =
@@ -245,7 +259,8 @@ playerAttacksCreature : Creature.Model -> Model -> Model
 playerAttacksCreature creature model =
   let
     damage =
-      model.player.attack - creature.defense
+      Warrior.computeDamageAgainst creature.defense model.player
+      --model.player.attack - creature.defense
   in
     model
     |> creatureTakesDamage creature damage
@@ -329,17 +344,10 @@ playerViewsField model =
 
     locations =
       model |> illuminate source
-
-    --dungeon =
-      --|> List.foldr (\location -> Dungeon.playerSees location model.depth) model.dungeon
-
   in
-    --if locations == model.illuminated then
-    --  model
-    --else
-      { model | dungeon = model.dungeon |> Dungeon.playerSees locations model.depth
-              , illuminated = locations -- |> Util.uniqueBy Point.code
-      }
+    { model | dungeon = model.dungeon |> Dungeon.playerSees locations model.depth
+            , illuminated = locations
+    }
 
 illuminate : Point -> Model -> List Point
 illuminate source model =
@@ -406,7 +414,7 @@ view model =
   let
     entities =
       listEntities model
-      
+
     entityViews =
       List.map (Entity.view) entities
 
@@ -419,8 +427,11 @@ view model =
     highlight =
       highlightCells model.debugPath
 
+    playerCard =
+      playerCardView model.player
+
   in
-    entityViews ++ log ++ [info] ++ highlight
+    entityViews ++ log ++ [info, playerCard] ++ highlight
 
 infoView : Model -> Svg.Svg a
 infoView model =
@@ -439,6 +450,18 @@ infoView model =
 
   in
      Graphics.render message (0,1) "green"
+
+playerCardView : Warrior.Model -> Svg.Svg a
+playerCardView model =
+  let
+    wielding =
+      "WEAPON: " ++
+      case model.weapon of
+        Nothing -> "(none)"
+        Just weapon ->
+          Weapon.describe weapon
+  in
+    Graphics.render wielding (55, 1) "white"
 
 highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
