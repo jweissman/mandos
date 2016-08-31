@@ -19,7 +19,7 @@ type alias Dungeon = List Level
 -- GENERATOR
 generate : Int -> Random.Generator Dungeon
 generate depth =
-  Random.list depth (Random.map Level.fromRooms (Room.generate 100000))
+  Random.list depth (Random.map Level.fromRooms (Room.generate 1000))
 
 prepare : Dungeon -> Dungeon
 prepare model =

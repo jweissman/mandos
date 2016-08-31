@@ -16,6 +16,9 @@ view (x,y) world quests =
       quests
       |> List.partition (Quest.completed world)
 
+    completed' =
+      quests
+
     title =
       (Graphics.render "QUESTS" (x,y) "grey")
   in

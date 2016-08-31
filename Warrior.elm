@@ -118,10 +118,11 @@ cardView (x,y) model =
     resist =
       toString (resistance model)
   in
-    [ Graphics.render "EQUIPMENT" (x, y) "darkgray"
-    , Graphics.render ("WEAPON: " ++ wielding) (x, y+2) "lightgray"
-    , Graphics.render (" ARMOR: " ++ wearing) (x, y+3) "lightgray"
-    , Graphics.render "STATS" (x, y+7) "darkgray"
-    , Graphics.render ("  STRENGTH: " ++ strength) (x, y+9) "lightgray"
-    , Graphics.render ("RESISTANCE: " ++ resist) (x, y+10) "lightgray"
+    [ Graphics.render "STATS" (x, y) "gray"
+    , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) "lightgray"
+    , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"
+
+    , Graphics.render "EQUIPMENT" (x, y+5) "gray"
+    , Graphics.render ("WEAPON: " ++ wielding) (x, y+7) "lightgray"
+    , Graphics.render (" ARMOR: " ++ wearing) (x, y+8) "lightgray"
     ]

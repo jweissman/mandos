@@ -11,4 +11,4 @@ viewWidth = 100
 viewHeight = 60
 
 -- player settings
-visionRadius = 16
+visionRadius = 7

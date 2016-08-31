@@ -444,7 +444,7 @@ view model =
       Journal.view (55,2) model.world model.quests
 
     character =
-      Warrior.cardView (55, 6 + (List.length model.quests)) model.world.player
+      Warrior.cardView (55, 5 + (List.length model.quests)) model.world.player
 
     log =
       Log.view (2, 37) model.world.events
