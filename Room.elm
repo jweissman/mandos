@@ -1,4 +1,4 @@
-module Room exposing (Room, generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center)
+module Room exposing (Room, Purpose(..), generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center, assign, armory, barracks)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -9,15 +9,19 @@ import Configuration
 import Random
 import Set exposing (Set)
 
-type RoomType = EmptyRoom
-              | TreasureHoard
-              --| MonsterCamp
-              --| DragonLair
+type Purpose = Armory
+             | Barracks
+
+armory = 
+  Armory
+
+barracks =
+  Barracks
 
 type alias Room = { origin : Point
                   , width : Int
-                  , height: Int
-                  --, kind : RoomType
+                  , height : Int
+                  , purpose : Maybe Purpose
                   }
 
 generate : Int -> Random.Generator (List Room)
@@ -53,6 +57,11 @@ create point width height =
   { origin = point
   , width = width
   , height = height
+  , purpose = Nothing
+  }
+
+assign purpose room =
+  { room | purpose = Just purpose
   }
 
 overlaps : Room -> Room -> Bool
@@ -62,10 +71,10 @@ overlaps a b =
 overlapsRelevantDirection : Int -> Room -> Room -> Bool
 overlapsRelevantDirection n a b =
   case directionBetween a b of
-    North -> overlapsX n a b --&& not (overlapsY n a b)
-    South -> overlapsX n a b --&& not (overlapsY n a b)
-    East  -> overlapsY n a b --&& not (overlapsX n a b)
-    West  -> overlapsY n a b --&& not (overlapsX n a b)
+    North -> overlapsX n a b
+    South -> overlapsX n a b
+    East  -> overlapsY n a b
+    West  -> overlapsY n a b
     _ -> False
 
 overlapsY n a b =

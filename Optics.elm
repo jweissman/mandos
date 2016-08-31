@@ -1,10 +1,11 @@
 module Optics exposing (illuminate)
 
+import Set exposing (Set)
 import Point exposing (Point, code)
 import Util
 import Bresenham exposing (line)
 
-illuminate : List Point -> List Point -> Point -> List Point
+illuminate : List Point -> Set Point -> Point -> List Point
 illuminate perimeter blockers source =
   let
     rays =
@@ -14,7 +15,7 @@ illuminate perimeter blockers source =
     |> List.concatMap rays
     |> Util.uniqueBy Point.code
 
-castRay : List Point -> Point -> Point -> List Point
+castRay : Set Point -> Point -> Point -> List Point
 castRay blockers src dst =
   let
     line' =
@@ -24,4 +25,4 @@ castRay blockers src dst =
 
   in
     line'
-    |> Util.takeWhile' (\pt -> not (List.member pt blockers))
+    |> Util.takeWhile' (\pt -> not (Set.member pt blockers))

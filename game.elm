@@ -37,7 +37,7 @@ main =
 
 type GameState = Splash | Generating | Playing | Death | Victory
 
-type alias Model = 
+type alias Model =
   { engine : Engine
   , state : GameState
   , generationUnderway : Bool
@@ -64,7 +64,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
     MapMsg dungeon ->
-      ({ model | engine = (model.engine |> Engine.enter dungeon) 
+      ({ model | engine = (model.engine |> Engine.enter dungeon)
                , state = Playing
       }, Cmd.none)
 
@@ -91,21 +91,21 @@ update message model =
 
     KeyMsg keyCode ->
       case model.state of
-        Splash -> 
+        Splash ->
           ({model | state = Generating}, Cmd.none)
 
-        Death -> 
+        Death ->
           ({model | state = Splash, engine = Engine.init}, Cmd.none)
 
-        Victory -> 
+        Victory ->
           ({model | state = Splash, engine = Engine.init}, Cmd.none)
 
-        Generating -> 
+        Generating ->
           (model, Cmd.none)
 
         Playing ->
-          let 
-            keyChar = 
+          let
+            keyChar =
               Char.fromCode keyCode
 
             engine' =
@@ -125,8 +125,8 @@ inferState model =
       model.engine.world.player.hp < 1
 
     state' =
-      if won then 
-        Victory 
+      if won then
+        Victory
       else
         if died then
           Death
@@ -154,40 +154,42 @@ view model =
       )
     ]
   in
-    Html.div [ style bgStyle ] 
+    Html.div [ style bgStyle ]
     [ Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
     , box (stateView model) --svg [ box ] (stateView model)
     ]
 
 box viewModel =
-  let 
-    scale = 
-      Configuration.viewScale 
+  let
+    scale =
+      Configuration.viewScale
+
     height' =
       Configuration.viewHeight
+
     width' =
       Configuration.viewWidth
+
     dims =
       [0,0,width',height']
       |> List.map toString
       |> String.join " "
-      --"0 0 " ++ (toString width) ++ " "
   in
     svg [ viewBox dims, width ((toString (width'*scale)) ++ "px"), height ((toString (height'*scale)) ++ "px") ] viewModel
 
-stateView model = 
-  let 
-    hero = 
+stateView model =
+  let
+    hero =
       Graphics.hero "MANDOS" (27,10)
 
-    jumbo = 
+    jumbo =
       Graphics.jumbo "@" (30,30)
 
     anyKey =
       Graphics.render "press any key to play" (33, 20) "lightgreen"
 
     trademark =
-      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 34) "darkgray"
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (27, 34) "darkgray"
 
     steps =
       model.engine.world.player.steps
@@ -196,38 +198,38 @@ stateView model =
       model.engine.world.events
       |> List.filter Event.isEnemyKill
       |> List.length
-  in 
-  case model.state of
-    Splash ->
-      [ jumbo
-      , hero
-      , anyKey
-      , trademark
-      ]
-
-    Generating ->
-      [ jumbo
-      , hero
-      ,Graphics.render "Generating world, please wait..." (32, 15) "lightgreen"
-      ,Graphics.render "(This may take a little while!)" (32, 20) "white"
-      ]
-
-    Victory ->
-      Engine.view model.engine
-      ++ [
-        Graphics.hero "YOU WON!" (26, 15) -- "lightgreen"
-      , Graphics.render "Congratulations!" (34, 20) "white"
-      , Graphics.render "You escaped the Halls of Mandos!" (31, 22) "white"
-        , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
-        , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
-      ]
-
-    Death ->
-        Engine.view model.engine ++ 
-        [ Graphics.hero "YOU DIED!" (23, 15) -- "lightgreen"
-        , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
-        , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
+  in
+    case model.state of
+      Splash ->
+        [ jumbo
+        , hero
+        , anyKey
+        , trademark
         ]
 
-    Playing ->
-      Engine.view model.engine
+      Generating ->
+        [ jumbo
+        , hero
+        , Graphics.render "Generating world, please wait..." (32, 15) "lightgreen"
+        , Graphics.render "(This may take a little while!)" (32, 20) "white"
+        ]
+
+      Victory ->
+        Engine.view model.engine
+        ++ [
+            Graphics.hero "YOU WON!" (25, 15)
+          , Graphics.render "Congratulations!" (34, 20) "white"
+          , Graphics.render "You escaped the Halls of Mandos!" (31, 22) "white"
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
+          , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
+          ]
+
+      Death ->
+          Engine.view model.engine ++
+          [ Graphics.hero "YOU DIED!" (23, 15)
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
+          , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
+          ]
+
+      Playing ->
+        Engine.view model.engine

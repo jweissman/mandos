@@ -1,6 +1,6 @@
-# rogue
+# mandos
 
-a tiny rogue clone written in elm
+a tiny rogue clone written in elm!
 
 # about
 
@@ -9,9 +9,16 @@ this is a learning elm project but i'd also like the code to be clear and well-f
 # features
 
   - [x] event log
+  - [x] melee combat
   - [x] auto-explore
   - [x] map generation
   - [x] field of vision
-  - [x] combat
-  - [ ] quests
+  - [x] quest journal
+  - [ ] weapons
+  - [ ] armor
   - [ ] items
+  - [ ] allies
+
+# caveats
+
+known not to work in firefox (this is maybe an `elm-keyboard` issue?)

@@ -1,8 +1,23 @@
-module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile')
+module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Set exposing (Set)
+
+everyNth n ls =
+  case (ls |> List.drop (n-1)) of
+    [] ->
+      []
+    (head :: rest) ->
+      head :: (everyNth n rest)
+
+mapEveryNth n f ls =
+  let ls' = List.take (n-1) ls in
+  case (List.drop (n-1) ls) of
+    [] ->
+      []
+    (head :: rest) ->
+      ls' ++ ((f head) :: (mapEveryNth n f rest))
 
 -- helpers from list extras
 minBy : (a -> comparable) -> List a -> Maybe a
@@ -45,3 +60,4 @@ takeWhile' predicate list =
     []      -> []
     x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
                else [x]
+

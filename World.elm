@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, exploration, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures)
+module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures, items)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -14,6 +14,7 @@ import Log
 import Event exposing (..)
 import Util
 import Configuration
+import Item exposing (Item)
 
 import Set exposing (Set)
 import String
@@ -61,16 +62,10 @@ viewed model =
   let lvl = (level model) in
   lvl.viewed
 
-exploration : Model -> (List Point, List Point)
-exploration model =
-  let v = viewed model in
-  ((model |> floors) ++ (model |> walls))
-  |> List.partition (\p -> List.member p v)
-
-walls : Model -> List Point
+walls : Model -> Set Point
 walls model =
   (level model).walls
-  |> Set.toList
+  --|> Set.toList
 
 coins : Model -> List Point
 coins model =
@@ -81,15 +76,19 @@ creatures : Model -> List Creature.Model
 creatures model =
   (level model).creatures
 
-doors : Model -> List Point
+items : Model -> List Item
+items model =
+  (level model).items
+
+doors : Model -> Set Point
 doors model =
   (level model).doors
-  |> Set.toList
+  --|> Set.toList
 
-floors : Model -> List Point
+floors : Model -> Set Point
 floors model =
   (level model).floors
-  |> Set.toList
+  --|> Set.toList
 
 upstairs : Model -> List Point
 upstairs model =
@@ -147,8 +146,8 @@ playerSteps direction model =
     model
     |> playerMoves direction
     |> playerAscendsOrDescends
-    |> playerViewsField
     |> playerCollectsCoins
+    |> playerCollectsItems
     |> playerLiberatesCrystal
     |> playerEscapesHall
 
@@ -163,7 +162,7 @@ canPlayerStep direction model =
       model.player.position
       |> slide direction
   in
-    not ( Level.isCreature move (level model) || List.member move (walls model))
+    not ( Level.isCreature move (level model) || Set.member move (walls model))
 --    not (isBlockedForPlayer move model)
 
 --isBlockedForPlayer : Point -> Model -> Bool
@@ -188,6 +187,19 @@ playerCollectsCoins model =
                 , dungeon = dungeon'
                 , events  = model.events ++ [event]
         }
+
+playerCollectsItems : Model -> Model
+playerCollectsItems model =
+  case (level model) |> Level.itemAt (model.player.position) of
+    Nothing ->
+      model
+
+    Just item ->
+      let event = Event.pickupItem item in
+      { model | player  = Warrior.collectsItem item model.player
+              , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
+              , events  = model.events ++ [ event ]
+      }
 
 playerLiberatesCrystal : Model -> Model
 playerLiberatesCrystal model =
@@ -251,7 +263,8 @@ playerAttacksCreature : Creature.Model -> Model -> Model
 playerAttacksCreature creature model =
   let
     damage =
-      model.player.attack - creature.defense
+      Warrior.computeDamageAgainst creature.defense model.player
+      --model.player.attack - creature.defense
   in
     model
     |> creatureTakesDamage creature damage
@@ -335,17 +348,10 @@ playerViewsField model =
 
     locations =
       model |> illuminate source
-
-    --dungeon =
-      --|> List.foldr (\location -> Dungeon.playerSees location model.depth) model.dungeon
-
   in
-    --if locations == model.illuminated then
-    --  model
-    --else
-      { model | dungeon = model.dungeon |> Dungeon.playerSees locations model.depth
-              , illuminated = locations -- |> Util.uniqueBy Point.code
-      }
+    { model | dungeon = model.dungeon |> Dungeon.playerSees locations model.depth
+            , illuminated = locations
+    }
 
 illuminate : Point -> Model -> List Point
 illuminate source model =
@@ -355,80 +361,86 @@ illuminate source model =
       |> Set.toList
 
     blockers =
-      (walls model) ++ (doors model)
+      (creatures model)
+      |> List.map .position
+      |> Set.fromList
+      |> Set.union (Set.union (walls model) (doors model))
 
   in
     source
     |> Optics.illuminate perimeter blockers
-    
+
+lastSingleton : List a -> List a
+lastSingleton ls =
+  case (ls |> List.reverse |> List.head) of
+    Nothing -> 
+      []
+
+    Just e ->
+      [e]
 
 -- VIEW
-view : Model -> List (Svg.Svg a)
-view model =
+listInvisibleEntities : Model -> List Entity
+listInvisibleEntities model =
+  let viewed' = (viewed model) in
+  Set.union (model |> floors) (model |> walls)
+  |> Set.filter (\pt -> not (List.member pt viewed'))
+  |> Set.toList
+  |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
+  |> List.map (Entity.imaginary)
+
+listEntities : Model -> List Entity
+listEntities model =
   let
     litEntities =
       model.illuminated
-      |> List.concatMap (\pt -> entitiesAt pt model)
+      |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
 
     memoryEntities =
       (viewed model)
-      |> List.concatMap (\pt -> entitiesAt pt model)
+      |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
       |> List.filter (not << Entity.isCreature)
       |> List.map (Entity.memory)
       |> List.filter (\pt -> not (List.member pt litEntities))
 
-    --(explored, unexplored) = 
-    --  exploration model
+  in
+    if model.showMap then
+      memoryEntities ++
+      (listInvisibleEntities model) ++
+      litEntities ++
+      [Entity.player model.player]
+    else
+      memoryEntities ++
+      litEntities ++
+      [Entity.player model.player]
 
-    --unexploredEntities =
-    --  unexplored
-    --  |> List.concatMap (\pt -> entitiesAt pt model)
-    --  |> List.map (Entity.imaginary)
-
+view : Model -> List (Svg.Svg a)
+view model =
+  let
     entities =
-      --if model.showMap then
-      --  memoryEntities ++
-      --  unexploredEntities ++
-
-      --  litEntities ++
-      --  [Entity.player model.player]
-      --else
-        memoryEntities ++
-        litEntities ++
-        [Entity.player model.player]
+      listEntities model
 
     entityViews =
       List.map (Entity.view) entities
 
-    log =
-      Log.view model.events
+    --log =
+    --  Log.view model.events
 
-    info =
-      infoView model
+    --info =
+    --  infoView model
 
     highlight =
       highlightCells model.debugPath
 
-  in
-    entityViews ++ log ++ [info] ++ highlight
-
-infoView : Model -> Svg.Svg a
-infoView model =
-  let
-    level =
-      "LEVEL: " ++ toString model.depth
-
-    gold =
-      "GOLD: " ++ toString model.player.gold
-
-    hp =
-      "HP: " ++ toString model.player.hp ++ "/" ++ toString model.player.maxHp
-
-    message =
-      String.join "  |  " [ gold, hp, level ]
+    playerCard =
+      Warrior.cardView (60,8) model.player
 
   in
-     Graphics.render message (0,1) "green"
+    entityViews
+    ++ highlight
+    --++ log
+    --++ [info]
+    --++ playerCard
 
 highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =

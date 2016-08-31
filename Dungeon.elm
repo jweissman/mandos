@@ -1,20 +1,17 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal, removeItem)
 
 import Warrior
 import Creature
 import Point exposing (Point)
-
 import Room exposing (Room)
 import Graph
-
 import Direction exposing (Direction(..))
-
 import Level exposing (Level)
 import Event exposing (Event)
+import Util
+import Item exposing (Item)
 
 import Random
-import Util
-
 -- TYPE
 
 type alias Dungeon = List Level
@@ -23,7 +20,7 @@ type alias Dungeon = List Level
 
 generate : Int -> Random.Generator Dungeon
 generate depth =
-  Random.list depth (Random.map Level.fromRooms (Room.generate 1000))
+  Random.list depth (Random.map Level.fromRooms (Room.generate 100))
 
 prepare : Dungeon -> Dungeon
 prepare model =
@@ -57,6 +54,11 @@ collectCoin pt depth model =
   model
   |> apply (Level.collectCoin pt) depth
 
+removeItem : Item -> Int -> Dungeon -> Dungeon
+removeItem item depth model =
+  model
+  |> apply (Level.removeItem item) depth
+
 liberateCrystal : Int -> Dungeon -> Dungeon
 liberateCrystal depth model =
   model
@@ -88,8 +90,6 @@ purge depth model =
         if n == depth then level else level')
   in
     (model', events)
-
---purge' model = model |> apply' Level.purge
 
 playerSees : List Point -> Int -> Dungeon -> Dungeon
 playerSees pts depth model =

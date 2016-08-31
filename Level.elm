@@ -1,22 +1,21 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal, itemAt, removeItem)
 
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
-import Room exposing (Room)
+import Room exposing (Room, Purpose(..))
 import Graph exposing (Graph)
-
 import Util
 import Path
 import Configuration
-
+import Weapon exposing (Weapon)
+import Armor exposing (Armor)
 import Warrior
 import Creature
 import Event exposing (Event)
 import Entity exposing (Entity)
-
+import Item exposing (Item)
 import Set exposing (Set)
-
 
 -- TYPE
 
@@ -29,6 +28,8 @@ type alias Level = { walls : Set Point
                    , upstairs : Maybe Point
                    , crystal : Maybe (Point, Bool)
                    , entrance : Maybe (Point, Bool)
+
+                   , items : List Item
 
                    , rooms : List Room
                    , viewed : List Point
@@ -49,6 +50,7 @@ init =
   , entrance = Nothing
   , rooms = []
   , viewed = []
+  , items = []
   }
 
 -- should probably spawn creatures here too
@@ -58,7 +60,8 @@ finalize depth model =
   model
   |> finalizeEntrance depth
   |> finalizeCrystal depth
-  |> spawnCreatures depth -- rooms
+  |> furnishRooms depth
+  |> spawnCreatures depth
 
 finalizeEntrance depth model =
   if depth == 0 then
@@ -211,6 +214,14 @@ entitiesAt point model =
       else
         Nothing
 
+    item =
+      case itemAt point model of
+        Just item' ->
+          Just (Entity.item item')
+
+        Nothing ->
+          Nothing
+
     entities =
       [ floor
       , door
@@ -221,6 +232,7 @@ entitiesAt point model =
       , upstairs
       , entrance
       , crystal
+      , item
       ]
   in
     entities
@@ -228,11 +240,15 @@ entitiesAt point model =
 
 creatureAt : Point -> Level -> Maybe Creature.Model
 creatureAt pt model =
-  let
-    creatures' =
-      List.filter (\c -> c.position == pt) model.creatures
-  in
-    List.head creatures'
+  model.creatures
+  |> List.filter (\c -> c.position == pt)
+  |> List.head
+
+itemAt : Point -> Level -> Maybe Item
+itemAt pt model =
+  model.items
+  |> List.filter (\item -> pt == (Item.position item))
+  |> List.head
 
 -- HELPERS (for update)
 
@@ -380,10 +396,18 @@ collectCoin : Point -> Level -> Level
 collectCoin pt model =
   let
     coins' =
-      model.coins
-      |> Set.remove pt -- (not << (\c -> c == pt))
+      model.coins |> Set.remove pt
   in
     { model | coins = coins' }
+
+removeItem : Item -> Level -> Level
+removeItem item model =
+  let
+    items' =
+      model.items
+      |> List.filter (\it -> not (it == item))
+  in
+    { model | items = items' }
 
 liberateCrystal : Level -> Level
 liberateCrystal model =
@@ -602,20 +626,9 @@ emplaceEntrance point model =
           |> removeWall point
 
 removeWall pt model =
-  --let
-  --  walls' =
-  --    model.walls |> List.filterMap (\pt' ->
-  --      if not (pt == pt') then Just pt' else Nothing)
-  --in
   { model | walls = Set.remove pt model.walls }
 
 removeFloor pt model =
-  --let
-  --  floors' =
-  --    model.floors
-  --    |> List.filterMap (\pt' ->
-  --      if not (pt == pt') then Just pt' else Nothing)
-  --in
   { model | floors = Set.remove pt model.floors }
 
 addWallsAround pt model =
@@ -624,14 +637,7 @@ addWallsAround pt model =
       Direction.directions
       |> List.map (\d -> Point.slide d pt)
       |> Set.fromList
-      |> Set.filter (\wall ->
-        not (
-          (model |> isFloor wall) --||
-          --(model |> isWall)
-        )
-          --(model.floors |> List.any (\floor' -> wall == floor')) ||
-          --(model.walls |> List.any (\wall' -> wall == wall'))
-      )
+      |> Set.filter (\wall -> not ( (model |> isFloor wall)))
   in
      { model | walls = Set.union newWalls model.walls }
 
@@ -661,24 +667,69 @@ dropCoins model =
               origin
 
     path' =
-      Path.seek up down (not << (\pt -> isWall pt model))
-      --path up down (\pt -> isWall pt model)
-      --|> Maybe.withDefault []
+      Path.seek up down (\pt -> isWall pt model)
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
       |> List.tail |> Maybe.withDefault []
 
-    everyN = \n ls ->
-      case (ls |> List.drop (n-1)) of
-        [] ->
-          []
-        (head :: rest) ->
-          head :: (everyN n rest)
-
     coins' =
-      path' |> everyN (List.length path' // 3)
+      path'
+      |> Util.everyNth 8
+      |> List.filter (\pt -> not (isDoor pt model))
+      |> Set.fromList
   in
-    { model | coins = Set.fromList coins' }
+    { model | coins = coins' }
+
+furnishRooms : Int -> Level -> Level
+furnishRooms depth model =
+  let model' = model |> assignRooms depth in
+  model'.rooms
+  |> List.foldr (furnishRoom depth) model'
+
+assignRooms : Int -> Level -> Level
+assignRooms depth model =
+  let
+    rooms' =
+      model.rooms
+      |> Util.mapEveryNth 5 (Room.assign Room.armory)
+      |> Util.mapEveryNth 7 (Room.assign Room.barracks)
+  in
+    { model | rooms = rooms' }
+
+furnishRoom : Int -> Room -> Level -> Level
+furnishRoom depth room model =
+  case room.purpose of
+    Nothing ->
+      model
+
+    Just purpose ->
+      model
+      |> furnishRoomFor purpose room depth
+
+furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
+furnishRoomFor purpose room depth model =
+  let
+    item =
+      case purpose of
+        Armory ->
+          Item.weapon Weapon.woodenSword
+
+        Barracks ->
+          Item.armor Armor.leatherTunic
+
+    (ox,oy) =
+      room.origin
+  in
+    model |> dropItem (ox+1,oy+1) item
+
+dropItem : Point -> Item.ItemKind -> Level -> Level
+dropItem pt kind model =
+  let item = Item.init pt kind in
+  model |> addItem item
+
+addItem : Item -> Level -> Level
+addItem item model =
+  { model | items = item :: model.items }
 
 spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
@@ -702,15 +753,3 @@ creatureForDepth depth =
       Creature.createMonkey
     else
       Creature.createBandit
-
-
--- pathfinding
---path : Point -> Point -> (Point -> Bool) -> Maybe (List Point)
---path dst src blocked =
---  Path.find dst src (movesFrom blocked)
---
---movesFrom : (Point -> Bool) ->  Point -> List (Point, Direction)
---movesFrom blocked point =
---  Direction.directions
---  |> List.map (\direction -> (Point.slide direction point, direction))
---  |> List.filter ((\p -> not (blocked p)) << fst)

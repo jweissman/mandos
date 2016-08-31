@@ -1,20 +1,15 @@
-module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, imaginary, isCreature)
-
+module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, imaginary, isCreature, item)
 
 import Point exposing (Point)
 import Creature
 import Warrior
-
 import String
 import Graphics
+import Item
+
 import Svg
 
 -- types
-
-type Orientation = Up | Down
-
-type Accessible = Open | Closed 
-
 type Entity = Monster Creature.Model
             | Player Warrior.Model
             | Wall Point
@@ -27,6 +22,7 @@ type Entity = Monster Creature.Model
             | Entrance Bool Point
             | Crystal Bool Point
             | Imaginary Entity
+            | Item Item.Item
 
 -- constructors
 wall point =
@@ -64,6 +60,9 @@ entrance open pt =
 
 imaginary entity =
   Imaginary entity
+
+item item' =
+  Item item'
 
 isCreature entity =
   case entity of
@@ -120,10 +119,13 @@ describe entity =
       else
         "a closed heavy metal gateway"
 
+    Item item ->
+      Item.describe item
+
 -- view
 view : Entity -> Svg.Svg a
 view entity =
-  Graphics.render (glyph entity) (position entity) (color entity) --"darkgreen"
+  Graphics.render (glyph entity) (position entity) (color entity)
 
 color : Entity -> String
 color entity =
@@ -135,22 +137,22 @@ color entity =
       "white"
 
     Wall _ ->
-      "grey"
+      "darkgrey"
 
     Coin _ ->
       "gold"
 
     Floor _ ->
-      "gray"
+      "rgba(80,80,120,0.7)"
 
     Door _ ->
       "orange"
 
     StairsUp _ ->
-      "green"
+      "lightgray"
 
     StairsDown _ ->
-      "yellow"
+      "lightgray"
 
     Memory _ ->
       "rgba(80,80,120,0.4)"
@@ -163,6 +165,9 @@ color entity =
 
     Entrance open _ ->
       if open then "green" else "red"
+
+    Item _ ->
+      "yellow"
 
 position : Entity -> Point.Point
 position entity =
@@ -203,6 +208,9 @@ position entity =
     Imaginary entity ->
       position entity
 
+    Item item ->
+      Item.position item
+
 glyph : Entity -> String
 glyph entity =
   case entity of
@@ -237,7 +245,10 @@ glyph entity =
       glyph e
 
     Entrance _ _ ->
-      "∞" 
+      "∞"
 
     Crystal _ _ ->
       "∆"
+
+    Item item ->
+      Item.glyph item
