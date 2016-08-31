@@ -41,7 +41,7 @@ init =
   , followPath = Nothing
   , auto = False
   , telepathy = False
-  , quests = Quest.coreCampaign --[ Quest.findCrystal ]
+  , quests = Quest.coreCampaign
   }
 
 enter : Dungeon -> Engine -> Engine
@@ -81,11 +81,11 @@ handleKeypress : Char -> Engine -> Engine
 handleKeypress keyChar model =
   let
     reset = (
-      resetFollow << 
-      resetAuto << 
-      illuminate << 
+      resetFollow <<
+      resetAuto <<
+      illuminate <<
       moveCreatures
-    ) 
+    )
   in
     model |> case keyChar of
       'a' -> autorogue
@@ -99,13 +99,12 @@ handleKeypress keyChar model =
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
-  model 
+  model
   |> followPaths
-  |> updateQuests 
+  |> updateQuests
 
 updateQuests : Engine -> Engine
 updateQuests model =
-  -- check if we've unlocked any quests...
   let
     quests' =
       model.quests
@@ -134,7 +133,6 @@ telepath model =
   if model.telepathy then
     { model | telepathy = False }
   else
-    --Debug.log "TELEPATH!"
     { model | telepathy = True }
 
 moveCreatures model =
@@ -153,7 +151,6 @@ moveCreatures model =
       }
 
   in
-    --Debug.log "MOVE CREATURES!"
     { model | world = world' }
 
 playerSteps direction model =
@@ -172,20 +169,12 @@ resetAuto : Engine -> Engine
 resetAuto model =
   { model | auto = False }
 
--- maybe to utils?
-screenToCoordinate : Mouse.Position -> Point
-screenToCoordinate {x,y} =
-  let scale = Configuration.viewScale in
-  ( x//scale
-  , (y//scale)+1 -- ignore top bar ...
-  )
-
 hoverAt : Mouse.Position -> Engine -> Engine
 hoverAt position model =
   --model
   let
     point =
-      (screenToCoordinate position)
+      Point.fromMouse position
 
     isLit =
       List.member point (model.world.illuminated)
@@ -278,7 +267,7 @@ imagineEntityAt point model =
           model |> pathToEntity entity
   in
     { model | hover = maybeEntity
-            , hoverPath = path' 
+            , hoverPath = path'
     }
 
 pathToEntity entity model =
@@ -345,8 +334,6 @@ playerFollowsPath model =
               |> resetFollow
               |> resetHover
 
---viewed model = World.viewed model.world
-
 playerExplores : Engine -> Engine
 playerExplores model =
   let
@@ -357,16 +344,15 @@ playerExplores model =
       (\c -> Point.distance playerPos c)
 
     (explored,unexplored) =
-      let v = (World.viewed model.world) in
-      model.world
-      |> World.floors
+      let viewed' = (World.viewed model.world) in
+      (Set.union (World.floors model.world) (World.doors model.world))
+      --|> World.floors
       |> Set.toList
-      |> List.partition (\p -> List.member p v)
+      |> List.partition (\p -> List.member p viewed')
 
     frontier =
       explored
-      |> List.filter (\pt ->
-        List.any (\pt' -> Point.isAdjacent pt pt') unexplored)
+      |> List.filter (\pt -> List.any (Point.isAdjacent pt) unexplored)
 
     visibleCreatures =
       (World.creatures model.world)
@@ -382,23 +368,20 @@ playerExplores model =
       |> List.map Item.position
       |> List.filter (\pt -> List.member pt (explored))
 
-    destSources =
-      if List.length visibleCreatures > 0 then
-        visibleCreatures
+    gatherAndExplore =
+      visibleCreatures ++ visibleItems ++ visibleCoins ++ frontier
+
+    ascendOrDescend =
+      if model.world.crystalTaken then
+        World.upstairs model.world ++ World.entrances model.world
       else
-        if List.length visibleCoins > 0 then
-          visibleCoins
+        if List.length frontier == 0 then
+          World.downstairs model.world ++ World.crystals model.world
         else
-          if List.length visibleItems > 0 then
-            visibleItems
-          else
-            if model.world.crystalTaken then
-              World.upstairs model.world ++ World.entrances model.world
-            else
-              if List.length frontier > 0 then
-                frontier
-              else
-                World.downstairs model.world ++ World.crystals model.world
+          []
+
+    destSources =
+      gatherAndExplore ++ ascendOrDescend
 
     maybeDest =
       destSources
@@ -424,7 +407,6 @@ playerExplores model =
     { model | followPath = path }
 
 -- VIEW
-
 view : Engine -> List (Svg.Svg a)
 view model =
   let
@@ -451,7 +433,7 @@ view model =
             Entity.Memory e ->
               "You remember seeing " ++ (Entity.describe e) ++ " here."
             Entity.Imaginary e ->
-              "You imagine there to be " ++ (Entity.describe e) ++ " here."
+              "You imagine there is " ++ (Entity.describe e) ++ " here."
             _ ->
               "You see " ++ (Entity.describe entity) ++ "."
 
@@ -465,16 +447,16 @@ view model =
       Warrior.cardView (55, 6 + (List.length model.quests)) model.world.player
 
     log =
-      Log.view (2, 35) model.world.events
+      Log.view (2, 37) model.world.events
 
     status =
       Status.view (0,1) model.world
 
     rightBar =
-      quests 
-      ++ character 
+      quests
+      ++ character
       ++ log
   in
-    worldView 
+    worldView
     ++ [status, note]
     ++ rightBar

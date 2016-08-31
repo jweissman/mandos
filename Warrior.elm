@@ -89,7 +89,7 @@ heal amount model =
 collectsItem : Item -> Model -> Model
 collectsItem (Item _ kind) model =
   case kind of
-    Arm weapon -> -- autoequip, no inv for now
+    Arm weapon ->
       { model | weapon = Just weapon }
     Shield armor ->
       { model | armor = Just armor }

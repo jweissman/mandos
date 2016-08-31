@@ -14,8 +14,8 @@ this is a learning elm project but i'd also like the code to be clear and well-f
   - [x] map generation
   - [x] field of vision
   - [x] quest journal
-  - [ ] weapons
-  - [ ] armor
+  - [x] weapons
+  - [x] armor
   - [ ] items
   - [ ] allies
 

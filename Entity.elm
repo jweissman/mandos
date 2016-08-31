@@ -105,7 +105,7 @@ describe entity =
       "You saw " ++ (describe entity) ++ " here"
 
     Imaginary entity ->
-      "You imagine there might be " ++ (describe entity) ++ " here"
+      "You imagine there is " ++ (describe entity) ++ " here"
       
     Crystal taken _ ->
       if taken then

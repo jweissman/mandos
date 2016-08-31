@@ -8,8 +8,6 @@ import Util
 -- bfs impl
 
 type alias PathSegment = (Point, Direction)
---type alias Discriminator = (Point -> Bool)
---type alias Path = List Point
 
 seek : Point -> Point -> (Point -> Bool) -> (List Point)
 seek dst src blocked =

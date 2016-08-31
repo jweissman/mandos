@@ -12,15 +12,14 @@ import Util
 import Item exposing (Item)
 
 import Random
--- TYPE
 
+-- TYPE
 type alias Dungeon = List Level
 
 -- GENERATOR
-
 generate : Int -> Random.Generator Dungeon
 generate depth =
-  Random.list depth (Random.map Level.fromRooms (Room.generate 100))
+  Random.list depth (Random.map Level.fromRooms (Room.generate 100000))
 
 prepare : Dungeon -> Dungeon
 prepare model =

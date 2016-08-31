@@ -1,8 +1,15 @@
-module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth)
+module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Set exposing (Set)
+import Mouse
+
+-- deterministically 'sample' a list based on two variables
+sample : Int -> Int -> a -> List a -> a
+sample m n zero ls =
+  getAt ls ((m ^ 31 + n) % (max 1 (List.length ls - 1)))
+  |> Maybe.withDefault zero
 
 everyNth n ls =
   case (ls |> List.drop (n-1)) of
@@ -15,7 +22,7 @@ mapEveryNth n f ls =
   let ls' = List.take (n-1) ls in
   case (List.drop (n-1) ls) of
     [] ->
-      []
+      ls'
     (head :: rest) ->
       ls' ++ ((f head) :: (mapEveryNth n f rest))
 

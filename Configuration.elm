@@ -1,11 +1,14 @@
-module Configuration exposing (levelCount, tickInterval, viewScale, viewWidth, viewHeight)
+module Configuration exposing (levelCount, tickInterval, viewScale, viewWidth, viewHeight, visionRadius)
 
 import Time exposing (Time, millisecond)
 
-tickInterval = 70*millisecond
+tickInterval = 60*millisecond
 levelCount = 10
 
 viewScale = 18
 
 viewWidth = 100
 viewHeight = 60
+
+-- player settings
+visionRadius = 16

@@ -44,8 +44,8 @@ init =
   , doors = Set.empty
   , coins = Set.empty
   , creatures = []
-  , upstairs = Nothing --origin
-  , downstairs = Nothing --origin
+  , upstairs = Nothing
+  , downstairs = Nothing
   , crystal = Nothing
   , entrance = Nothing
   , rooms = []
@@ -53,8 +53,6 @@ init =
   , items = []
   }
 
--- should probably spawn creatures here too
--- since we finally know what level we are!
 finalize : Int -> Level -> Level
 finalize depth model =
   model
@@ -122,7 +120,6 @@ isStairsDown position model =
       position == pt
     Nothing ->
       False
-  --model.downstairs == position
 
 isEntrance : Point -> Level -> Bool
 isEntrance position model =
@@ -308,7 +305,7 @@ creatureEngages warrior creature model =
         if c.id == creature.id then
            c
            |> Creature.engage
-           |> Creature.turn --direction
+           |> Creature.turn
                ((Point.towards c.position warrior.position)
                |> Direction.invert)
         else c
@@ -322,7 +319,7 @@ creatureMoves creature player model =
     creatures' =
       model.creatures
       |> List.map (\c ->
-        if c.id == creature.id && (model |> canCreatureStep c player) then -- model
+        if c.id == creature.id && (model |> canCreatureStep c player) then
           c |> Creature.step
         else c)
   in
@@ -468,86 +465,33 @@ connectRooms rooms model =
 connectRooms' : (Room,Room) -> Level -> Level
 connectRooms' (a, b) model =
   let
-    (ax,ay) =
-      a.origin
-
-    (bx,by) =
-      b.origin
-
-    direction =
-      Direction.invert (Room.directionBetween a b)
-
-    xOverlapStart =
-      (max ax bx) + 1
-
-    xOverlapEnd =
-      (min (ax+a.width) (bx+b.width)) - 1
-
-    xOverlapRange =
-      [(xOverlapStart)..(xOverlapEnd)]
-
-    sampleOverlap = \overlap ->
-       Util.getAt overlap ((a.height ^ 31 + bx) % (max 1 (List.length overlap - 1)))
-       |> Maybe.withDefault -1
-
-    yOverlapStart =
-      (max ay by) + 1
-
-    yOverlapEnd =
-      (min (ay+a.height) (by+b.height)) - 1
-
-    yOverlapRange =
-      [(yOverlapStart)..(yOverlapEnd)]
-
-    startPosition =
-      case direction of
-        North ->
-          Just ((sampleOverlap xOverlapRange), ay)
-
-        South ->
-          Just ((sampleOverlap xOverlapRange), ay+a.height)
-
-        East ->
-          Just (ax+a.width, (sampleOverlap yOverlapRange))
-
-        West ->
-          Just (ax, (sampleOverlap yOverlapRange))
-
-        _ ->
-          Nothing
+    corridor =
+      Room.corridor a b
   in
-    case startPosition of
-      Just pos ->
+    case corridor of
+      [] -> model
+      [pt] ->
         model
-        |> extrudeCorridor (round (Room.distance a b)) pos direction
+        |> emplaceDoor pt
+      _ ->
+        if List.length corridor > 2 then
+          model
+          |> extrudeCorridor corridor
+          |> emplaceDoor (corridor |> List.head |> Maybe.withDefault origin)
+          |> emplaceDoor (corridor |> List.reverse |> List.head |> Maybe.withDefault origin)
+        else
+          model
+          |> extrudeCorridor corridor
 
-      Nothing ->
-        model
+extrudeCorridor : List Point -> Level -> Level
+extrudeCorridor pts model =
+  pts
+  |> List.foldr extrudeCorridor' model
 
-extrudeCorridor : Int -> Point -> Direction -> Level -> Level
-extrudeCorridor depth pt dir model =
---  extrudeCorridor' pt dir depth model
---extrudeCorridor' pt dir depth model =
-  let
-    model' =
-      { model | floors = Set.insert pt model.floors  }
-              |> addWallsAround pt
-              |> removeWall pt
-
-    next =
-      Point.slide dir pt
-
-    foundFloor =
-      model |> isFloor pt
-      --(List.any (\pt' -> pt' == pt) model.floors)
-  in
-    if foundFloor || depth < 0 then
-      model'
-      |> emplaceDoor (pt |> Point.slide (Direction.invert dir))
-    else
-      model'
-      |> extrudeCorridor (depth-1) (pt |> Point.slide dir) dir
-
+extrudeCorridor' pt model =
+  { model | floors = Set.insert pt model.floors  }
+          |> addWallsAround pt
+          |> removeWall pt
 
 -- doors
 emplaceDoor : Point -> Level -> Level
@@ -739,6 +683,7 @@ spawnCreatures depth model =
 
     creatures' =
       model.rooms
+      |> Util.everyNth 3
       |> List.map Room.center
       |> List.indexedMap (\n pt -> creature n pt)
   in

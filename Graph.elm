@@ -108,10 +108,6 @@ match n graph =
 span : (a -> a -> comparable) -> List a -> Maybe (Graph a)
 span f ls = tree f (\_ _ -> True) ls
 
--- span with a predicate... determining whether these two nodes 'should' be connected
--- allow to structure according to another criteria on top of just raw weight
--- note this may leave disconnected graphs etc --
--- how to ensure we have at least a connected fragment...?
 tree : (a -> a -> comparable) -> (a -> a -> Bool) -> List a -> Maybe (Graph a)
 tree f predicate ls =
   case (List.head ls) of

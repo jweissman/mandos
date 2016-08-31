@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures, items)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures, items)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -83,12 +83,10 @@ items model =
 doors : Model -> Set Point
 doors model =
   (level model).doors
-  --|> Set.toList
 
 floors : Model -> Set Point
 floors model =
   (level model).floors
-  --|> Set.toList
 
 upstairs : Model -> List Point
 upstairs model =
@@ -163,10 +161,6 @@ canPlayerStep direction model =
       |> slide direction
   in
     not ( Level.isCreature move (level model) || Set.member move (walls model))
---    not (isBlockedForPlayer move model)
-
---isBlockedForPlayer : Point -> Model -> Bool
---isBlockedForPlayer pt model =
 
 playerCollectsCoins : Model -> Model
 playerCollectsCoins model =
@@ -264,7 +258,6 @@ playerAttacksCreature creature model =
   let
     damage =
       Warrior.computeDamageAgainst creature.defense model.player
-      --model.player.attack - creature.defense
   in
     model
     |> creatureTakesDamage creature damage
@@ -423,12 +416,6 @@ view model =
     entityViews =
       List.map (Entity.view) entities
 
-    --log =
-    --  Log.view model.events
-
-    --info =
-    --  infoView model
-
     highlight =
       highlightCells model.debugPath
 
@@ -438,9 +425,6 @@ view model =
   in
     entityViews
     ++ highlight
-    --++ log
-    --++ [info]
-    --++ playerCard
 
 highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
