@@ -15,7 +15,7 @@ init : Model
 init = [ Event.awaken ]
 
 -- origin = (15,35)
-maxEntries = 9
+maxEntries = 7
 
 -- VIEW
 view : Point -> Model -> List (Svg.Svg a)

@@ -91,6 +91,8 @@ collectsItem (Item _ kind) model =
   case kind of
     Arm weapon -> -- autoequip, no inv for now
       { model | weapon = Just weapon }
+    Shield armor ->
+      { model | armor = Just armor }
 
 
 ---

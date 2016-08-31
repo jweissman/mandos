@@ -9,6 +9,7 @@ import Util
 import Path
 import Configuration
 import Weapon exposing (Weapon)
+import Armor exposing (Armor)
 import Warrior
 import Creature
 import Event exposing (Event)
@@ -691,6 +692,7 @@ assignRooms depth model =
     rooms' =
       model.rooms
       |> Util.mapEveryNth 5 (Room.assign Room.armory)
+      |> Util.mapEveryNth 7 (Room.assign Room.barracks)
   in
     { model | rooms = rooms' }
 
@@ -710,7 +712,10 @@ furnishRoomFor purpose room depth model =
     item =
       case purpose of
         Armory ->
-          Item.arm Weapon.woodenSword
+          Item.weapon Weapon.woodenSword
+
+        Barracks ->
+          Item.armor Armor.leatherTunic
 
     (ox,oy) =
       room.origin
