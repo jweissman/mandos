@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures, items)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, entitiesAt, viewed, canPlayerStep, creatures, items)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -184,16 +184,19 @@ playerCollectsCoins model =
 
 playerCollectsItems : Model -> Model
 playerCollectsItems model =
-  case (level model) |> Level.itemAt (model.player.position) of
-    Nothing ->
-      model
+  if List.length model.player.inventory < Configuration.inventoryLimit then
+    case (level model) |> Level.itemAt (model.player.position) of
+      Nothing ->
+        model
 
-    Just item ->
-      let event = Event.pickupItem item in
-      { model | player  = Warrior.collectsItem item model.player
-              , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
-              , events  = model.events ++ [ event ]
-      }
+      Just item ->
+        let event = Event.pickupItem item in
+        { model | player  = Warrior.collectsItem item model.player
+                , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
+                , events  = model.events ++ [ event ]
+        }
+  else
+    model
 
 playerLiberatesCrystal : Model -> Model
 playerLiberatesCrystal model =
@@ -363,14 +366,31 @@ illuminate source model =
     source
     |> Optics.illuminate perimeter blockers
 
-lastSingleton : List a -> List a
-lastSingleton ls =
-  case (ls |> List.reverse |> List.head) of
-    Nothing -> 
-      []
+playerUsesItem : Item -> Model -> Model
+playerUsesItem item model =
+  let
+    {kind} =
+      item
 
-    Just e ->
-      [e]
+    inventory' =
+      model.player.inventory
+      |> List.filter (\it -> not (it == item))
+
+    player =
+      model.player
+
+    player' =
+      { player | inventory = inventory' }
+
+  in case kind of
+    Item.Arm weapon' ->
+      { model | player = player' |> Warrior.wield weapon' }
+
+    Item.Shield armor' ->
+      { model | player = player' |> Warrior.wear armor' }
+
+    _ ->
+      { model | player = player' }
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity
@@ -449,3 +469,15 @@ highlightCells cells =
 
 highlightCell (x,y) color =
   Graphics.render "@" (x,y) color
+
+-- todo move to util?
+lastSingleton : List a -> List a
+lastSingleton ls =
+  case (ls |> List.reverse |> List.head) of
+    Nothing -> 
+      []
+
+    Just e ->
+      [e]
+
+

@@ -48,7 +48,7 @@ enter : Dungeon -> Engine -> Engine
 enter dungeon model =
   let
     dungeon' =
-      dungeon |> Dungeon.prepare
+      dungeon |> Dungeon.prepare Configuration.levelCount
 
     world =
       model.world
@@ -95,7 +95,30 @@ handleKeypress keyChar model =
       'l' -> reset << playerSteps East
       't' -> telepath
       'x' -> playerExplores
+      '0' -> reset << playerUses 0
+      '1' -> reset << playerUses 1
+      '2' -> reset << playerUses 2
+      '3' -> reset << playerUses 3
+      '4' -> reset << playerUses 4
+      '5' -> reset << playerUses 5
+      '6' -> reset << playerUses 6
+      '7' -> reset << playerUses 7
+      '8' -> reset << playerUses 8
+      '9' -> reset << playerUses 9
       _ -> reset
+
+playerUses : Int -> Engine -> Engine
+playerUses itemIdx model =
+  let
+    maybeItem =
+      Util.getAt model.world.player.inventory itemIdx
+
+  in case maybeItem of
+    Nothing ->
+      model
+
+    Just item ->
+      { model | world = model.world |> World.playerUsesItem item }
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
@@ -347,35 +370,39 @@ playerExplores model =
       let viewed' = (World.viewed model.world) in
       (Set.union (World.floors model.world) (World.doors model.world))
       --|> World.floors
-      |> Set.toList
-      |> List.partition (\p -> List.member p viewed')
+      --|> Set.toList
+      |> Set.partition (\p -> List.member p viewed')
 
     frontier =
       explored
-      |> List.filter (\pt -> List.any (Point.isAdjacent pt) unexplored)
+      |> Set.filter (\pt -> List.any (Point.isAdjacent pt) (unexplored |> Set.toList))
+      --|> Set.toList
 
     visibleCreatures =
       (World.creatures model.world)
       |> List.map .position
-      |> List.filter (\pt -> List.member pt (explored))
+      |> List.filter (\pt -> Set.member pt (explored))
 
     visibleCoins =
       (World.coins model.world)
-      |> List.filter (\pt -> List.member pt (explored))
+      |> List.filter (\pt -> Set.member pt (explored))
 
     visibleItems =
-      (World.items model.world)
-      |> List.map Item.position
-      |> List.filter (\pt -> List.member pt (explored))
+      if List.length model.world.player.inventory < Configuration.inventoryLimit then
+        (World.items model.world)
+        |> List.map .position
+        |> List.filter (\pt -> Set.member pt (explored))
+      else
+        []
 
     gatherAndExplore =
-      visibleCreatures ++ visibleItems ++ visibleCoins ++ frontier
+      visibleCreatures ++ visibleItems ++ visibleCoins ++ (frontier |> Set.toList)
 
     ascendOrDescend =
       if model.world.crystalTaken then
         World.upstairs model.world ++ World.entrances model.world
       else
-        if List.length frontier == 0 then
+        if Set.size frontier == 0 then
           World.downstairs model.world ++ World.crystals model.world
         else
           []

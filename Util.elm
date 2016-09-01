@@ -1,4 +1,4 @@
-module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample)
+module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample, zip)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -25,6 +25,17 @@ mapEveryNth n f ls =
       ls'
     (head :: rest) ->
       ls' ++ ((f head) :: (mapEveryNth n f rest))
+
+
+-- zzzip
+zip : List a -> List b -> List (a,b)
+zip xs ys =
+  case (xs, ys) of
+    ( x :: xs', y :: ys' ) ->
+        (x,y) :: zip xs' ys'
+
+    (_, _) ->
+        []
 
 -- helpers from list extras
 minBy : (a -> comparable) -> List a -> Maybe a
@@ -67,4 +78,5 @@ takeWhile' predicate list =
     []      -> []
     x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
                else [x]
+
 

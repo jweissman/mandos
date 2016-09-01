@@ -1,4 +1,4 @@
-module Species exposing (Species, name, adjective, glyph, hp, rat, monkey, bandit)
+module Species exposing (Species, name, adjective, glyph, hp, power, resistance, rat, monkey, bandit)
 
 -- TYPE
 type Species = Bandit | Rat | Snake | Tiger | Dragon | Monkey
@@ -10,6 +10,27 @@ monkey = Monkey
 bandit = Bandit
 
 -- helpers
+
+power : Species -> Int
+power species =
+  case species of
+    Rat    -> 2
+    Monkey -> 3
+    Bandit -> 4
+    Tiger  -> 8
+    Snake  -> 7
+    Dragon -> 12
+
+resistance : Species -> Int
+resistance species =
+  case species of
+    Rat    -> 1
+    Monkey -> 2
+    Bandit -> 3
+    Tiger  -> 4
+    Snake  -> 5
+    Dragon -> 7
+
 
 glyph : Species -> Char
 glyph species =
@@ -45,8 +66,8 @@ hp : Species -> Int
 hp species =
   case species of
     Rat -> 2
-    Snake -> 4
-    Monkey -> 5
+    Monkey -> 4
     Bandit -> 7
-    Tiger -> 10
-    Dragon -> 16
+    Snake -> 14
+    Tiger -> 25
+    Dragon -> 46

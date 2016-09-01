@@ -19,14 +19,16 @@ type alias Dungeon = List Level
 -- GENERATOR
 generate : Int -> Random.Generator Dungeon
 generate depth =
-  Random.list depth (Random.map Level.fromRooms (Room.generate 1000))
+  Random.list (depth) (Random.map Level.fromRooms (Room.generate 100))
 
-prepare : Dungeon -> Dungeon
-prepare model =
-  model |> List.indexedMap Level.finalize
+prepare : Int -> Dungeon -> Dungeon
+prepare depth model =
+  model 
+  --|> List.filter Level.navigable
+  --|> List.take depth
+  |> List.indexedMap Level.finalize
 
 -- HELPERS
-
 levelAt : Int -> Dungeon -> Level
 levelAt depth model =
   Util.getAt model depth

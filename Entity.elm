@@ -209,7 +209,7 @@ position entity =
       position entity
 
     Item item ->
-      Item.position item
+      item.position
 
 glyph : Entity -> String
 glyph entity =

@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal, itemAt, removeItem)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal, itemAt, removeItem, navigable)
 
 
 import Point exposing (Point)
@@ -244,7 +244,7 @@ creatureAt pt model =
 itemAt : Point -> Level -> Maybe Item
 itemAt pt model =
   model.items
-  |> List.filter (\item -> pt == (Item.position item))
+  |> List.filter (\item -> pt == (item.position))
   |> List.head
 
 -- HELPERS (for update)
@@ -480,6 +480,7 @@ connectRooms' (a, b) model =
           |> emplaceDoor (corridor |> List.head |> Maybe.withDefault origin)
           |> emplaceDoor (corridor |> List.reverse |> List.head |> Maybe.withDefault origin)
         else
+          -- okay, i think we're capable of running over pre-existing doors!
           model
           |> extrudeCorridor corridor
 
@@ -581,37 +582,38 @@ addWallsAround pt model =
       Direction.directions
       |> List.map (\d -> Point.slide d pt)
       |> Set.fromList
-      |> Set.filter (\wall -> not ( (model |> isFloor wall)))
+      |> Set.filter (\wall -> not ( (model |> isFloor wall) || (model |> isDoor wall)))
   in
      { model | walls = Set.union newWalls model.walls }
 
 dropCoins : Level -> Level
 dropCoins model =
   let
-    down =
-      case model.downstairs of
-        Just pt ->
-          pt
-        Nothing ->
-          case model.crystal of
-            Just (pt,_) ->
-              pt
-            Nothing ->
-              origin
+    --down =
+    --  case model.downstairs of
+    --    Just pt ->
+    --      pt
+    --    Nothing ->
+    --      case model.crystal of
+    --        Just (pt,_) ->
+    --          pt
+    --        Nothing ->
+    --          origin
 
-    up =
-       case model.upstairs of
-        Just pt ->
-          pt
-        Nothing ->
-          case model.entrance of
-            Just (pt,_) ->
-              pt
-            Nothing ->
-              origin
+    --up =
+    --   case model.upstairs of
+    --    Just pt ->
+    --      pt
+    --    Nothing ->
+    --      case model.entrance of
+    --        Just (pt,_) ->
+    --          pt
+    --        Nothing ->
+    --          origin
 
     path' =
-      Path.seek up down (\pt -> isWall pt model)
+      model |> bestPath
+      --Path.seek up down (\pt -> isWall pt model)
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
       |> List.tail |> Maybe.withDefault []
@@ -653,22 +655,37 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
-    item =
+    items =
       case purpose of
         Armory ->
-          Item.weapon Weapon.woodenSword
+          [ Item.weapon Weapon.ironSword, Item.armor Armor.leatherSuit ]
 
         Barracks ->
-          Item.armor Armor.leatherTunic
+          [ Item.armor Armor.leatherTunic, Item.weapon Weapon.ironDagger ]
 
-    (ox,oy) =
-      room.origin
+    (_,floors') =
+      Room.layout room
+
+    targets =
+      floors'
+      |> Set.toList
+      |> Util.everyNth 13
+      |> List.take (List.length items)
   in
-    model |> dropItem (ox+1,oy+1) item
+    furnishRoomWith targets items room model
+
+furnishRoomWith : List Point -> List Item.ItemKind -> Room -> Level -> Level
+furnishRoomWith targets items room model =
+    Util.zip items targets
+    |> List.foldr (furnishRoomWith' room) model
+
+furnishRoomWith' : Room -> (Item.ItemKind, Point) -> Level -> Level
+furnishRoomWith' room (item,pt) model =
+  model |> dropItem pt item
 
 dropItem : Point -> Item.ItemKind -> Level -> Level
 dropItem pt kind model =
-  let item = Item.init pt kind in
+  let item = Item.init pt kind 1 in
   model |> addItem item
 
 addItem : Item -> Level -> Level
@@ -698,3 +715,37 @@ creatureForDepth depth =
       Creature.createMonkey
     else
       Creature.createBandit
+
+bestPath : Level -> List Point
+bestPath model =
+  let
+    down =
+      case model.downstairs of
+        Just pt ->
+          pt
+        Nothing ->
+          case model.crystal of
+            Just (pt,_) ->
+              pt
+            Nothing ->
+              origin
+
+    up =
+       case model.upstairs of
+        Just pt ->
+          pt
+        Nothing ->
+          case model.entrance of
+            Just (pt,_) ->
+              pt
+            Nothing ->
+              origin
+  in
+    Path.seek up down (\pt -> isWall pt model)
+
+navigable : Level -> Bool
+navigable level =
+  if List.length (bestPath level) == 0 then
+    False
+  else
+    True

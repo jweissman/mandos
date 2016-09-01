@@ -1,11 +1,11 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, computeDamageAgainst, cardView)
+module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, wield, wear, computeDamageAgainst, cardView)
 
 import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
 
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
-import Item exposing (Item(..), ItemKind(..))
+import Item exposing (Item, ItemKind(..))
 
 import Graphics
 import Svg
@@ -23,6 +23,7 @@ type alias Model =
   , steps : Int
   , weapon : Maybe Weapon
   , armor : Maybe Armor
+  , inventory : List Item
   }
 
 
@@ -40,12 +41,13 @@ init point =
   , steps = 0
   , weapon = Nothing
   , armor = Nothing
+  , inventory = []
   }
 
 power : Model -> Int
 power model =
-  case model.weapon of 
-    Nothing -> 
+  case model.weapon of
+    Nothing ->
       model.attack
     Just weapon ->
       model.attack + (Weapon.damage weapon)
@@ -86,14 +88,51 @@ heal : Int -> Model -> Model
 heal amount model =
   { model | hp = min model.maxHp (model.hp + 1) }
 
-collectsItem : Item -> Model -> Model
-collectsItem (Item _ kind) model =
-  case kind of
-    Arm weapon ->
+wield : Weapon -> Model -> Model
+wield weapon model =
+  case model.weapon of
+    Just weapon' ->
+      { model | weapon = Just weapon
+              , inventory = model.inventory ++ [Item.init (0,0) (Item.weapon weapon') 1]
+      }
+
+    Nothing ->
       { model | weapon = Just weapon }
-    Shield armor ->
+
+wear : Armor -> Model -> Model
+wear armor model =
+  case model.armor of
+    Just armor' ->
+      { model | armor = Just armor
+              , inventory = model.inventory ++ [Item.init (0,0) (Item.armor armor') 1]
+      }
+
+    Nothing ->
       { model | armor = Just armor }
 
+collectsItem : Item -> Model -> Model
+collectsItem item model =
+  let
+    {kind} =
+      item
+
+    model' =
+      { model | inventory = model.inventory ++ [item] }
+  in case kind of
+    Arm weapon ->
+      if model.weapon == Nothing then
+         model |> wield weapon
+      else
+        model'
+
+    Shield armor ->
+      if model.armor == Nothing then
+        model |> wear armor
+      else
+        model'
+
+    _ ->
+      model'
 
 ---
 
@@ -121,8 +160,23 @@ cardView (x,y) model =
     [ Graphics.render "STATS" (x, y) "gray"
     , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) "lightgray"
     , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"
-
-    , Graphics.render "EQUIPMENT" (x, y+5) "gray"
-    , Graphics.render ("WEAPON: " ++ wielding) (x, y+7) "lightgray"
-    , Graphics.render (" ARMOR: " ++ wearing) (x, y+8) "lightgray"
     ]
+    ++ equipmentView (x,y+5) wielding wearing
+     ++ inventoryView (x,y+10) model.inventory
+
+equipmentView (x,y) wielding wearing =
+  [ Graphics.render "EQUIPMENT" (x, y) "gray"
+  , Graphics.render ("WEAPON: " ++ wielding) (x, y+2) "lightgray"
+  , Graphics.render (" ARMOR: " ++ wearing) (x, y+3) "lightgray"
+  ]
+
+inventoryView : Point -> List Item -> List (Svg.Svg a)
+inventoryView (x,y) items =
+    [ Graphics.render "INVENTORY" (x, y) "gray"
+    ] ++
+    (List.indexedMap (inventoryItemView (x,y+2)) items)
+
+inventoryItemView: Point -> Int -> Item -> Svg.Svg a
+inventoryItemView (x,y) n item =
+  let desc = "(" ++ (toString n) ++ ") " ++ (Item.describe item) in
+  Graphics.render desc (x,y+n) "lightgray"
