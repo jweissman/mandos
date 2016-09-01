@@ -20,7 +20,7 @@ ironSword =
 
 ironDagger : Weapon
 ironDagger =
-  { family  = Sword
+  { family  = Dagger
   , material = Material.iron
   }
 
@@ -31,7 +31,7 @@ damage {family,material} =
 
 describe : Weapon -> String
 describe {family,material} =
-  ["a", Material.describe material, describeFamily family ] 
+  [Material.describe material, describeFamily family ] 
   |> String.join " "
 
 describeFamily : Family -> String

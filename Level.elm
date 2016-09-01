@@ -589,31 +589,9 @@ addWallsAround pt model =
 dropCoins : Level -> Level
 dropCoins model =
   let
-    --down =
-    --  case model.downstairs of
-    --    Just pt ->
-    --      pt
-    --    Nothing ->
-    --      case model.crystal of
-    --        Just (pt,_) ->
-    --          pt
-    --        Nothing ->
-    --          origin
-
-    --up =
-    --   case model.upstairs of
-    --    Just pt ->
-    --      pt
-    --    Nothing ->
-    --      case model.entrance of
-    --        Just (pt,_) ->
-    --          pt
-    --        Nothing ->
-    --          origin
-
     path' =
-      model |> bestPath
-      --Path.seek up down (\pt -> isWall pt model)
+      model
+      |> bestPath
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
       |> List.tail |> Maybe.withDefault []
@@ -639,6 +617,7 @@ assignRooms depth model =
       model.rooms
       |> Util.mapEveryNth 5 (Room.assign Room.armory)
       |> Util.mapEveryNth 7 (Room.assign Room.barracks)
+      |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
 
@@ -655,13 +634,22 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
-    items =
+    itemKinds =
       case purpose of
         Armory ->
           [ Item.weapon Weapon.ironSword, Item.armor Armor.leatherSuit ]
 
         Barracks ->
           [ Item.armor Armor.leatherTunic, Item.weapon Weapon.ironDagger ]
+
+    -- collision-free assignment assumes: 
+    --   * no more than 99 rooms per level
+    --   * no more than 99 items per room
+    idRange =
+      [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]
+
+    items =
+      List.map3 (\pt idx kind -> Item.init pt kind idx) targets idRange itemKinds
 
     (_,floors') =
       Room.layout room
@@ -670,22 +658,17 @@ furnishRoomFor purpose room depth model =
       floors'
       |> Set.toList
       |> Util.everyNth 13
-      |> List.take (List.length items)
+      --|> List.take (List.length items)
   in
-    furnishRoomWith targets items room model
+    furnishRoomWith items room model
 
-furnishRoomWith : List Point -> List Item.ItemKind -> Room -> Level -> Level
-furnishRoomWith targets items room model =
-    Util.zip items targets
-    |> List.foldr (furnishRoomWith' room) model
+furnishRoomWith : List Item -> Room -> Level -> Level
+furnishRoomWith items room model =
+  items
+  |>  List.foldr (furnishRoomWith' room) model
 
-furnishRoomWith' : Room -> (Item.ItemKind, Point) -> Level -> Level
-furnishRoomWith' room (item,pt) model =
-  model |> dropItem pt item
-
-dropItem : Point -> Item.ItemKind -> Level -> Level
-dropItem pt kind model =
-  let item = Item.init pt kind 1 in
+furnishRoomWith' : Room -> Item -> Level -> Level
+furnishRoomWith' room item model =
   model |> addItem item
 
 addItem : Item -> Level -> Level

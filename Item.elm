@@ -4,10 +4,12 @@ import Point exposing (Point)
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Liquid exposing (Liquid)
+--import Action exposing (Action(..))
 
 type ItemKind = Arm Weapon
               | Shield Armor
               | Bottle Liquid
+              --| QuestItem String
 
 weapon weapon' =
   Arm weapon'
@@ -15,8 +17,8 @@ weapon weapon' =
 armor armor' =
   Shield armor'
 
-bottle liquid =
-  Bottle liquid
+--bottle liquid =
+--  Bottle liquid
 
 type alias Item = { position : Point
                   , kind : ItemKind
@@ -24,6 +26,7 @@ type alias Item = { position : Point
                   }
 
 init pt kind id =
+  Debug.log "NEW ITEM"
   { position = pt
   , kind = kind
   , id = id
@@ -51,4 +54,4 @@ describe {kind} =
       Armor.describe armor'
 
     Bottle liquid ->
-      "Bottle of " ++ (Liquid.describe liquid)
+      "bottle of " ++ (Liquid.describe liquid)

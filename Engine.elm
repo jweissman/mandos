@@ -15,6 +15,7 @@ import Journal
 import Log
 import Status
 import Item
+import Action exposing (Action(..))
 
 import Set exposing (Set)
 import Time
@@ -31,7 +32,10 @@ type alias Engine =
   , auto : Bool
   , telepathy : Bool
   , quests : List Quest
+  --, waitForSelection : Bool
+  , action : Maybe Action
   }
+
 
 init : Engine
 init =
@@ -42,6 +46,7 @@ init =
   , auto = False
   , telepathy = False
   , quests = Quest.coreCampaign
+  , action = Nothing
   }
 
 enter : Dungeon -> Engine -> Engine
@@ -81,31 +86,79 @@ handleKeypress : Char -> Engine -> Engine
 handleKeypress keyChar model =
   let
     reset = (
+      resetAction <<
       resetFollow <<
       resetAuto <<
       illuminate <<
       moveCreatures
     )
   in
-    model |> case keyChar of
-      'a' -> autorogue
-      'h' -> reset << playerSteps West
-      'j' -> reset << playerSteps South
-      'k' -> reset << playerSteps North
-      'l' -> reset << playerSteps East
-      't' -> telepath
-      'x' -> playerExplores
-      '0' -> reset << playerUses 0
-      '1' -> reset << playerUses 1
-      '2' -> reset << playerUses 2
-      '3' -> reset << playerUses 3
-      '4' -> reset << playerUses 4
-      '5' -> reset << playerUses 5
-      '6' -> reset << playerUses 6
-      '7' -> reset << playerUses 7
-      '8' -> reset << playerUses 8
-      '9' -> reset << playerUses 9
-      _ -> reset
+    case model.action of
+      Just action ->
+        model |> case keyChar of
+          '0' -> playerActs 0
+          '1' -> playerActs 1
+          '2' -> playerActs 2
+          '3' -> playerActs 3
+          '4' -> playerActs 4
+          '5' -> playerActs 5
+          '6' -> playerActs 6
+          '7' -> playerActs 7
+          '8' -> playerActs 8
+          '9' -> playerActs 9
+          _ -> reset
+
+      Nothing ->
+        model |> case keyChar of
+          'a' -> autorogue
+          'h' -> reset << playerSteps West
+          'j' -> reset << playerSteps South
+          'k' -> reset << playerSteps North
+          'l' -> reset << playerSteps East
+          't' -> telepath
+          'x' -> playerExplores
+          'd' -> waitForSelection Action.drop
+          '0' -> playerUses 0
+          '1' -> playerUses 1
+          '2' -> playerUses 2
+          '3' -> playerUses 3
+          '4' -> playerUses 4
+          '5' -> playerUses 5
+          '6' -> playerUses 6
+          '7' -> playerUses 7
+          '8' -> playerUses 8
+          '9' -> playerUses 9
+          _ -> reset
+
+waitForSelection : Action -> Engine -> Engine
+waitForSelection action model =
+  if List.length model.world.player.inventory > 0 then
+    { model | action = Just action }
+  else
+    model
+
+playerActs : Int -> Engine -> Engine
+playerActs idx model =
+  case model.action of
+    Nothing ->
+      model
+
+    Just act ->
+      case act of
+        Drop ->
+          model |> playerDrops idx
+
+        _ ->
+          model
+
+
+playerDrops : Int -> Engine -> Engine
+playerDrops idx model =
+  { model | world = model.world |> World.playerDropsItem idx }
+
+resetAction : Engine -> Engine
+resetAction model =
+  { model | action = Nothing }
 
 playerUses : Int -> Engine -> Engine
 playerUses itemIdx model =
@@ -442,8 +495,11 @@ view model =
 
     path =
       case model.followPath of
-        Nothing -> model.hoverPath
-        Just path -> path
+        Nothing ->
+          model.hoverPath
+
+        Just path ->
+          path
 
     worldView =
       World.view { world | debugPath = path
@@ -451,18 +507,12 @@ view model =
                          }
 
     debugMsg =
-      case model.hover of
-        Nothing ->
-          "You aren't looking at anything in particular."
+      case model.action of
+        Just action' ->
+          Action.question action'
 
-        Just entity ->
-          case entity of
-            Entity.Memory e ->
-              "You remember seeing " ++ (Entity.describe e) ++ " here."
-            Entity.Imaginary e ->
-              "You imagine there is " ++ (Entity.describe e) ++ " here."
-            _ ->
-              "You see " ++ (Entity.describe entity) ++ "."
+        Nothing ->
+          model |> hoverMessage
 
     note =
       Graphics.render debugMsg (25,1) "rgba(160,160,160,0.6)"
@@ -471,7 +521,8 @@ view model =
       Journal.view (55,2) model.world model.quests
 
     character =
-      Warrior.cardView (55, 5 + (List.length model.quests)) model.world.player
+      model.world.player
+      |> Warrior.cardView (55, 5 + (List.length model.quests)) (model.action)
 
     log =
       Log.view (2, 37) model.world.events
@@ -487,3 +538,19 @@ view model =
     worldView
     ++ [status, note]
     ++ rightBar
+
+
+hoverMessage : Engine -> String
+hoverMessage model =
+  case model.hover of
+    Nothing ->
+      "You aren't looking at anything in particular."
+
+    Just entity ->
+      case entity of
+        Entity.Memory e ->
+          "You remember seeing " ++ (Entity.describe e) ++ " here."
+        Entity.Imaginary e ->
+          "You imagine there is " ++ (Entity.describe e) ++ " here."
+        _ ->
+          "You see " ++ (Entity.describe entity) ++ "."

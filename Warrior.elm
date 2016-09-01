@@ -6,6 +6,7 @@ import Point exposing (Point, slide)
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Item exposing (Item, ItemKind(..))
+import Action exposing (Action)
 
 import Graphics
 import Svg
@@ -24,8 +25,8 @@ type alias Model =
   , weapon : Maybe Weapon
   , armor : Maybe Armor
   , inventory : List Item
+  , timesGearChanged : Int
   }
-
 
 -- INIT
 
@@ -42,6 +43,7 @@ init point =
   , weapon = Nothing
   , armor = Nothing
   , inventory = []
+  , timesGearChanged = 0
   }
 
 power : Model -> Int
@@ -93,7 +95,8 @@ wield weapon model =
   case model.weapon of
     Just weapon' ->
       { model | weapon = Just weapon
-              , inventory = model.inventory ++ [Item.init (0,0) (Item.weapon weapon') 1]
+              , inventory = model.inventory ++ [Item.init (0,0) (Item.weapon weapon') (1000000 + model.timesGearChanged)]
+              , timesGearChanged = model.timesGearChanged + 1
       }
 
     Nothing ->
@@ -104,7 +107,8 @@ wear armor model =
   case model.armor of
     Just armor' ->
       { model | armor = Just armor
-              , inventory = model.inventory ++ [Item.init (0,0) (Item.armor armor') 1]
+              , inventory = model.inventory ++ [Item.init (0,0) (Item.armor armor') (1000000 + model.timesGearChanged)]
+              , timesGearChanged = model.timesGearChanged + 1
       }
 
     Nothing ->
@@ -134,10 +138,14 @@ collectsItem item model =
     _ ->
       model'
 
+--losesItem : Item -> Model -> Model
+--losesItem item model =
+
+
 ---
 
-cardView : Point -> Model -> List (Svg.Svg a)
-cardView (x,y) model =
+cardView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
+cardView (x,y) action model =
   let
     wielding =
       case model.weapon of
@@ -162,7 +170,7 @@ cardView (x,y) model =
     , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"
     ]
     ++ equipmentView (x,y+5) wielding wearing
-     ++ inventoryView (x,y+10) model.inventory
+     ++ inventoryView (x,y+10) action model.inventory
 
 equipmentView (x,y) wielding wearing =
   [ Graphics.render "EQUIPMENT" (x, y) "gray"
@@ -170,13 +178,33 @@ equipmentView (x,y) wielding wearing =
   , Graphics.render (" ARMOR: " ++ wearing) (x, y+3) "lightgray"
   ]
 
-inventoryView : Point -> List Item -> List (Svg.Svg a)
-inventoryView (x,y) items =
+inventoryView : Point -> Maybe Action -> List Item -> List (Svg.Svg a)
+inventoryView (x,y) action items =
     [ Graphics.render "INVENTORY" (x, y) "gray"
     ] ++
-    (List.indexedMap (inventoryItemView (x,y+2)) items)
+    (List.indexedMap (inventoryItemView (x,y+2) action) items)
 
-inventoryItemView: Point -> Int -> Item -> Svg.Svg a
-inventoryItemView (x,y) n item =
-  let desc = "(" ++ (toString n) ++ ") " ++ (Item.describe item) in
-  Graphics.render desc (x,y+n) "lightgray"
+inventoryItemView: Point -> Maybe Action -> Int -> Item -> Svg.Svg a
+inventoryItemView (x,y) action n item =
+  let
+    action' =
+      action |> Maybe.withDefault (Action.defaultForItem item)
+
+    desc =
+      "(" ++ (toString n) ++ ") "
+      ++ (Action.describe action')  ++ " "
+      ++ (Item.describe item)
+
+    color =
+      case action of
+        Nothing ->
+          "lightgrey"
+
+        Just act ->
+          if act |> Action.canPerform item then
+            "lightgrey"
+          else
+            "darkgrey"
+
+  in
+    Graphics.render desc (x,y+n) color

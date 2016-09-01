@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, entitiesAt, viewed, canPlayerStep, creatures, items)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -42,7 +42,7 @@ init =
   {
     dungeon = []
   , depth = 0
-  , player = Warrior.init origin
+  , player = Warrior.init (0,0)
   , events = Log.init
   , debugPath = []
   , illuminated = []
@@ -112,8 +112,6 @@ crystals model =
     Just (pt,_) -> [pt]
     Nothing -> []
 
-origin = (0,0)
-
 -- PREDICATES/QUERIES
 
 isPlayer : Point -> Model -> Bool
@@ -181,22 +179,6 @@ playerCollectsCoins model =
                 , dungeon = dungeon'
                 , events  = model.events ++ [event]
         }
-
-playerCollectsItems : Model -> Model
-playerCollectsItems model =
-  if List.length model.player.inventory < Configuration.inventoryLimit then
-    case (level model) |> Level.itemAt (model.player.position) of
-      Nothing ->
-        model
-
-      Just item ->
-        let event = Event.pickupItem item in
-        { model | player  = Warrior.collectsItem item model.player
-                , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
-                , events  = model.events ++ [ event ]
-        }
-  else
-    model
 
 playerLiberatesCrystal : Model -> Model
 playerLiberatesCrystal model =
@@ -312,7 +294,7 @@ playerAscends model =
       { model | depth = model.depth - 1 }
 
     player' =
-      { player | position = (downstairs model') |> List.head |> Maybe.withDefault origin }
+      { player | position = (downstairs model') |> List.head |> Maybe.withDefault (0,0) }
 
     events' =
       model.events ++ [Event.ascend (model.depth-1)]
@@ -329,7 +311,7 @@ playerDescends model =
       { model | depth = model.depth + 1 }
 
     player' =
-      { player | position = (upstairs model') |> List.head |> Maybe.withDefault origin }
+      { player | position = (upstairs model') |> List.head |> Maybe.withDefault (0,0) }
 
     events' =
       model.events ++ [Event.descend (model.depth+1)]
@@ -365,6 +347,46 @@ illuminate source model =
   in
     source
     |> Optics.illuminate perimeter blockers
+
+playerCollectsItems : Model -> Model
+playerCollectsItems model =
+  if List.length model.player.inventory < Configuration.inventoryLimit then
+    case (level model) |> Level.itemAt (model.player.position) of
+      Nothing ->
+        model
+
+      Just item ->
+        let event = Event.pickupItem item in
+        { model | player  = Warrior.collectsItem item model.player
+                , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
+                , events  = model.events ++ [ event ]
+        }
+  else
+    model
+
+playerDropsItem : Int -> Model -> Model
+playerDropsItem idx model =
+  let
+    maybeItem =
+      Util.getAt model.player.inventory idx
+  in
+    case maybeItem of
+      Just item ->
+        let
+          inventory' =
+            model.player.inventory
+            |> List.filter (\it -> not (it == item))
+
+          player =
+            model.player
+
+          player' =
+            { player | inventory = inventory' }
+        in
+          { model | player = player' }
+
+      Nothing ->
+        model
 
 playerUsesItem : Item -> Model -> Model
 playerUsesItem item model =
@@ -438,10 +460,6 @@ view model =
 
     highlight =
       highlightCells model.debugPath
-
-    playerCard =
-      Warrior.cardView (60,8) model.player
-
   in
     entityViews
     ++ highlight
@@ -474,7 +492,7 @@ highlightCell (x,y) color =
 lastSingleton : List a -> List a
 lastSingleton ls =
   case (ls |> List.reverse |> List.head) of
-    Nothing -> 
+    Nothing ->
       []
 
     Just e ->

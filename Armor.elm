@@ -37,7 +37,7 @@ baseResist family =
 
 describe : Armor -> String
 describe {kind,material} =
-  ["a", Material.describe material, describeKind kind ]
+  [Material.describe material, describeKind kind ]
   |> String.join " "
 
 describeKind : Kind -> String

@@ -23,6 +23,7 @@ type alias Room = { origin : Point
                   , width : Int
                   , height : Int
                   , purpose : Maybe Purpose
+                  , id : Int
                   }
 
 generate : Int -> Random.Generator (List Room)
@@ -59,6 +60,7 @@ create point width height =
   , width = width
   , height = height
   , purpose = Nothing
+  , id = -1
   }
 
 assign purpose room =
