@@ -56,7 +56,7 @@ power model =
     Nothing ->
       model.attack
     Just weapon ->
-      model.attack + (Weapon.damage weapon)
+      model.attack + (Weapon.averageDamage weapon)
 
 resistance : Model -> Int
 resistance model =
@@ -80,7 +80,14 @@ step direction model =
 
 computeDamageAgainst : Int -> Model -> Int
 computeDamageAgainst defense model =
-  max 1 ((power model) - defense)
+  let
+    damage = case model.weapon of
+      Just weapon ->
+        model.attack + Weapon.damage model.steps model.timesGearChanged weapon
+      Nothing ->
+        model.attack
+  in
+    max 1 (damage - defense)
 
 takeDamage : Int -> Model -> Model
 takeDamage amount model =
@@ -154,7 +161,7 @@ collectsItem item model =
         Nothing ->
           model |> wield weapon
         Just weapon' ->
-          if (Weapon.damage weapon' < Weapon.damage (weapon)) then
+          if (Weapon.averageDamage weapon' < Weapon.averageDamage (weapon)) then
              model |> wield weapon
           else
             model'

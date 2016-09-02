@@ -143,7 +143,7 @@ color entity =
       "gold"
 
     Floor _ ->
-      "rgba(80,80,120,0.7)"
+      "rgba(160,160,240,0.5)"
 
     Door _ ->
       "orange"

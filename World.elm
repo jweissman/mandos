@@ -418,7 +418,7 @@ playerUsesItem item model =
 
     Item.Scroll spell' ->
       { model | player = player' |> Warrior.cast spell' }
-              |> playerViewsField -- handle lux immediately
+              |> playerViewsField
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity

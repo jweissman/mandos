@@ -417,10 +417,16 @@ playerExplores model =
     byDistanceFromPlayer =
       (\c -> Point.distance playerPos c)
 
-    (explored,unexplored) =
-      let viewed' = (World.viewed model.world) in
+    viewed = 
+      World.viewed model.world
+
+    (explored,unexploredFloorsAndDoors) =
       (Set.union (World.floors model.world) (World.doors model.world))
-      |> Set.partition (\p -> List.member p viewed')
+      |> Set.partition (\p -> List.member p viewed)
+
+    unexplored =
+      (unexploredFloorsAndDoors)
+      |> Set.union (World.walls model.world |> Set.filter (\pt -> not (List.member pt viewed)))
 
     frontier =
       explored

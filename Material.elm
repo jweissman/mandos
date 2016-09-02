@@ -1,4 +1,4 @@
-module Material exposing (Material, describe, strength, resistance, forWeaponry, forArmor) -- iron, wood, steel, leather, bronze, mandium, cloth)
+module Material exposing (Material, describe, strength, resistance, forWeaponry, forArmor)
 
 import ChallengeRating exposing (ChallengeRating(..))
 
@@ -8,28 +8,11 @@ type Material = Cloth
               | Bronze
               | Iron
               | Steel
+              | Cobalt
+              | Titanium
+              | Corundum
+              | Diamond
               | Mandium
-
-cloth =
-  Cloth
-
-bronze =
-  Bronze
-
-iron =
-  Iron
-
-wood =
-  Wood
-
-steel =
-  Steel
-
-leather =
-  Leather
-
-mandium =
-  Mandium
 
 describe : Material -> String
 describe material =
@@ -41,62 +24,66 @@ describe material =
     Mandium -> "mandium"
     Steel -> "steel"
     Wood -> "wooden"
+    Cobalt -> "cobalt"
+    Corundum -> "corundum"
+    Titanium -> "titanium"
+    Diamond -> "diamond"
+
+hardness : Material -> Float 
+hardness material =
+  case material of
+    Cloth -> 0.0
+    Wood -> 0.2
+    Leather -> 0.3
+    Bronze -> 0.5
+    Iron  -> 1.0
+    Steel -> 2.0
+    Cobalt -> 3.0
+    Titanium -> 4.5
+    Corundum -> 5.0
+    Diamond -> 6.5
+    Mandium -> 8.0
 
 strength : Material -> Float
 strength material =
-  case material of
-    Cloth -> 0.2
-    Leather -> 0.4
-    Wood  -> 1.0
-    Bronze -> 1.6
-    Iron  -> 2.5
-    Steel -> 4.7
-    Mandium -> 6.4
+  (hardness material) + 0.5
 
 resistance : Material -> Float
 resistance material =
-  case material of
-    Cloth -> 1.0
-    Wood  -> 1.5
-    Leather -> 2.0
-    Bronze -> 2.5
-    Iron  -> 3.5
-    Steel -> 4.8
-    Mandium -> 7.2
+  (hardness material)
 
 forArmor : ChallengeRating -> Material
 forArmor rating =
   case rating of
     Beginner ->
-      cloth
+      Leather
 
     Easy ->
-      leather
+      Iron
 
     Moderate ->
-      iron
+      Steel
 
     Hard ->
-      steel
+      Titanium
 
     Impossible ->
-      mandium
- 
+      Mandium
+
 forWeaponry : ChallengeRating -> Material
 forWeaponry rating =
   case rating of
     Beginner ->
-      wood
+      Bronze
 
     Easy ->
-      bronze
+      Iron
 
     Moderate ->
-      iron
+      Steel
 
     Hard ->
-      steel
+      Corundum
 
     Impossible ->
-      mandium
- 
+      Diamond

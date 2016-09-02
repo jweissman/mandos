@@ -1,11 +1,15 @@
-module Weapon exposing (Weapon, damage, describe, dagger, sword, axe)
+module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe)
 
 import Material exposing (Material)
+import Util
+
 import String
 
 type Family = Sword
             | Axe
             | Dagger
+            --| Rapier
+            --| Mace
 
 type alias Weapon =
   { family : Family
@@ -30,10 +34,29 @@ sword material =
   , material = material
   }
 
-damage : Weapon -> Int
-damage {family,material} =
-  let multiplier = (Material.strength material) in
-  round (baseDamage family * multiplier)
+averageDamage : Weapon -> Int
+averageDamage weapon =
+  let
+    dmg =
+      (baseDamage weapon.family)
+
+    midpoint =
+      ((List.length dmg) // 2)
+  in
+    Util.getAt dmg midpoint --dmg
+    |> Maybe.withDefault 1
+
+damage : Int -> Int -> Weapon -> Int
+damage m n {family,material} =
+  let
+    multiplier =
+      (Material.strength material)
+
+    damage =
+      Util.sample m n 1 (baseDamage family)
+      |> toFloat
+  in
+    round (damage * multiplier)
 
 describe : Weapon -> String
 describe {family,material} =
@@ -52,9 +75,9 @@ describeFamily family =
     Dagger ->
       "dagger"
 
-baseDamage : Family -> Float
+baseDamage : Family -> List Int
 baseDamage family =
   case family of
-    Sword -> 3
-    Dagger -> 2
-    Axe -> 4
+    Sword -> [2..8]
+    Dagger -> [1..4]
+    Axe -> [3..5]

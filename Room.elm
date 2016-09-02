@@ -37,8 +37,11 @@ generate n =
 generate' : Random.Generator Room
 generate' =
   let
-    maxRoomSize =
-      8
+    width' =
+      Configuration.maxRoomWidth
+
+    height' =
+      Configuration.maxRoomHeight
 
     vWidth =
       Configuration.viewWidth // 2
@@ -47,13 +50,13 @@ generate' =
       Configuration.viewHeight // 2
 
     width =
-      Random.int 4 maxRoomSize
+      Random.int 4 width'
 
     height =
-      Random.int 4 maxRoomSize
+      Random.int 4 height'
 
     origin =
-      Point.randomWithOffset (3,4) (vWidth-maxRoomSize) (vHeight-maxRoomSize)
+      Point.randomWithOffset (3,4) (vWidth-width') (vHeight-height')
 
   in
     Random.map3 create origin width height

@@ -26,4 +26,4 @@ castRay power blockers src dst =
 
   in
     line'
-    |> Util.takeWhile' (\pt -> not (Set.member pt blockers) && (Point.distance src pt) < toFloat power)
+    |> Util.takeWhile' (\pt -> not (Set.member pt blockers) && not ((Point.distance src pt) > toFloat power))

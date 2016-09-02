@@ -11,6 +11,9 @@ sample m n zero ls =
   getAt ls ((m ^ 31 + n) % (max 1 (List.length ls - 1)))
   |> Maybe.withDefault zero
 
+-- 
+--pick
+
 everyNth n ls =
   case (ls |> List.drop (n-1)) of
     [] ->
