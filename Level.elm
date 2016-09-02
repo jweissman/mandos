@@ -12,6 +12,7 @@ import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Warrior
 import Creature
+import Liquid
 import Event exposing (Event)
 import Entity exposing (Entity)
 import Item exposing (Item)
@@ -333,7 +334,7 @@ creatureAttacks creature (model, events, player) =
       |> Point.slide creature.direction
 
     dmg =
-      creature.attack - player.defense
+      max 1 (creature.attack - (Warrior.resistance player)) --.defense
   in
     if pos == player.position then
        (model, events, player)
@@ -637,12 +638,18 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.weapon Weapon.ironSword, Item.armor Armor.leatherSuit ]
+          [ Item.bottle Liquid.water
+          , Item.armor Armor.leatherTunic
+          , Item.weapon Weapon.ironSword
+          ]
 
         Barracks ->
-          [ Item.armor Armor.leatherTunic, Item.weapon Weapon.ironDagger ]
+          [ Item.bottle Liquid.water
+          , Item.weapon Weapon.ironDagger
+          , Item.armor Armor.leatherSuit
+          ]
 
-    -- collision-free assignment assumes: 
+    -- to be collision-free this item id assignment algo needs to assume:
     --   * no more than 99 rooms per level
     --   * no more than 99 items per room
     idRange =
@@ -657,7 +664,7 @@ furnishRoomFor purpose room depth model =
     targets =
       floors'
       |> Set.toList
-      |> Util.everyNth 13
+      |> Util.everyNth 17
       --|> List.take (List.length items)
   in
     furnishRoomWith items room model

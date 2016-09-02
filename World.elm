@@ -411,8 +411,11 @@ playerUsesItem item model =
     Item.Shield armor' ->
       { model | player = player' |> Warrior.wear armor' }
 
-    _ ->
-      { model | player = player' }
+    Item.Bottle liquid' ->
+      { model | player = player' |> Warrior.drink liquid' }
+
+    --_ ->
+    --  { model | player = player' }
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity

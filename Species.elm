@@ -17,20 +17,19 @@ power species =
     Rat    -> 2
     Monkey -> 3
     Bandit -> 4
-    Tiger  -> 8
     Snake  -> 7
-    Dragon -> 12
+    Tiger  -> 20
+    Dragon -> 36
 
 resistance : Species -> Int
 resistance species =
   case species of
-    Rat    -> 1
-    Monkey -> 2
+    Rat    -> 2
+    Snake  -> 3
+    Monkey -> 3
     Bandit -> 3
-    Tiger  -> 4
-    Snake  -> 5
+    Tiger  -> 5
     Dragon -> 7
-
 
 glyph : Species -> Char
 glyph species =
@@ -65,9 +64,9 @@ adjective species =
 hp : Species -> Int
 hp species =
   case species of
-    Rat -> 2
-    Monkey -> 4
-    Bandit -> 7
-    Snake -> 14
+    Snake -> 5
+    Rat -> 6
+    Monkey -> 8
+    Bandit -> 10
     Tiger -> 25
-    Dragon -> 46
+    Dragon -> 50

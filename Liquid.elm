@@ -1,4 +1,4 @@
-module Liquid exposing (Liquid, describe, water)
+module Liquid exposing (Liquid(..), describe, water)
 
 type Liquid = Water
             --| Acid

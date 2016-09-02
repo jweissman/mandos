@@ -1,4 +1,4 @@
-module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor)
+module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, bottle)
 
 import Point exposing (Point)
 import Weapon exposing (Weapon)
@@ -17,8 +17,8 @@ weapon weapon' =
 armor armor' =
   Shield armor'
 
---bottle liquid =
---  Bottle liquid
+bottle liquid =
+  Bottle liquid
 
 type alias Item = { position : Point
                   , kind : ItemKind

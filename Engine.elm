@@ -106,7 +106,7 @@ handleKeypress keyChar model =
           '7' -> playerActs 7
           '8' -> playerActs 8
           '9' -> playerActs 9
-          _ -> reset
+          _ -> resetAction
 
       Nothing ->
         model |> case keyChar of

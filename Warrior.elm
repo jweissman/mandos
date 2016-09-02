@@ -1,4 +1,4 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, wield, wear, computeDamageAgainst, cardView)
+module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, computeDamageAgainst, resistance, cardView)
 
 import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
@@ -7,6 +7,7 @@ import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Item exposing (Item, ItemKind(..))
 import Action exposing (Action)
+import Liquid exposing (Liquid(..))
 
 import Graphics
 import Svg
@@ -88,7 +89,16 @@ enrich amount model =
 
 heal : Int -> Model -> Model
 heal amount model =
-  { model | hp = min model.maxHp (model.hp + 1) }
+  { model | hp = min model.maxHp (model.hp + amount) }
+
+drink : Liquid -> Model -> Model
+drink liquid model =
+  case liquid of
+    Liquid.Water -> 
+      model |> heal 5
+
+    --_ -> 
+    --  model
 
 wield : Weapon -> Model -> Model
 wield weapon model =
