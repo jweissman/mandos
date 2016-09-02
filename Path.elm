@@ -5,8 +5,6 @@ import Direction exposing (Direction)
 
 import Util
 
--- bfs impl
-
 type alias PathSegment = (Point, Direction)
 
 seek : Point -> Point -> (Point -> Bool) -> (List Point)
@@ -19,8 +17,6 @@ movesFrom blocked point =
   Direction.directions
   |> List.map (\direction -> (Point.slide direction point, direction))
   |> List.filter ((\p -> not (blocked p)) << fst)
-
----
 
 find : Point -> Point -> (Point -> List PathSegment) -> Maybe (List Point)
 find dst src moves =

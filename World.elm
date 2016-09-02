@@ -65,7 +65,6 @@ viewed model =
 walls : Model -> Set Point
 walls model =
   (level model).walls
-  --|> Set.toList
 
 coins : Model -> List Point
 coins model =
@@ -414,9 +413,6 @@ playerUsesItem item model =
     Item.Bottle liquid' ->
       { model | player = player' |> Warrior.drink liquid' }
 
-    --_ ->
-    --  { model | player = player' }
-
 -- VIEW
 listInvisibleEntities : Model -> List Entity
 listInvisibleEntities model =
@@ -491,7 +487,6 @@ highlightCells cells =
 highlightCell (x,y) color =
   Graphics.render "@" (x,y) color
 
--- todo move to util?
 lastSingleton : List a -> List a
 lastSingleton ls =
   case (ls |> List.reverse |> List.head) of

@@ -1,4 +1,4 @@
-module Armor exposing (Armor, absorption, describe, leatherTunic, leatherSuit)
+module Armor exposing (Armor, absorption, describe, tunic, suit)
 
 import Material exposing (Material)
 
@@ -12,16 +12,16 @@ type alias Armor =
   , material : Material
   }
 
-leatherTunic : Armor
-leatherTunic =
+tunic : Material -> Armor
+tunic material =
   { kind  = Tunic
-  , material = Material.leather
+  , material = material
   }
 
-leatherSuit : Armor
-leatherSuit =
+suit : Material -> Armor
+suit material =
   { kind  = Suit
-  , material = Material.leather
+  , material = material
   }
 
 absorption : Armor -> Int
@@ -45,5 +45,6 @@ describeKind family =
   case family of
     Suit ->
       "suit"
+
     Tunic ->
       "tunic"

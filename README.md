@@ -16,7 +16,7 @@ this is a learning elm project but i'd also like the code to be clear and well-f
   - [x] quest journal
   - [x] weapons
   - [x] armor
-  - [ ] items
+  - [x] items
   - [ ] allies
 
 # caveats

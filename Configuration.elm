@@ -10,6 +10,5 @@ viewScale = 18
 viewWidth = 100
 viewHeight = 60
 
--- player settings
 visionRadius = 5
 inventoryLimit = 10

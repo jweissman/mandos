@@ -1,4 +1,4 @@
-module Creature exposing (Model, step, turn, injure, describe, engage, disengage, createRat, createMonkey, createBandit)
+module Creature exposing (Model, init, step, turn, injure, describe, engage, disengage)
 
 import Species exposing (Species)
 
@@ -44,15 +44,6 @@ init species id point =
   , engaged = False
   , subtype = Species.adjective species
   }
-
-createRat id point =
-  init Species.rat id point
-
-createMonkey id point =
-  init Species.monkey id point
-
-createBandit id point =
-  init Species.bandit id point
 
 step : Model -> Model
 step model =

@@ -95,10 +95,13 @@ drink : Liquid -> Model -> Model
 drink liquid model =
   case liquid of
     Liquid.Water -> 
-      model |> heal 5
+      model 
+      |> heal 5
 
-    --_ -> 
-    --  model
+    Liquid.Blessed liquid' ->
+      model
+      |> heal 10
+      |> drink liquid'
 
 wield : Weapon -> Model -> Model
 wield weapon model =
@@ -148,11 +151,7 @@ collectsItem item model =
     _ ->
       model'
 
---losesItem : Item -> Model -> Model
---losesItem item model =
-
-
----
+-- VIEW
 
 cardView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
 cardView (x,y) action model =

@@ -12,7 +12,9 @@ import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Warrior
 import Creature
+import Species
 import Liquid
+import Material
 import Event exposing (Event)
 import Entity exposing (Entity)
 import Item exposing (Item)
@@ -225,12 +227,12 @@ entitiesAt point model =
       , door
       , wall
       , coin
-      , monster
       , downstairs
       , upstairs
       , entrance
       , crystal
       , item
+      , monster
       ]
   in
     entities
@@ -334,7 +336,7 @@ creatureAttacks creature (model, events, player) =
       |> Point.slide creature.direction
 
     dmg =
-      max 1 (creature.attack - (Warrior.resistance player)) --.defense
+      max 1 (creature.attack - (Warrior.resistance player))
   in
     if pos == player.position then
        (model, events, player)
@@ -417,7 +419,6 @@ liberateCrystal model =
 
 -- GENERATE
 
--- actually build out the rooms and corridors for a level
 fromRooms : List Room -> Level
 fromRooms roomCandidates =
   let
@@ -481,7 +482,6 @@ connectRooms' (a, b) model =
           |> emplaceDoor (corridor |> List.head |> Maybe.withDefault origin)
           |> emplaceDoor (corridor |> List.reverse |> List.head |> Maybe.withDefault origin)
         else
-          -- okay, i think we're capable of running over pre-existing doors!
           model
           |> extrudeCorridor corridor
 
@@ -616,8 +616,8 @@ assignRooms depth model =
   let
     rooms' =
       model.rooms
-      |> Util.mapEveryNth 5 (Room.assign Room.armory)
-      |> Util.mapEveryNth 7 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 4 (Room.assign Room.armory)
+      |> Util.mapEveryNth 5 (Room.assign Room.barracks)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
@@ -635,23 +635,53 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
+    liquid =
+      if depth < 7 then
+        Liquid.water
+      else
+        Liquid.holy (Liquid.water)
+
+    weaponMaterial =
+      if depth < 1 then
+        Material.wood
+      else if depth < 3 then
+        Material.bronze
+      else if depth < 7 then
+        Material.iron
+      else if depth < 9 then
+        Material.steel
+      else
+        Material.mandium
+
+    armorMaterial =
+      if depth < 1 then
+        Material.cloth
+      else if depth < 3 then
+        Material.leather
+      else if depth < 5 then
+        Material.bronze
+      else if depth < 7 then
+        Material.iron
+      else if depth < 9 then
+        Material.steel
+      else
+        Material.mandium
+
+
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.bottle Liquid.water
-          , Item.armor Armor.leatherTunic
-          , Item.weapon Weapon.ironSword
+          [ Item.bottle liquid
+          , Item.armor (Armor.tunic armorMaterial)
+          , Item.weapon (Weapon.dagger weaponMaterial)
           ]
 
         Barracks ->
-          [ Item.bottle Liquid.water
-          , Item.weapon Weapon.ironDagger
-          , Item.armor Armor.leatherSuit
+          [ Item.bottle liquid
+          , Item.weapon (Weapon.sword weaponMaterial)
+          , Item.armor (Armor.suit armorMaterial)
           ]
 
-    -- to be collision-free this item id assignment algo needs to assume:
-    --   * no more than 99 rooms per level
-    --   * no more than 99 items per room
     idRange =
       [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]
 
@@ -664,8 +694,7 @@ furnishRoomFor purpose room depth model =
     targets =
       floors'
       |> Set.toList
-      |> Util.everyNth 17
-      --|> List.take (List.length items)
+      |> Util.everyNth 7
   in
     furnishRoomWith items room model
 
@@ -685,26 +714,16 @@ addItem item model =
 spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
   let
-    creature =
-      creatureForDepth depth
+    species =
+      Species.level depth
 
     creatures' =
       model.rooms
-      |> Util.everyNth 3
+      |> Util.everyNth 4
       |> List.map Room.center
-      |> List.indexedMap (\n pt -> creature n pt)
+      |> List.map3 (\species' n pt -> Creature.init species' n pt) species [0..99]
   in
     { model | creatures = creatures' }
-
-creatureForDepth : Int -> (Int -> Point -> Creature.Model)
-creatureForDepth depth =
-  if depth < 3 then
-     Creature.createRat
-  else
-    if depth < 6 then
-      Creature.createMonkey
-    else
-      Creature.createBandit
 
 bestPath : Level -> List Point
 bestPath model =

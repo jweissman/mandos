@@ -4,12 +4,10 @@ import Point exposing (Point)
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Liquid exposing (Liquid)
---import Action exposing (Action(..))
 
 type ItemKind = Arm Weapon
               | Shield Armor
               | Bottle Liquid
-              --| QuestItem String
 
 weapon weapon' =
   Arm weapon'

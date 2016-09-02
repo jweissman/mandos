@@ -142,7 +142,7 @@ fromMouse : Mouse.Position -> Point
 fromMouse {x,y} =
   let scale = Configuration.viewScale in
   ( x//scale
-  , (y//scale)+1 -- ignore top bar ...
+  , (y//scale)+1
   )
 
 

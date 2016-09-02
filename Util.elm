@@ -27,7 +27,6 @@ mapEveryNth n f ls =
       ls' ++ ((f head) :: (mapEveryNth n f rest))
 
 
--- zzzip
 zip : List a -> List b -> List (a,b)
 zip xs ys =
   case (xs, ys) of

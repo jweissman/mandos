@@ -34,7 +34,6 @@ defaultForItem {kind} =
     Arm _ -> Wield
     Shield _ -> Wear
     Bottle _ -> Drink
-    --_ -> Action.look
 
 canPerform : Item -> Action -> Bool
 canPerform {kind} action =

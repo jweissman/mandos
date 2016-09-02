@@ -32,7 +32,6 @@ type alias Engine =
   , auto : Bool
   , telepathy : Bool
   , quests : List Quest
-  --, waitForSelection : Bool
   , action : Maybe Action
   }
 
@@ -247,7 +246,6 @@ resetAuto model =
 
 hoverAt : Mouse.Position -> Engine -> Engine
 hoverAt position model =
-  --model
   let
     point =
       Point.fromMouse position
@@ -422,14 +420,11 @@ playerExplores model =
     (explored,unexplored) =
       let viewed' = (World.viewed model.world) in
       (Set.union (World.floors model.world) (World.doors model.world))
-      --|> World.floors
-      --|> Set.toList
       |> Set.partition (\p -> List.member p viewed')
 
     frontier =
       explored
       |> Set.filter (\pt -> List.any (Point.isAdjacent pt) (unexplored |> Set.toList))
-      --|> Set.toList
 
     visibleCreatures =
       (World.creatures model.world)

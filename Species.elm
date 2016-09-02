@@ -1,13 +1,24 @@
-module Species exposing (Species, name, adjective, glyph, hp, power, resistance, rat, monkey, bandit)
+module Species exposing (Species, name, adjective, glyph, hp, power, resistance, level)
 
 -- TYPE
 type Species = Bandit | Rat | Snake | Tiger | Dragon | Monkey
 
 -- ctors
 
-rat = Rat
-monkey = Monkey
-bandit = Bandit
+level : Int -> List Species
+level depth =
+  if depth < 1 then
+    [ Rat, Rat, Rat, Rat ]
+  else if depth < 3 then
+    [ Rat, Monkey, Rat, Snake ]
+  else if depth < 5 then
+    [ Monkey, Bandit, Snake, Monkey ]
+  else if depth < 7 then
+    [ Bandit, Tiger, Snake, Bandit ]
+  else if depth < 9 then
+    [ Tiger, Bandit, Tiger, Bandit ]
+  else
+    [ Dragon, Dragon, Dragon, Dragon ]
 
 -- helpers
 
@@ -15,21 +26,21 @@ power : Species -> Int
 power species =
   case species of
     Rat    -> 2
-    Monkey -> 3
-    Bandit -> 4
     Snake  -> 7
-    Tiger  -> 20
-    Dragon -> 36
+    Monkey -> 10
+    Bandit -> 18
+    Tiger  -> 30
+    Dragon -> 40
 
 resistance : Species -> Int
 resistance species =
   case species of
     Rat    -> 2
-    Snake  -> 3
-    Monkey -> 3
-    Bandit -> 3
-    Tiger  -> 5
-    Dragon -> 7
+    Snake  -> 4
+    Monkey -> 7
+    Bandit -> 9
+    Tiger  -> 15
+    Dragon -> 26
 
 glyph : Species -> Char
 glyph species =
@@ -64,9 +75,11 @@ adjective species =
 hp : Species -> Int
 hp species =
   case species of
-    Snake -> 5
     Rat -> 6
-    Monkey -> 8
-    Bandit -> 10
-    Tiger -> 25
-    Dragon -> 50
+    Snake -> 10
+    Monkey -> 14
+    Bandit -> 20
+    Tiger -> 45
+    Dragon -> 150
+
+
