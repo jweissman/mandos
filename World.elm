@@ -343,9 +343,12 @@ illuminate source model =
       |> Set.fromList
       |> Set.union (Set.union (walls model) (doors model))
 
+    power =
+      model.player.visionRadius
+
   in
     source
-    |> Optics.illuminate perimeter blockers
+    |> Optics.illuminate power perimeter blockers
 
 playerCollectsItems : Model -> Model
 playerCollectsItems model =
@@ -412,6 +415,10 @@ playerUsesItem item model =
 
     Item.Bottle liquid' ->
       { model | player = player' |> Warrior.drink liquid' }
+
+    Item.Scroll spell' ->
+      { model | player = player' |> Warrior.cast spell' }
+              |> playerViewsField -- handle lux immediately
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity

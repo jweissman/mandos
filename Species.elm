@@ -1,27 +1,31 @@
 module Species exposing (Species, name, adjective, glyph, hp, power, resistance, level)
 
+import ChallengeRating exposing (ChallengeRating(..))
+
 -- TYPE
 type Species = Bandit | Rat | Snake | Tiger | Dragon | Monkey
 
 -- ctors
 
-level : Int -> List Species
-level depth =
-  if depth < 1 then
-    [ Rat, Rat, Rat, Rat ]
-  else if depth < 3 then
-    [ Rat, Monkey, Rat, Snake ]
-  else if depth < 5 then
-    [ Monkey, Bandit, Snake, Monkey ]
-  else if depth < 7 then
-    [ Bandit, Tiger, Snake, Bandit ]
-  else if depth < 9 then
-    [ Tiger, Bandit, Tiger, Bandit ]
-  else
-    [ Dragon, Dragon, Dragon, Dragon ]
+level : ChallengeRating -> List Species
+level rating =
+  case rating of
+    Beginner ->
+      [ Rat, Rat, Rat, Rat, Rat ]
+
+    Easy ->
+      [ Rat, Monkey, Rat, Snake, Rat ]
+
+    Moderate ->
+      [ Monkey, Bandit, Snake, Monkey, Monkey ]
+
+    Hard ->
+      [ Bandit, Tiger, Snake, Bandit, Monkey ]
+
+    Impossible ->
+      [ Dragon, Tiger, Dragon, Dragon, Tiger ]
 
 -- helpers
-
 power : Species -> Int
 power species =
   case species of

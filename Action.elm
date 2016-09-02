@@ -9,24 +9,28 @@ type Action = Drop
             | Wear
             | Drink
             | Look
+            | Read
 
 drop =
   Drop
 
-throw =
-  Throw
-
-identify =
-  Identify
-
-wield =
-  Wield
-
-wear =
-  Wear
-
-drink =
-  Drink
+--throw =
+--  Throw
+--
+--identify =
+--  Identify
+--
+--wield =
+--  Wield
+--
+--wear =
+--  Wear
+--
+--drink =
+--  Drink
+--
+--read =
+--  Read
 
 defaultForItem : Item -> Action
 defaultForItem {kind} =
@@ -34,10 +38,33 @@ defaultForItem {kind} =
     Arm _ -> Wield
     Shield _ -> Wear
     Bottle _ -> Drink
+    Scroll _ -> Read
 
 canPerform : Item -> Action -> Bool
 canPerform {kind} action =
-  True
+  case action of
+    Wield ->
+      case kind of
+        Arm _ -> True
+        _ -> False
+
+    Wear ->
+      case kind of
+        Shield _ -> True
+        _ -> False
+
+    Read ->
+      case kind of
+        Scroll _ -> True
+        _ -> False
+
+    Drink ->
+      case kind of
+        Bottle _ -> True
+        _ -> False
+
+    _ ->
+      True
 
 describe : Action -> String
 describe action =
@@ -63,6 +90,9 @@ describe action =
     Look ->
       "Search"
 
+    Read ->
+      "Read"
+
 question : Action -> String
 question action =
   case action of
@@ -86,3 +116,6 @@ question action =
 
     Look ->
       "Where would you like to look?"
+
+    Read ->
+      "What would you like to read?"

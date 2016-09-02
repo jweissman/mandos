@@ -1,13 +1,14 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, computeDamageAgainst, resistance, cardView)
+module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, cast, computeDamageAgainst, resistance, cardView)
 
+import Configuration
 import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
-
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Item exposing (Item, ItemKind(..))
 import Action exposing (Action)
 import Liquid exposing (Liquid(..))
+import Spell exposing (Spell(..))
 
 import Graphics
 import Svg
@@ -27,6 +28,7 @@ type alias Model =
   , armor : Maybe Armor
   , inventory : List Item
   , timesGearChanged : Int
+  , visionRadius : Int
   }
 
 -- INIT
@@ -45,6 +47,7 @@ init point =
   , armor = Nothing
   , inventory = []
   , timesGearChanged = 0
+  , visionRadius = Configuration.visionRadius
   }
 
 power : Model -> Int
@@ -91,17 +94,27 @@ heal : Int -> Model -> Model
 heal amount model =
   { model | hp = min model.maxHp (model.hp + amount) }
 
+augmentVision : Int -> Model -> Model
+augmentVision amount model =
+  { model | visionRadius = model.visionRadius + amount }
+
 drink : Liquid -> Model -> Model
 drink liquid model =
   case liquid of
-    Liquid.Water -> 
-      model 
+    Liquid.Water ->
+      model
       |> heal 5
 
     Liquid.Blessed liquid' ->
       model
       |> heal 10
       |> drink liquid'
+
+cast : Spell -> Model -> Model
+cast spell model =
+  case spell of
+    Lux ->
+      model |> augmentVision 1
 
 wield : Weapon -> Model -> Model
 wield weapon model =
@@ -137,16 +150,24 @@ collectsItem item model =
       { model | inventory = model.inventory ++ [item] }
   in case kind of
     Arm weapon ->
-      if model.weapon == Nothing then
-         model |> wield weapon
-      else
-        model'
+      case model.weapon of
+        Nothing ->
+          model |> wield weapon
+        Just weapon' ->
+          if (Weapon.damage weapon' < Weapon.damage (weapon)) then
+             model |> wield weapon
+          else
+            model'
 
     Shield armor ->
-      if model.armor == Nothing then
-        model |> wear armor
-      else
-        model'
+      case model.armor of
+        Nothing ->
+          model |> wear armor
+        Just armor' ->
+          if (Armor.absorption armor' < Armor.absorption (armor)) then
+            model |> wear armor
+          else
+            model'
 
     _ ->
       model'

@@ -57,4 +57,4 @@ baseDamage family =
   case family of
     Sword -> 3
     Dagger -> 2
-    Axe -> 3
+    Axe -> 4

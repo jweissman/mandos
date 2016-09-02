@@ -1,4 +1,6 @@
-module Material exposing (Material, describe, strength, resistance, iron, wood, steel, leather, bronze, mandium, cloth)
+module Material exposing (Material, describe, strength, resistance, forWeaponry, forArmor) -- iron, wood, steel, leather, bronze, mandium, cloth)
+
+import ChallengeRating exposing (ChallengeRating(..))
 
 type Material = Cloth
               | Leather
@@ -61,3 +63,40 @@ resistance material =
     Iron  -> 3.5
     Steel -> 4.8
     Mandium -> 7.2
+
+forArmor : ChallengeRating -> Material
+forArmor rating =
+  case rating of
+    Beginner ->
+      cloth
+
+    Easy ->
+      leather
+
+    Moderate ->
+      iron
+
+    Hard ->
+      steel
+
+    Impossible ->
+      mandium
+ 
+forWeaponry : ChallengeRating -> Material
+forWeaponry rating =
+  case rating of
+    Beginner ->
+      wood
+
+    Easy ->
+      bronze
+
+    Moderate ->
+      iron
+
+    Hard ->
+      steel
+
+    Impossible ->
+      mandium
+ 

@@ -10,5 +10,5 @@ viewScale = 18
 viewWidth = 100
 viewHeight = 60
 
-visionRadius = 5
+visionRadius = 3
 inventoryLimit = 10

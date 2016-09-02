@@ -6,12 +6,9 @@ import Util
 import Bresenham exposing (line)
 import Configuration
 
-illuminate : List Point -> Set Point -> Point -> List Point
-illuminate perimeter blockers source =
+illuminate : Int -> List Point -> Set Point -> Point -> List Point
+illuminate power perimeter blockers source =
   let
-    power =
-      Configuration.visionRadius
-
     rays =
       castRay power blockers source
   in

@@ -15,6 +15,8 @@ import Creature
 import Species
 import Liquid
 import Material
+import Spell
+import ChallengeRating
 import Event exposing (Event)
 import Entity exposing (Entity)
 import Item exposing (Item)
@@ -616,8 +618,9 @@ assignRooms depth model =
   let
     rooms' =
       model.rooms
-      |> Util.mapEveryNth 4 (Room.assign Room.armory)
+      |> Util.mapEveryNth 4 (Room.assign Room.library)
       |> Util.mapEveryNth 5 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 6 (Room.assign Room.armory)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
@@ -635,6 +638,9 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
+    challenge =
+      ChallengeRating.forDepth depth
+
     liquid =
       if depth < 7 then
         Liquid.water
@@ -642,31 +648,10 @@ furnishRoomFor purpose room depth model =
         Liquid.holy (Liquid.water)
 
     weaponMaterial =
-      if depth < 1 then
-        Material.wood
-      else if depth < 3 then
-        Material.bronze
-      else if depth < 7 then
-        Material.iron
-      else if depth < 9 then
-        Material.steel
-      else
-        Material.mandium
-
+      Material.forWeaponry challenge
+      
     armorMaterial =
-      if depth < 1 then
-        Material.cloth
-      else if depth < 3 then
-        Material.leather
-      else if depth < 5 then
-        Material.bronze
-      else if depth < 7 then
-        Material.iron
-      else if depth < 9 then
-        Material.steel
-      else
-        Material.mandium
-
+      Material.forArmor challenge
 
     itemKinds =
       case purpose of
@@ -681,6 +666,10 @@ furnishRoomFor purpose room depth model =
           , Item.weapon (Weapon.sword weaponMaterial)
           , Item.armor (Armor.suit armorMaterial)
           ]
+
+        Library ->
+          [ Item.scroll Spell.lux ]
+
 
     idRange =
       [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]
@@ -715,11 +704,11 @@ spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
   let
     species =
-      Species.level depth
+      Species.level (ChallengeRating.forDepth depth)
 
     creatures' =
       model.rooms
-      |> Util.everyNth 4
+      |> Util.everyNth 3
       |> List.map Room.center
       |> List.map3 (\species' n pt -> Creature.init species' n pt) species [0..99]
   in
