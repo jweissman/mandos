@@ -1,9 +1,11 @@
-module Point exposing (Point, x, y, slide, describe, distance, random, randomWithOffset, code, perimeter, grid, isAdjacent, towards, towards', adjacent)
+module Point exposing (Point, x, y, slide, describe, distance, random, randomWithOffset, code, perimeter, grid, isAdjacent, towards, towards', adjacent, fromMouse)
 
 import Direction exposing (Direction(..), directions)
 
 import Random
 import Set exposing (Set)
+import Mouse
+import Configuration
 
 type alias Point = ( Int, Int )
 
@@ -16,7 +18,7 @@ adjacent pt =
   |> List.map (\dir -> pt |> slide dir)
 
 isAdjacent a b =
-  adjacent a 
+  adjacent a
   |> List.member b
 
 slide : Direction -> Point -> Point
@@ -99,9 +101,6 @@ grid (x,y) width height =
   ) [0..(height)]
   |> Set.fromList
 
-
--- move util directionBetween back here as `towards`...?
--- towards : Point -> Point -> Direction
 towards : Point -> Point -> Direction
 towards (ax,ay) (bx,by) =
   if (ax > bx) && (ay > by) then
@@ -137,5 +136,13 @@ towards' (ax,ay) (bx,by) =
         South
       else
         North
+
+
+fromMouse : Mouse.Position -> Point
+fromMouse {x,y} =
+  let scale = Configuration.viewScale in
+  ( x//scale
+  , (y//scale)+1
+  )
 
 

@@ -16,9 +16,8 @@ view (x,y) world quests =
       quests
       |> List.partition (Quest.completed world)
 
-    --active =
-    --  quests
-    --  |> List.filter (not << (Quest.completed world))
+    completed' =
+      quests
 
     title =
       (Graphics.render "QUESTS" (x,y) "grey")

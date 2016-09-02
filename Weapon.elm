@@ -1,20 +1,33 @@
-module Weapon exposing (Weapon, woodenSword, damage, describe)
+module Weapon exposing (Weapon, damage, describe, dagger, sword, axe)
 
 import Material exposing (Material)
 import String
 
 type Family = Sword
             | Axe
+            | Dagger
 
 type alias Weapon =
   { family : Family
   , material : Material
   }
 
-woodenSword : Weapon
-woodenSword =
-  { family   = Sword
-  , material = Material.wood
+axe : Material -> Weapon
+axe material =
+  { family = Axe
+  , material = material
+  }
+
+dagger : Material -> Weapon
+dagger material =
+  { family  = Dagger
+  , material = material
+  }
+
+sword : Material -> Weapon
+sword material =
+  { family  = Sword
+  , material = material
   }
 
 damage : Weapon -> Int
@@ -24,20 +37,24 @@ damage {family,material} =
 
 describe : Weapon -> String
 describe {family,material} =
-  ["a", Material.describe material, describeFamily family ] 
+  [Material.describe material, describeFamily family ]
   |> String.join " "
 
 describeFamily : Family -> String
 describeFamily family =
   case family of
-    Sword -> 
+    Sword ->
       "sword"
 
     Axe ->
       "axe"
 
+    Dagger ->
+      "dagger"
+
 baseDamage : Family -> Float
 baseDamage family =
   case family of
-    Sword -> 7
-    Axe -> 10
+    Sword -> 3
+    Dagger -> 2
+    Axe -> 3

@@ -1,4 +1,4 @@
-module Armor exposing (Armor, absorption, describe, leatherTunic)
+module Armor exposing (Armor, absorption, describe, tunic, suit)
 
 import Material exposing (Material)
 
@@ -12,16 +12,16 @@ type alias Armor =
   , material : Material
   }
 
-leatherTunic : Armor
-leatherTunic =
-  { kind  = Suit
-  , material = Material.leather
+tunic : Material -> Armor
+tunic material =
+  { kind  = Tunic
+  , material = material
   }
 
-leatherSuit : Armor
-leatherSuit =
+suit : Material -> Armor
+suit material =
   { kind  = Suit
-  , material = Material.leather
+  , material = material
   }
 
 absorption : Armor -> Int
@@ -32,12 +32,12 @@ absorption {kind, material} =
 baseResist : Kind -> Float
 baseResist family =
   case family of
-    Tunic -> 2
+    Tunic -> 4
     Suit -> 5
 
 describe : Armor -> String
 describe {kind,material} =
-  ["a", Material.describe material, describeKind kind ]
+  [Material.describe material, describeKind kind ]
   |> String.join " "
 
 describeKind : Kind -> String
@@ -45,5 +45,6 @@ describeKind family =
   case family of
     Suit ->
       "suit"
+
     Tunic ->
       "tunic"

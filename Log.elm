@@ -14,7 +14,6 @@ type alias Model = List Event
 init : Model
 init = [ Event.awaken ]
 
--- origin = (15,35)
 maxEntries = 7
 
 -- VIEW

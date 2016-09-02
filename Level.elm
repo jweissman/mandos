@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal, itemAt, removeItem)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal, itemAt, removeItem, navigable)
 
 
 import Point exposing (Point)
@@ -12,6 +12,9 @@ import Weapon exposing (Weapon)
 import Armor exposing (Armor)
 import Warrior
 import Creature
+import Species
+import Liquid
+import Material
 import Event exposing (Event)
 import Entity exposing (Entity)
 import Item exposing (Item)
@@ -44,8 +47,8 @@ init =
   , doors = Set.empty
   , coins = Set.empty
   , creatures = []
-  , upstairs = Nothing --origin
-  , downstairs = Nothing --origin
+  , upstairs = Nothing
+  , downstairs = Nothing
   , crystal = Nothing
   , entrance = Nothing
   , rooms = []
@@ -53,8 +56,6 @@ init =
   , items = []
   }
 
--- should probably spawn creatures here too
--- since we finally know what level we are!
 finalize : Int -> Level -> Level
 finalize depth model =
   model
@@ -122,7 +123,6 @@ isStairsDown position model =
       position == pt
     Nothing ->
       False
-  --model.downstairs == position
 
 isEntrance : Point -> Level -> Bool
 isEntrance position model =
@@ -227,12 +227,12 @@ entitiesAt point model =
       , door
       , wall
       , coin
-      , monster
       , downstairs
       , upstairs
       , entrance
       , crystal
       , item
+      , monster
       ]
   in
     entities
@@ -247,7 +247,7 @@ creatureAt pt model =
 itemAt : Point -> Level -> Maybe Item
 itemAt pt model =
   model.items
-  |> List.filter (\item -> pt == (Item.position item))
+  |> List.filter (\item -> pt == (item.position))
   |> List.head
 
 -- HELPERS (for update)
@@ -308,7 +308,7 @@ creatureEngages warrior creature model =
         if c.id == creature.id then
            c
            |> Creature.engage
-           |> Creature.turn --direction
+           |> Creature.turn
                ((Point.towards c.position warrior.position)
                |> Direction.invert)
         else c
@@ -322,7 +322,7 @@ creatureMoves creature player model =
     creatures' =
       model.creatures
       |> List.map (\c ->
-        if c.id == creature.id && (model |> canCreatureStep c player) then -- model
+        if c.id == creature.id && (model |> canCreatureStep c player) then
           c |> Creature.step
         else c)
   in
@@ -336,7 +336,7 @@ creatureAttacks creature (model, events, player) =
       |> Point.slide creature.direction
 
     dmg =
-      creature.attack - player.defense
+      max 1 (creature.attack - (Warrior.resistance player))
   in
     if pos == player.position then
        (model, events, player)
@@ -419,7 +419,6 @@ liberateCrystal model =
 
 -- GENERATE
 
--- actually build out the rooms and corridors for a level
 fromRooms : List Room -> Level
 fromRooms roomCandidates =
   let
@@ -468,86 +467,33 @@ connectRooms rooms model =
 connectRooms' : (Room,Room) -> Level -> Level
 connectRooms' (a, b) model =
   let
-    (ax,ay) =
-      a.origin
-
-    (bx,by) =
-      b.origin
-
-    direction =
-      Direction.invert (Room.directionBetween a b)
-
-    xOverlapStart =
-      (max ax bx) + 1
-
-    xOverlapEnd =
-      (min (ax+a.width) (bx+b.width)) - 1
-
-    xOverlapRange =
-      [(xOverlapStart)..(xOverlapEnd)]
-
-    sampleOverlap = \overlap ->
-       Util.getAt overlap ((a.height ^ 31 + bx) % (max 1 (List.length overlap - 1)))
-       |> Maybe.withDefault -1
-
-    yOverlapStart =
-      (max ay by) + 1
-
-    yOverlapEnd =
-      (min (ay+a.height) (by+b.height)) - 1
-
-    yOverlapRange =
-      [(yOverlapStart)..(yOverlapEnd)]
-
-    startPosition =
-      case direction of
-        North ->
-          Just ((sampleOverlap xOverlapRange), ay)
-
-        South ->
-          Just ((sampleOverlap xOverlapRange), ay+a.height)
-
-        East ->
-          Just (ax+a.width, (sampleOverlap yOverlapRange))
-
-        West ->
-          Just (ax, (sampleOverlap yOverlapRange))
-
-        _ ->
-          Nothing
+    corridor =
+      Room.corridor a b
   in
-    case startPosition of
-      Just pos ->
+    case corridor of
+      [] -> model
+      [pt] ->
         model
-        |> extrudeCorridor (round (Room.distance a b)) pos direction
+        |> emplaceDoor pt
+      _ ->
+        if List.length corridor > 2 then
+          model
+          |> extrudeCorridor corridor
+          |> emplaceDoor (corridor |> List.head |> Maybe.withDefault origin)
+          |> emplaceDoor (corridor |> List.reverse |> List.head |> Maybe.withDefault origin)
+        else
+          model
+          |> extrudeCorridor corridor
 
-      Nothing ->
-        model
+extrudeCorridor : List Point -> Level -> Level
+extrudeCorridor pts model =
+  pts
+  |> List.foldr extrudeCorridor' model
 
-extrudeCorridor : Int -> Point -> Direction -> Level -> Level
-extrudeCorridor depth pt dir model =
---  extrudeCorridor' pt dir depth model
---extrudeCorridor' pt dir depth model =
-  let
-    model' =
-      { model | floors = Set.insert pt model.floors  }
-              |> addWallsAround pt
-              |> removeWall pt
-
-    next =
-      Point.slide dir pt
-
-    foundFloor =
-      model |> isFloor pt
-      --(List.any (\pt' -> pt' == pt) model.floors)
-  in
-    if foundFloor || depth < 0 then
-      model'
-      |> emplaceDoor (pt |> Point.slide (Direction.invert dir))
-    else
-      model'
-      |> extrudeCorridor (depth-1) (pt |> Point.slide dir) dir
-
+extrudeCorridor' pt model =
+  { model | floors = Set.insert pt model.floors  }
+          |> addWallsAround pt
+          |> removeWall pt
 
 -- doors
 emplaceDoor : Point -> Level -> Level
@@ -637,37 +583,16 @@ addWallsAround pt model =
       Direction.directions
       |> List.map (\d -> Point.slide d pt)
       |> Set.fromList
-      |> Set.filter (\wall -> not ( (model |> isFloor wall)))
+      |> Set.filter (\wall -> not ( (model |> isFloor wall) || (model |> isDoor wall)))
   in
      { model | walls = Set.union newWalls model.walls }
 
 dropCoins : Level -> Level
 dropCoins model =
   let
-    down =
-      case model.downstairs of
-        Just pt ->
-          pt
-        Nothing ->
-          case model.crystal of
-            Just (pt,_) ->
-              pt
-            Nothing ->
-              origin
-
-    up =
-       case model.upstairs of
-        Just pt ->
-          pt
-        Nothing ->
-          case model.entrance of
-            Just (pt,_) ->
-              pt
-            Nothing ->
-              origin
-
     path' =
-      Path.seek up down (\pt -> isWall pt model)
+      model
+      |> bestPath
       |> List.tail |> Maybe.withDefault []
       |> List.reverse
       |> List.tail |> Maybe.withDefault []
@@ -691,8 +616,9 @@ assignRooms depth model =
   let
     rooms' =
       model.rooms
-      |> Util.mapEveryNth 5 (Room.assign Room.armory)
-      |> Util.mapEveryNth 7 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 4 (Room.assign Room.armory)
+      |> Util.mapEveryNth 5 (Room.assign Room.barracks)
+      |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
 
@@ -709,22 +635,76 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
-    item =
+    liquid =
+      if depth < 7 then
+        Liquid.water
+      else
+        Liquid.holy (Liquid.water)
+
+    weaponMaterial =
+      if depth < 1 then
+        Material.wood
+      else if depth < 3 then
+        Material.bronze
+      else if depth < 7 then
+        Material.iron
+      else if depth < 9 then
+        Material.steel
+      else
+        Material.mandium
+
+    armorMaterial =
+      if depth < 1 then
+        Material.cloth
+      else if depth < 3 then
+        Material.leather
+      else if depth < 5 then
+        Material.bronze
+      else if depth < 7 then
+        Material.iron
+      else if depth < 9 then
+        Material.steel
+      else
+        Material.mandium
+
+
+    itemKinds =
       case purpose of
         Armory ->
-          Item.weapon Weapon.woodenSword
+          [ Item.bottle liquid
+          , Item.armor (Armor.tunic armorMaterial)
+          , Item.weapon (Weapon.dagger weaponMaterial)
+          ]
 
         Barracks ->
-          Item.armor Armor.leatherTunic
+          [ Item.bottle liquid
+          , Item.weapon (Weapon.sword weaponMaterial)
+          , Item.armor (Armor.suit armorMaterial)
+          ]
 
-    (ox,oy) =
-      room.origin
+    idRange =
+      [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]
+
+    items =
+      List.map3 (\pt idx kind -> Item.init pt kind idx) targets idRange itemKinds
+
+    (_,floors') =
+      Room.layout room
+
+    targets =
+      floors'
+      |> Set.toList
+      |> Util.everyNth 7
   in
-    model |> dropItem (ox+1,oy+1) item
+    furnishRoomWith items room model
 
-dropItem : Point -> Item.ItemKind -> Level -> Level
-dropItem pt kind model =
-  let item = Item.init pt kind in
+furnishRoomWith : List Item -> Room -> Level -> Level
+furnishRoomWith items room model =
+  items
+  |>  List.foldr (furnishRoomWith' room) model
+
+furnishRoomWith' : Room -> Item -> Level -> Level
+furnishRoomWith' room item model =
   model |> addItem item
 
 addItem : Item -> Level -> Level
@@ -734,22 +714,47 @@ addItem item model =
 spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
   let
-    creature =
-      creatureForDepth depth
+    species =
+      Species.level depth
 
     creatures' =
       model.rooms
+      |> Util.everyNth 4
       |> List.map Room.center
-      |> List.indexedMap (\n pt -> creature n pt)
+      |> List.map3 (\species' n pt -> Creature.init species' n pt) species [0..99]
   in
     { model | creatures = creatures' }
 
-creatureForDepth : Int -> (Int -> Point -> Creature.Model)
-creatureForDepth depth =
-  if depth < 3 then
-     Creature.createRat
+bestPath : Level -> List Point
+bestPath model =
+  let
+    down =
+      case model.downstairs of
+        Just pt ->
+          pt
+        Nothing ->
+          case model.crystal of
+            Just (pt,_) ->
+              pt
+            Nothing ->
+              origin
+
+    up =
+       case model.upstairs of
+        Just pt ->
+          pt
+        Nothing ->
+          case model.entrance of
+            Just (pt,_) ->
+              pt
+            Nothing ->
+              origin
+  in
+    Path.seek up down (\pt -> isWall pt model)
+
+navigable : Level -> Bool
+navigable level =
+  if List.length (bestPath level) == 0 then
+    False
   else
-    if depth < 6 then
-      Creature.createMonkey
-    else
-      Creature.createBandit
+    True

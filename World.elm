@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, coins, downstairs, upstairs, entrances, crystals, playerViewsField, entitiesAt, viewed, canPlayerStep, creatures, items)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -42,7 +42,7 @@ init =
   {
     dungeon = []
   , depth = 0
-  , player = Warrior.init origin
+  , player = Warrior.init (0,0)
   , events = Log.init
   , debugPath = []
   , illuminated = []
@@ -65,7 +65,6 @@ viewed model =
 walls : Model -> Set Point
 walls model =
   (level model).walls
-  --|> Set.toList
 
 coins : Model -> List Point
 coins model =
@@ -83,12 +82,10 @@ items model =
 doors : Model -> Set Point
 doors model =
   (level model).doors
-  --|> Set.toList
 
 floors : Model -> Set Point
 floors model =
   (level model).floors
-  --|> Set.toList
 
 upstairs : Model -> List Point
 upstairs model =
@@ -113,8 +110,6 @@ crystals model =
   case (level model).crystal of
     Just (pt,_) -> [pt]
     Nothing -> []
-
-origin = (0,0)
 
 -- PREDICATES/QUERIES
 
@@ -163,10 +158,6 @@ canPlayerStep direction model =
       |> slide direction
   in
     not ( Level.isCreature move (level model) || Set.member move (walls model))
---    not (isBlockedForPlayer move model)
-
---isBlockedForPlayer : Point -> Model -> Bool
---isBlockedForPlayer pt model =
 
 playerCollectsCoins : Model -> Model
 playerCollectsCoins model =
@@ -187,19 +178,6 @@ playerCollectsCoins model =
                 , dungeon = dungeon'
                 , events  = model.events ++ [event]
         }
-
-playerCollectsItems : Model -> Model
-playerCollectsItems model =
-  case (level model) |> Level.itemAt (model.player.position) of
-    Nothing ->
-      model
-
-    Just item ->
-      let event = Event.pickupItem item in
-      { model | player  = Warrior.collectsItem item model.player
-              , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
-              , events  = model.events ++ [ event ]
-      }
 
 playerLiberatesCrystal : Model -> Model
 playerLiberatesCrystal model =
@@ -264,7 +242,6 @@ playerAttacksCreature creature model =
   let
     damage =
       Warrior.computeDamageAgainst creature.defense model.player
-      --model.player.attack - creature.defense
   in
     model
     |> creatureTakesDamage creature damage
@@ -316,7 +293,7 @@ playerAscends model =
       { model | depth = model.depth - 1 }
 
     player' =
-      { player | position = (downstairs model') |> List.head |> Maybe.withDefault origin }
+      { player | position = (downstairs model') |> List.head |> Maybe.withDefault (0,0) }
 
     events' =
       model.events ++ [Event.ascend (model.depth-1)]
@@ -333,7 +310,7 @@ playerDescends model =
       { model | depth = model.depth + 1 }
 
     player' =
-      { player | position = (upstairs model') |> List.head |> Maybe.withDefault origin }
+      { player | position = (upstairs model') |> List.head |> Maybe.withDefault (0,0) }
 
     events' =
       model.events ++ [Event.descend (model.depth+1)]
@@ -370,14 +347,71 @@ illuminate source model =
     source
     |> Optics.illuminate perimeter blockers
 
-lastSingleton : List a -> List a
-lastSingleton ls =
-  case (ls |> List.reverse |> List.head) of
-    Nothing -> 
-      []
+playerCollectsItems : Model -> Model
+playerCollectsItems model =
+  if List.length model.player.inventory < Configuration.inventoryLimit then
+    case (level model) |> Level.itemAt (model.player.position) of
+      Nothing ->
+        model
 
-    Just e ->
-      [e]
+      Just item ->
+        let event = Event.pickupItem item in
+        { model | player  = Warrior.collectsItem item model.player
+                , dungeon = model.dungeon |> Dungeon.removeItem item model.depth
+                , events  = model.events ++ [ event ]
+        }
+  else
+    model
+
+playerDropsItem : Int -> Model -> Model
+playerDropsItem idx model =
+  let
+    maybeItem =
+      Util.getAt model.player.inventory idx
+  in
+    case maybeItem of
+      Just item ->
+        let
+          inventory' =
+            model.player.inventory
+            |> List.filter (\it -> not (it == item))
+
+          player =
+            model.player
+
+          player' =
+            { player | inventory = inventory' }
+        in
+          { model | player = player' }
+
+      Nothing ->
+        model
+
+playerUsesItem : Item -> Model -> Model
+playerUsesItem item model =
+  let
+    {kind} =
+      item
+
+    inventory' =
+      model.player.inventory
+      |> List.filter (\it -> not (it == item))
+
+    player =
+      model.player
+
+    player' =
+      { player | inventory = inventory' }
+
+  in case kind of
+    Item.Arm weapon' ->
+      { model | player = player' |> Warrior.wield weapon' }
+
+    Item.Shield armor' ->
+      { model | player = player' |> Warrior.wear armor' }
+
+    Item.Bottle liquid' ->
+      { model | player = player' |> Warrior.drink liquid' }
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity
@@ -423,24 +457,11 @@ view model =
     entityViews =
       List.map (Entity.view) entities
 
-    --log =
-    --  Log.view model.events
-
-    --info =
-    --  infoView model
-
     highlight =
       highlightCells model.debugPath
-
-    playerCard =
-      Warrior.cardView (60,8) model.player
-
   in
     entityViews
     ++ highlight
-    --++ log
-    --++ [info]
-    --++ playerCard
 
 highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
@@ -465,3 +486,14 @@ highlightCells cells =
 
 highlightCell (x,y) color =
   Graphics.render "@" (x,y) color
+
+lastSingleton : List a -> List a
+lastSingleton ls =
+  case (ls |> List.reverse |> List.head) of
+    Nothing ->
+      []
+
+    Just e ->
+      [e]
+
+

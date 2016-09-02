@@ -1,10 +1,11 @@
-module Room exposing (Room, Purpose(..), generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center, assign, armory, barracks)
+module Room exposing (Room, Purpose(..), generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center, corridor, assign, armory, barracks)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Graph exposing (Graph)
 import Util
 import Configuration
+import Bresenham
 
 import Random
 import Set exposing (Set)
@@ -12,7 +13,7 @@ import Set exposing (Set)
 type Purpose = Armory
              | Barracks
 
-armory = 
+armory =
   Armory
 
 barracks =
@@ -22,6 +23,7 @@ type alias Room = { origin : Point
                   , width : Int
                   , height : Int
                   , purpose : Maybe Purpose
+                  , id : Int
                   }
 
 generate : Int -> Random.Generator (List Room)
@@ -31,8 +33,8 @@ generate n =
 generate' : Random.Generator Room
 generate' =
   let
-    maxRoomSize = 
-      9
+    maxRoomSize =
+      8
 
     vWidth =
       Configuration.viewWidth // 2
@@ -41,7 +43,7 @@ generate' =
       Configuration.viewHeight // 2
 
     width =
-      Random.int 6 maxRoomSize
+      Random.int 4 maxRoomSize
 
     height =
       Random.int 4 maxRoomSize
@@ -58,16 +60,16 @@ create point width height =
   , width = width
   , height = height
   , purpose = Nothing
+  , id = -1
   }
 
 assign purpose room =
-  { room | purpose = Just purpose
-  }
+  { room | purpose = Just purpose }
 
 overlaps : Room -> Room -> Bool
 overlaps a b =
   overlapsY -1 a b && overlapsX -1 a b
- 
+
 overlapsRelevantDirection : Int -> Room -> Room -> Bool
 overlapsRelevantDirection n a b =
   case directionBetween a b of
@@ -85,37 +87,36 @@ overlapsX n a b =
 
 isAbove : Int -> Room -> Room -> Bool
 isAbove n a b =
-  let 
-    (_,ay) = a.origin 
+  let
+    (_,ay) = a.origin
     (_,by) = b.origin
   in
   ay + a.height < by - n
 
 isBelow : Int -> Room -> Room -> Bool
 isBelow n a b =
-  let 
-    (_,ay) = a.origin 
+  let
+    (_,ay) = a.origin
     (_,by) = b.origin
   in
   by + b.height < ay - n
 
 isLeft  : Int -> Room -> Room -> Bool
 isLeft n a b =
-  let 
-    (ax,_) = a.origin 
+  let
+    (ax,_) = a.origin
     (bx,_) = b.origin
   in
   ax + a.width < bx - n
 
 isRight : Int -> Room -> Room -> Bool
 isRight n a b =
-  let 
-    (ax,_) = a.origin 
+  let
+    (ax,_) = a.origin
     (bx,_) = b.origin
   in
   bx + b.width < ax - n
 
--- return a tuple of two lists of points -- (walls, list of points in floors)
 layout : Room -> (Set Point, Set Point)
 layout {origin,width,height} =
   layout' origin width height
@@ -158,7 +159,71 @@ center {origin,width,height} =
 
 distance : Room -> Room -> Float
 distance a b =
-  Point.distance (center a) (center b)
+  Point.distance (center a) (center b) 
+  --List.length (corridor a b))
+
+corridor : Room -> Room -> List Point
+corridor a b =
+  case corridorEndpoints a b of
+    Just (pos,pos') ->
+      Bresenham.line pos pos'
+
+    Nothing ->
+      []
+
+corridorEndpoints : Room -> Room -> Maybe (Point,Point)
+corridorEndpoints a b =
+  let
+    direction =
+      directionBetween a b
+      |> Direction.invert
+
+    (ax,ay) =
+      a.origin
+
+    (bx,by) =
+      b.origin
+
+    xOverlapStart =
+      (max ax bx) + 1
+
+    xOverlapEnd =
+      (min (ax+a.width) (bx+b.width)) - 1
+
+    xOverlapRange =
+      [(xOverlapStart)..(xOverlapEnd)]
+
+    sampleOverlap = \overlap ->
+       Util.sample a.height bx -1 overlap
+
+    yOverlapStart =
+      (max ay by) + 1
+
+    yOverlapEnd =
+      (min (ay+a.height) (by+b.height)) - 1
+
+    yOverlapRange =
+      [(yOverlapStart)..(yOverlapEnd)]
+  in
+    case direction of
+      North ->
+        Just ((sampleOverlap xOverlapRange, ay),
+             (sampleOverlap xOverlapRange, by+b.height))
+
+      South ->
+        Just ((sampleOverlap xOverlapRange, ay+a.height),
+              (sampleOverlap xOverlapRange, by))
+
+      East ->
+        Just ((ax+a.width, sampleOverlap yOverlapRange),
+              (bx, sampleOverlap yOverlapRange))
+
+      West ->
+        Just ((ax, sampleOverlap yOverlapRange),
+              (bx+b.width, sampleOverlap yOverlapRange))
+
+      _ ->
+        Nothing
 
 canConnect : Room -> Room -> Bool
 canConnect a b =
@@ -166,7 +231,6 @@ canConnect a b =
 
 network : List Room -> Maybe (Graph Room)
 network rooms =
-  -- would think this shoudl filter unconnectable rooms!!
   Graph.tree distance canConnect rooms
 
 directionBetween : Room -> Room -> Direction

@@ -1,10 +1,10 @@
 module Quest exposing (Quest, completed, describe, findCrystal, escape, goal, unlocked, coreCampaign)
 
 import World
+import Configuration
 
 type Goal = FindWeapon
           | FindArmor
-          --| FindAlly
           | FindCrystal
           | Escape
 
@@ -66,15 +66,15 @@ completed world (Quest goal _) =
 unlocked : World.Model -> List Quest -> List Quest
 unlocked world quests =
   let
-    completed' =
+    (completed', incomplete) =
       quests
-      |> List.filter (completed world)
+      |> List.partition (completed world)
 
     unlocked' =
       completed'
       |> List.concatMap (\(Quest _ unlocks) -> unlocks)
       |> List.filter (\(Quest goal' _) ->
         not (List.member goal' (List.map goal quests)))
-
   in
     unlocked'
+

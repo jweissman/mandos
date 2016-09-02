@@ -15,6 +15,7 @@ import Journal
 import Log
 import Status
 import Item
+import Action exposing (Action(..))
 
 import Set exposing (Set)
 import Time
@@ -31,7 +32,9 @@ type alias Engine =
   , auto : Bool
   , telepathy : Bool
   , quests : List Quest
+  , action : Maybe Action
   }
+
 
 init : Engine
 init =
@@ -41,14 +44,15 @@ init =
   , followPath = Nothing
   , auto = False
   , telepathy = False
-  , quests = Quest.coreCampaign --[ Quest.findCrystal ]
+  , quests = Quest.coreCampaign
+  , action = Nothing
   }
 
 enter : Dungeon -> Engine -> Engine
 enter dungeon model =
   let
     dungeon' =
-      dungeon |> Dungeon.prepare
+      dungeon |> Dungeon.prepare Configuration.levelCount
 
     world =
       model.world
@@ -81,31 +85,101 @@ handleKeypress : Char -> Engine -> Engine
 handleKeypress keyChar model =
   let
     reset = (
-      resetFollow << 
-      resetAuto << 
-      illuminate << 
+      resetAction <<
+      resetFollow <<
+      resetAuto <<
+      illuminate <<
       moveCreatures
-    ) 
+    )
   in
-    model |> case keyChar of
-      'a' -> autorogue
-      'h' -> reset << playerSteps West
-      'j' -> reset << playerSteps South
-      'k' -> reset << playerSteps North
-      'l' -> reset << playerSteps East
-      't' -> telepath
-      'x' -> playerExplores
-      _ -> reset
+    case model.action of
+      Just action ->
+        model |> case keyChar of
+          '0' -> playerActs 0
+          '1' -> playerActs 1
+          '2' -> playerActs 2
+          '3' -> playerActs 3
+          '4' -> playerActs 4
+          '5' -> playerActs 5
+          '6' -> playerActs 6
+          '7' -> playerActs 7
+          '8' -> playerActs 8
+          '9' -> playerActs 9
+          _ -> resetAction
+
+      Nothing ->
+        model |> case keyChar of
+          'a' -> autorogue
+          'h' -> reset << playerSteps West
+          'j' -> reset << playerSteps South
+          'k' -> reset << playerSteps North
+          'l' -> reset << playerSteps East
+          't' -> telepath
+          'x' -> playerExplores
+          'd' -> waitForSelection Action.drop
+          '0' -> playerUses 0
+          '1' -> playerUses 1
+          '2' -> playerUses 2
+          '3' -> playerUses 3
+          '4' -> playerUses 4
+          '5' -> playerUses 5
+          '6' -> playerUses 6
+          '7' -> playerUses 7
+          '8' -> playerUses 8
+          '9' -> playerUses 9
+          _ -> reset
+
+waitForSelection : Action -> Engine -> Engine
+waitForSelection action model =
+  if List.length model.world.player.inventory > 0 then
+    { model | action = Just action }
+  else
+    model
+
+playerActs : Int -> Engine -> Engine
+playerActs idx model =
+  case model.action of
+    Nothing ->
+      model
+
+    Just act ->
+      case act of
+        Drop ->
+          model |> playerDrops idx
+
+        _ ->
+          model
+
+
+playerDrops : Int -> Engine -> Engine
+playerDrops idx model =
+  { model | world = model.world |> World.playerDropsItem idx }
+
+resetAction : Engine -> Engine
+resetAction model =
+  { model | action = Nothing }
+
+playerUses : Int -> Engine -> Engine
+playerUses itemIdx model =
+  let
+    maybeItem =
+      Util.getAt model.world.player.inventory itemIdx
+
+  in case maybeItem of
+    Nothing ->
+      model
+
+    Just item ->
+      { model | world = model.world |> World.playerUsesItem item }
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
-  model 
+  model
   |> followPaths
-  |> updateQuests 
+  |> updateQuests
 
 updateQuests : Engine -> Engine
 updateQuests model =
-  -- check if we've unlocked any quests...
   let
     quests' =
       model.quests
@@ -134,7 +208,6 @@ telepath model =
   if model.telepathy then
     { model | telepathy = False }
   else
-    --Debug.log "TELEPATH!"
     { model | telepathy = True }
 
 moveCreatures model =
@@ -153,7 +226,6 @@ moveCreatures model =
       }
 
   in
-    --Debug.log "MOVE CREATURES!"
     { model | world = world' }
 
 playerSteps direction model =
@@ -172,20 +244,11 @@ resetAuto : Engine -> Engine
 resetAuto model =
   { model | auto = False }
 
--- maybe to utils?
-screenToCoordinate : Mouse.Position -> Point
-screenToCoordinate {x,y} =
-  let scale = Configuration.viewScale in
-  ( x//scale
-  , (y//scale)+1 -- ignore top bar ...
-  )
-
 hoverAt : Mouse.Position -> Engine -> Engine
 hoverAt position model =
-  --model
   let
     point =
-      (screenToCoordinate position)
+      Point.fromMouse position
 
     isLit =
       List.member point (model.world.illuminated)
@@ -278,7 +341,7 @@ imagineEntityAt point model =
           model |> pathToEntity entity
   in
     { model | hover = maybeEntity
-            , hoverPath = path' 
+            , hoverPath = path'
     }
 
 pathToEntity entity model =
@@ -345,8 +408,6 @@ playerFollowsPath model =
               |> resetFollow
               |> resetHover
 
---viewed model = World.viewed model.world
-
 playerExplores : Engine -> Engine
 playerExplores model =
   let
@@ -357,48 +418,45 @@ playerExplores model =
       (\c -> Point.distance playerPos c)
 
     (explored,unexplored) =
-      let v = (World.viewed model.world) in
-      model.world
-      |> World.floors
-      |> Set.toList
-      |> List.partition (\p -> List.member p v)
+      let viewed' = (World.viewed model.world) in
+      (Set.union (World.floors model.world) (World.doors model.world))
+      |> Set.partition (\p -> List.member p viewed')
 
     frontier =
       explored
-      |> List.filter (\pt ->
-        List.any (\pt' -> Point.isAdjacent pt pt') unexplored)
+      |> Set.filter (\pt -> List.any (Point.isAdjacent pt) (unexplored |> Set.toList))
 
     visibleCreatures =
       (World.creatures model.world)
       |> List.map .position
-      |> List.filter (\pt -> List.member pt (explored))
+      |> List.filter (\pt -> Set.member pt (explored))
 
     visibleCoins =
       (World.coins model.world)
-      |> List.filter (\pt -> List.member pt (explored))
+      |> List.filter (\pt -> Set.member pt (explored))
 
     visibleItems =
-      (World.items model.world)
-      |> List.map Item.position
-      |> List.filter (\pt -> List.member pt (explored))
+      if List.length model.world.player.inventory < Configuration.inventoryLimit then
+        (World.items model.world)
+        |> List.map .position
+        |> List.filter (\pt -> Set.member pt (explored))
+      else
+        []
+
+    gatherAndExplore =
+      visibleCreatures ++ visibleItems ++ visibleCoins ++ (frontier |> Set.toList)
+
+    ascendOrDescend =
+      if model.world.crystalTaken then
+        World.upstairs model.world ++ World.entrances model.world
+      else
+        if Set.size frontier == 0 then
+          World.downstairs model.world ++ World.crystals model.world
+        else
+          []
 
     destSources =
-      if List.length visibleCreatures > 0 then
-        visibleCreatures
-      else
-        if List.length visibleCoins > 0 then
-          visibleCoins
-        else
-          if List.length visibleItems > 0 then
-            visibleItems
-          else
-            if model.world.crystalTaken then
-              World.upstairs model.world ++ World.entrances model.world
-            else
-              if List.length frontier > 0 then
-                frontier
-              else
-                World.downstairs model.world ++ World.crystals model.world
+      gatherAndExplore ++ ascendOrDescend
 
     maybeDest =
       destSources
@@ -424,7 +482,6 @@ playerExplores model =
     { model | followPath = path }
 
 -- VIEW
-
 view : Engine -> List (Svg.Svg a)
 view model =
   let
@@ -433,8 +490,11 @@ view model =
 
     path =
       case model.followPath of
-        Nothing -> model.hoverPath
-        Just path -> path
+        Nothing ->
+          model.hoverPath
+
+        Just path ->
+          path
 
     worldView =
       World.view { world | debugPath = path
@@ -442,18 +502,12 @@ view model =
                          }
 
     debugMsg =
-      case model.hover of
-        Nothing ->
-          "You aren't looking at anything in particular."
+      case model.action of
+        Just action' ->
+          Action.question action'
 
-        Just entity ->
-          case entity of
-            Entity.Memory e ->
-              "You remember seeing " ++ (Entity.describe e) ++ " here."
-            Entity.Imaginary e ->
-              "You imagine there to be " ++ (Entity.describe e) ++ " here."
-            _ ->
-              "You see " ++ (Entity.describe entity) ++ "."
+        Nothing ->
+          model |> hoverMessage
 
     note =
       Graphics.render debugMsg (25,1) "rgba(160,160,160,0.6)"
@@ -462,19 +516,36 @@ view model =
       Journal.view (55,2) model.world model.quests
 
     character =
-      Warrior.cardView (55, 6 + (List.length model.quests)) model.world.player
+      model.world.player
+      |> Warrior.cardView (55, 5 + (List.length model.quests)) (model.action)
 
     log =
-      Log.view (2, 35) model.world.events
+      Log.view (2, 37) model.world.events
 
     status =
       Status.view (0,1) model.world
 
     rightBar =
-      quests 
-      ++ character 
+      quests
+      ++ character
       ++ log
   in
-    worldView 
+    worldView
     ++ [status, note]
     ++ rightBar
+
+
+hoverMessage : Engine -> String
+hoverMessage model =
+  case model.hover of
+    Nothing ->
+      "You aren't looking at anything in particular."
+
+    Just entity ->
+      case entity of
+        Entity.Memory e ->
+          "You remember seeing " ++ (Entity.describe e) ++ " here."
+        Entity.Imaginary e ->
+          "You imagine there is " ++ (Entity.describe e) ++ " here."
+        _ ->
+          "You see " ++ (Entity.describe entity) ++ "."

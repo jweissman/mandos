@@ -45,7 +45,12 @@ type alias Model =
 
 -- INIT
 init : (Model, Cmd Msg)
-init = ( { engine = Engine.init, state = Splash, generationUnderway = False  }, Cmd.none ) -- generate )
+init = ( { engine = Engine.init
+         , state = Splash
+         , generationUnderway = False
+         },
+         Cmd.none
+       )
 
 generate : Cmd Msg
 generate =
@@ -85,20 +90,24 @@ update message model =
           if model.generationUnderway then
              (model, Cmd.none)
           else
-             (model, generate)
+             ({ model | generationUnderway = True }, generate)
 
         _ -> (model, Cmd.none)
 
     KeyMsg keyCode ->
       case model.state of
         Splash ->
-          ({model | state = Generating}, Cmd.none)
+          ({model | state = Generating
+                  , generationUnderway = False
+                  , engine = Engine.init
+                  },
+                  Cmd.none)
 
         Death ->
-          ({model | state = Splash, engine = Engine.init}, Cmd.none)
+          ({model | state = Splash}, Cmd.none)
 
         Victory ->
-          ({model | state = Splash, engine = Engine.init}, Cmd.none)
+          ({model | state = Splash}, Cmd.none)
 
         Generating ->
           (model, Cmd.none)
@@ -156,7 +165,7 @@ view model =
   in
     Html.div [ style bgStyle ]
     [ Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-    , box (stateView model) --svg [ box ] (stateView model)
+    , box (stateView model)
     ]
 
 box viewModel =

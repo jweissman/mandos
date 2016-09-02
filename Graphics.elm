@@ -7,7 +7,7 @@ import Html
 import Svg exposing (text')
 import Svg.Attributes exposing (x, y, fontSize, fontFamily, fill)
 
-font = "VT323" --Source Code Pro"
+font = "VT323"
 
 render : String -> Point.Point -> String -> Svg.Svg a
 render string (px,py) color =
@@ -15,7 +15,7 @@ render string (px,py) color =
         , y (toString py)
         , fontSize "1"
         , fontFamily font 
-        , fill color --"darkgreen"
+        , fill color
         ] [ Html.text string ]
 
 hero : String -> Point.Point -> Svg.Svg a
@@ -24,7 +24,7 @@ hero string (px,py) =
         , y (toString py)
         , fontSize "9"
         , fontFamily font 
-        , fill "white" --"darkgreen"
+        , fill "white"
         ] [ Html.text string ]
 
 jumbo : String -> Point.Point -> Svg.Svg a
@@ -33,7 +33,7 @@ jumbo string (px,py) =
         , y (toString py)
         , fontSize "35"
         , fontFamily font 
-        , fill "rgba(192,192,192,0.3)" --"darkgreen"
+        , fill "rgba(192,192,192,0.3)"
         ] [ Html.text string ]
 
 

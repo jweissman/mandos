@@ -1,9 +1,18 @@
-module Material exposing (Material, describe, strength, resistance, iron, wood, steel, leather)
+module Material exposing (Material, describe, strength, resistance, iron, wood, steel, leather, bronze, mandium, cloth)
 
-type Material = Leather
-              | Iron
+type Material = Cloth
+              | Leather
               | Wood
+              | Bronze
+              | Iron
               | Steel
+              | Mandium
+
+cloth =
+  Cloth
+
+bronze =
+  Bronze
 
 iron =
   Iron
@@ -17,26 +26,38 @@ steel =
 leather =
   Leather
 
+mandium =
+  Mandium
+
 describe : Material -> String
 describe material =
   case material of
-    Leather -> "leather"
-    Wood -> "wooden"
+    Bronze -> "bronze"
+    Cloth -> "cloth"
     Iron -> "iron"
+    Leather -> "leather"
+    Mandium -> "mandium"
     Steel -> "steel"
+    Wood -> "wooden"
 
 strength : Material -> Float
 strength material =
   case material of
-    Leather -> 0.1
-    Wood  -> 0.8
-    Iron  -> 1.0
-    Steel -> 1.25
+    Cloth -> 0.2
+    Leather -> 0.4
+    Wood  -> 1.0
+    Bronze -> 1.6
+    Iron  -> 2.5
+    Steel -> 4.7
+    Mandium -> 6.4
 
 resistance : Material -> Float
 resistance material =
   case material of
-    Wood  -> 0.2
-    Leather -> 1.0
-    Iron  -> 1.4
-    Steel -> 2.8
+    Cloth -> 1.0
+    Wood  -> 1.5
+    Leather -> 2.0
+    Bronze -> 2.5
+    Iron  -> 3.5
+    Steel -> 4.8
+    Mandium -> 7.2
