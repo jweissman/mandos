@@ -32,7 +32,7 @@ absorption {kind, material} =
 baseResist : Kind -> Float
 baseResist family =
   case family of
-    Tunic -> 4
+    Tunic -> 2
     Suit -> 5
 
 describe : Armor -> String

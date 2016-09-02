@@ -15,5 +15,5 @@ maxRoomWidth = 15
 maxRoomHeight = 8
 
 -- character
-visionRadius = 3
+visionRadius = 2
 inventoryLimit = 10

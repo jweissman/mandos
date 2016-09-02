@@ -33,20 +33,20 @@ hardness : Material -> Float
 hardness material =
   case material of
     Cloth -> 0.0
-    Wood -> 0.2
-    Leather -> 0.3
+    Leather -> 0.2
+    Wood -> 0.25
     Bronze -> 0.5
     Iron  -> 1.0
     Steel -> 2.0
     Cobalt -> 3.0
-    Titanium -> 4.5
-    Corundum -> 5.0
-    Diamond -> 6.5
-    Mandium -> 8.0
+    Titanium -> 5.0
+    Corundum -> 7.7
+    Diamond -> 9.5
+    Mandium -> 10.0
 
 strength : Material -> Float
 strength material =
-  (hardness material) + 0.5
+  ((hardness material)^2) + 0.5
 
 resistance : Material -> Float
 resistance material =

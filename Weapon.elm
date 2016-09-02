@@ -37,14 +37,18 @@ sword material =
 averageDamage : Weapon -> Int
 averageDamage weapon =
   let
-    dmg =
+    dmgRange =
       (baseDamage weapon.family)
 
     midpoint =
-      ((List.length dmg) // 2)
+      (List.length dmgRange) // 2
+
+    avg = 
+      Util.getAt dmgRange midpoint
+      |> Maybe.withDefault 1
+      |> toFloat
   in
-    Util.getAt dmg midpoint --dmg
-    |> Maybe.withDefault 1
+     round (avg * (Material.strength weapon.material))
 
 damage : Int -> Int -> Weapon -> Int
 damage m n {family,material} =

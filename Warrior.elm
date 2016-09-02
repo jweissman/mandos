@@ -201,13 +201,26 @@ cardView (x,y) action model =
 
     resist =
       toString (resistance model)
+
+    stats = 
+      [ Graphics.render "STATS" (x, y) "gray"
+      , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) "lightgray"
+      , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"
+      ]
+
+    equipment =
+      if not (model.weapon == Nothing && model.armor == Nothing) then
+        equipmentView (x,y+5) wielding wearing
+      else
+        []
+
+    inventory =
+      if (List.length model.inventory) > 0 then
+        inventoryView (x,y+10) action model.inventory
+      else
+        []
   in
-    [ Graphics.render "STATS" (x, y) "gray"
-    , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) "lightgray"
-    , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"
-    ]
-    ++ equipmentView (x,y+5) wielding wearing
-     ++ inventoryView (x,y+10) action model.inventory
+    stats ++ equipment ++ inventory
 
 equipmentView (x,y) wielding wearing =
   [ Graphics.render "EQUIPMENT" (x, y) "gray"
