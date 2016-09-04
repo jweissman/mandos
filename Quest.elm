@@ -52,7 +52,8 @@ completed : World.Model -> Quest -> Bool
 completed world (Quest goal _) =
   case goal of
     FindCrystal ->
-      world.crystalTaken
+      world |> World.doesPlayerHaveCrystal
+      --world.crystalTaken
 
     Escape ->
       world.hallsEscaped

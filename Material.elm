@@ -32,16 +32,16 @@ describe material =
 hardness : Material -> Float 
 hardness material =
   case material of
-    Cloth -> 0.0
-    Leather -> 0.2
-    Wood -> 0.25
-    Bronze -> 0.5
-    Iron  -> 1.0
-    Steel -> 2.0
-    Cobalt -> 3.0
-    Titanium -> 5.0
-    Corundum -> 7.7
-    Diamond -> 9.5
+    Cloth -> 1.0
+    Leather -> 1.2
+    Wood -> 1.3
+    Bronze -> 1.4
+    Iron  -> 1.5
+    Steel -> 2.7
+    Cobalt -> 4.0
+    Titanium -> 6.7
+    Corundum -> 7.4
+    Diamond -> 8.5
     Mandium -> 10.0
 
 strength : Material -> Float
@@ -50,7 +50,7 @@ strength material =
 
 resistance : Material -> Float
 resistance material =
-  (hardness material)
+  ((1+(hardness material)) * 2)
 
 forArmor : ChallengeRating -> Material
 forArmor rating =

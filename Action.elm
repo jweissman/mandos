@@ -39,6 +39,7 @@ defaultForItem {kind} =
     Shield _ -> Wear
     Bottle _ -> Drink
     Scroll _ -> Read
+    QuestItem _ -> Look
 
 canPerform : Item -> Action -> Bool
 canPerform {kind} action =
@@ -63,8 +64,12 @@ canPerform {kind} action =
         Bottle _ -> True
         _ -> False
 
-    _ ->
-      True
+    Drop ->
+      case kind of
+        QuestItem _ -> False
+        _ -> True
+
+    _ -> True
 
 describe : Action -> String
 describe action =

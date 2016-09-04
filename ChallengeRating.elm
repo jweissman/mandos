@@ -11,13 +11,13 @@ type ChallengeRating = Beginner
 
 forDepth : Int -> ChallengeRating
 forDepth level =
-  if level == 0 then
+  if level < levelCount // 5 then
     Beginner
-  else if level < levelCount // 4 then
+  else if level < 2 * levelCount // 5 then
     Easy
-  else if level < levelCount // 2 then
+  else if level < 3 * levelCount // 5 then
     Moderate
-  else if level < 3 * (levelCount // 4) then
+  else if level < 4 * (levelCount // 5) then
     Hard
   else
     Impossible

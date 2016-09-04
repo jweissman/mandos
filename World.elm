@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -31,7 +31,7 @@ type alias Model =
   , events : Log.Model
   , debugPath : List Point
   , illuminated : List Point
-  , crystalTaken : Bool
+  --, crystalTaken : Bool
   , hallsEscaped : Bool
   , showMap : Bool
   }
@@ -46,7 +46,7 @@ init =
   , events = Log.init
   , debugPath = []
   , illuminated = []
-  , crystalTaken = False
+  --, crystalTaken = False
   , hallsEscaped = False
   , showMap = False
   }
@@ -107,8 +107,9 @@ entrances model =
 
 crystals : Model -> List Point
 crystals model =
-  case (level model).crystal of
-    Just (pt,_) -> [pt]
+  let location = (level model) |> Level.crystalLocation in
+  case location of
+    Just pt -> [pt]
     Nothing -> []
 
 -- PREDICATES/QUERIES
@@ -143,7 +144,7 @@ playerSteps direction model =
     |> playerAscendsOrDescends
     |> playerCollectsCoins
     |> playerCollectsItems
-    |> playerLiberatesCrystal
+    --|> playerLiberatesCrystal
     |> playerEscapesHall
 
 playerMoves : Direction -> Model -> Model
@@ -179,25 +180,29 @@ playerCollectsCoins model =
                 , events  = model.events ++ [event]
         }
 
-playerLiberatesCrystal : Model -> Model
-playerLiberatesCrystal model =
-  let
-    isCrystal =
-      level model
-      |> Level.isCrystal model.player.position
+--playerLiberatesCrystal : Model -> Model
+--playerLiberatesCrystal model =
+--  let
+--    isCrystal =
+--      level model
+--      |> Level.isCrystal model.player.position
+--
+--    dungeon' =
+--      model.dungeon
+--      |> Dungeon.liberateCrystal model.depth
+--  in
+--    if model.crystalTaken || (not isCrystal) then
+--      model
+--    else
+--      let event = Event.crystalTaken in
+--      { model | crystalTaken = True
+--              , dungeon = dungeon'
+--              , events = model.events ++ [event]
+--      }
 
-    dungeon' =
-      model.dungeon
-      |> Dungeon.liberateCrystal model.depth
-  in
-    if model.crystalTaken || (not isCrystal) then
-      model
-    else
-      let event = Event.crystalTaken in
-      { model | crystalTaken = True
-              , dungeon = dungeon'
-              , events = model.events ++ [event]
-      }
+doesPlayerHaveCrystal model =
+  model.player.inventory
+  |> List.any (\{kind} -> kind == Item.crystal) 
 
 playerEscapesHall : Model -> Model
 playerEscapesHall model =
@@ -205,8 +210,12 @@ playerEscapesHall model =
     isEntrance =
       level model
       |> Level.isEntrance model.player.position
+
+    --hasCrystal =
+    --  model.player.inventory
+    --  |> List.any (\{kind} -> kind == Item.crystal) 
   in
-    if model.crystalTaken && isEntrance then
+    if (model |> doesPlayerHaveCrystal) && isEntrance then
       let event = Event.hallsEscaped in
       { model | hallsEscaped = True
               , events = model.events ++ [event]
@@ -419,6 +428,10 @@ playerUsesItem item model =
     Item.Scroll spell' ->
       { model | player = player' |> Warrior.cast spell' }
               |> playerViewsField
+
+    -- maybe describe them?
+    Item.QuestItem _ ->
+      model 
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity

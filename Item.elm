@@ -1,4 +1,4 @@
-module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, bottle, scroll)
+module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, bottle, scroll, crystal)
 
 import Point exposing (Point)
 import Weapon exposing (Weapon)
@@ -6,10 +6,14 @@ import Armor exposing (Armor)
 import Liquid exposing (Liquid)
 import Spell exposing (Spell)
 
+type QuestItemKind = Crystal
+
 type ItemKind = Arm Weapon
               | Shield Armor
               | Bottle Liquid
               | Scroll Spell
+              --| Crystal
+              | QuestItem QuestItemKind -- rtring
 
 weapon weapon' =
   Arm weapon'
@@ -22,6 +26,9 @@ bottle liquid =
 
 scroll spell =
   Scroll spell
+
+crystal =
+  QuestItem Crystal
 
 type alias Item = { position : Point
                   , kind : ItemKind
@@ -50,6 +57,9 @@ glyph {kind} =
     Scroll _ ->
       "ø"
 
+    QuestItem _ ->
+      "∆"
+
 describe : Item -> String
 describe {kind} =
   case kind of
@@ -64,3 +74,8 @@ describe {kind} =
 
     Scroll spell ->
       "scroll of " ++ (Spell.describe spell)
+
+    QuestItem kind ->
+      case kind of
+        Crystal ->
+          "Crystal of Time"

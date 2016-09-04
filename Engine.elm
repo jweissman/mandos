@@ -138,18 +138,30 @@ waitForSelection action model =
 
 playerActs : Int -> Engine -> Engine
 playerActs idx model =
-  case model.action of
-    Nothing ->
-      model
+  let
+    maybeItem =
+      Util.getAt model.world.player.inventory idx
+  in
+    case maybeItem of
+      Nothing ->
+        model
 
-    Just act ->
-      case act of
-        Drop ->
-          model |> playerDrops idx
+      Just item ->
+        case model.action of
+          Nothing ->
+            model
 
-        _ ->
-          model
+          Just act ->
+            if Action.canPerform item act then
+              case act of
+                Drop ->
+                  model |> playerDrops idx
 
+                _ ->
+                  model
+
+           else
+             model
 
 playerDrops : Int -> Engine -> Engine
 playerDrops idx model =
@@ -414,10 +426,13 @@ playerExplores model =
     playerPos =
       model.world.player.position
 
-    byDistanceFromPlayer =
-      (\c -> Point.distance playerPos c)
+    walls' =
+      World.walls model.world
 
-    viewed = 
+    byDistanceFromPlayer =
+      (\pt -> Point.distance playerPos pt)
+
+    viewed =
       World.viewed model.world
 
     (explored,unexploredFloorsAndDoors) =
@@ -450,10 +465,13 @@ playerExplores model =
         []
 
     gatherAndExplore =
-      visibleCreatures ++ visibleItems ++ visibleCoins ++ (frontier |> Set.toList)
+      if model.world |> World.doesPlayerHaveCrystal then
+        visibleCoins
+      else
+        visibleCreatures ++ visibleItems ++ visibleCoins ++ (frontier |> Set.toList)
 
     ascendOrDescend =
-      if model.world.crystalTaken then
+      if model.world |> World.doesPlayerHaveCrystal then
         World.upstairs model.world ++ World.entrances model.world
       else
         if Set.size frontier == 0 then

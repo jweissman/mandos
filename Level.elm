@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal, itemAt, removeItem, navigable)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, navigable, crystalLocation)
 
 
 import Point exposing (Point)
@@ -31,7 +31,7 @@ type alias Level = { walls : Set Point
                    , creatures : List Creature.Model
                    , downstairs : Maybe Point
                    , upstairs : Maybe Point
-                   , crystal : Maybe (Point, Bool)
+                   --, crystal : Maybe (Point, Bool)
                    , entrance : Maybe (Point, Bool)
 
                    , items : List Item
@@ -51,7 +51,7 @@ init =
   , creatures = []
   , upstairs = Nothing
   , downstairs = Nothing
-  , crystal = Nothing
+  --, crystal = Nothing
   , entrance = Nothing
   , rooms = []
   , viewed = []
@@ -134,13 +134,13 @@ isEntrance position model =
     Nothing ->
       False
 
-isCrystal : Point -> Level -> Bool
-isCrystal position model =
-  case model.crystal of
-    Just (pt,_) ->
-      position == pt
-    Nothing ->
-      False
+--isCrystal : Point -> Level -> Bool
+--isCrystal position model =
+--  case model.crystal of
+--    Just (pt,_) ->
+--      position == pt
+--    Nothing ->
+--      False
 
 hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
@@ -206,15 +206,15 @@ entitiesAt point model =
       else
         Nothing
 
-    crystal =
-      if isCrystal point model then
-        case model.crystal of
-          Nothing ->
-            Nothing
-          Just (pt,taken) ->
-            Just (Entity.crystal taken point)
-      else
-        Nothing
+    --crystal =
+    --  if isCrystal point model then
+    --    case model.crystal of
+    --      Nothing ->
+    --        Nothing
+    --      Just (pt,taken) ->
+    --        Just (Entity.crystal taken point)
+    --  else
+    --    Nothing
 
     item =
       case itemAt point model of
@@ -232,7 +232,7 @@ entitiesAt point model =
       , downstairs
       , upstairs
       , entrance
-      , crystal
+      --, crystal
       , item
       , monster
       ]
@@ -250,6 +250,13 @@ itemAt : Point -> Level -> Maybe Item
 itemAt pt model =
   model.items
   |> List.filter (\item -> pt == (item.position))
+  |> List.head
+
+crystalLocation : Level -> Maybe Point
+crystalLocation model =
+  model.items
+  |> List.filter (\{kind} -> kind == Item.crystal)
+  |> List.map .position --(\{position} -> position)
   |> List.head
 
 -- HELPERS (for update)
@@ -411,13 +418,14 @@ removeItem item model =
   in
     { model | items = items' }
 
-liberateCrystal : Level -> Level
-liberateCrystal model =
-  { model | crystal = case model.crystal of
-      Nothing -> Nothing
-      Just (pt,taken) ->
-        Just (pt, True)
-    }
+--liberateCrystal : Level -> Level
+--liberateCrystal model =
+--  { model |
+--  crystal = case model.crystal of
+--      Nothing -> Nothing
+--      Just (pt,taken) ->
+--        Just (pt, True)
+--    }
 
 -- GENERATE
 
@@ -559,11 +567,13 @@ emplaceDownstairs point model =
 
 emplaceCrystal : Point -> Level -> Level
 emplaceCrystal point model =
-  { model | crystal = Just (point, False)
+  let crystal = Item.init point Item.crystal -1 in
+  { model | items = model.items ++ [ crystal ] --crystal = Just (point, False)
           , downstairs = Nothing
           }
           |> addWallsAround point
           |> removeWall point
+          |> addFloor point
 
 emplaceEntrance : Point -> Level -> Level
 emplaceEntrance point model =
@@ -578,6 +588,9 @@ removeWall pt model =
 
 removeFloor pt model =
   { model | floors = Set.remove pt model.floors }
+
+addFloor pt model =
+  { model | floors = Set.insert pt model.floors }
 
 addWallsAround pt model =
   let
@@ -649,7 +662,7 @@ furnishRoomFor purpose room depth model =
 
     weaponMaterial =
       Material.forWeaponry challenge
-      
+
     armorMaterial =
       Material.forArmor challenge
 
@@ -721,10 +734,12 @@ bestPath model =
       case model.downstairs of
         Just pt ->
           pt
+
         Nothing ->
-          case model.crystal of
-            Just (pt,_) ->
+          case (crystalLocation model) of
+            Just pt ->
               pt
+
             Nothing ->
               origin
 
