@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -15,6 +15,7 @@ import Event exposing (..)
 import Util
 import Configuration
 import Item exposing (Item)
+import Spell exposing (Spell(..))
 
 import Set exposing (Set)
 import String
@@ -31,7 +32,6 @@ type alias Model =
   , events : Log.Model
   , debugPath : List Point
   , illuminated : List Point
-  --, crystalTaken : Bool
   , hallsEscaped : Bool
   , showMap : Bool
   }
@@ -46,7 +46,6 @@ init =
   , events = Log.init
   , debugPath = []
   , illuminated = []
-  --, crystalTaken = False
   , hallsEscaped = False
   , showMap = False
   }
@@ -180,26 +179,6 @@ playerCollectsCoins model =
                 , events  = model.events ++ [event]
         }
 
---playerLiberatesCrystal : Model -> Model
---playerLiberatesCrystal model =
---  let
---    isCrystal =
---      level model
---      |> Level.isCrystal model.player.position
---
---    dungeon' =
---      model.dungeon
---      |> Dungeon.liberateCrystal model.depth
---  in
---    if model.crystalTaken || (not isCrystal) then
---      model
---    else
---      let event = Event.crystalTaken in
---      { model | crystalTaken = True
---              , dungeon = dungeon'
---              , events = model.events ++ [event]
---      }
-
 doesPlayerHaveCrystal model =
   model.player.inventory
   |> List.any (\{kind} -> kind == Item.crystal) 
@@ -211,9 +190,6 @@ playerEscapesHall model =
       level model
       |> Level.isEntrance model.player.position
 
-    --hasCrystal =
-    --  model.player.inventory
-    --  |> List.any (\{kind} -> kind == Item.crystal) 
   in
     if (model |> doesPlayerHaveCrystal) && isEntrance then
       let event = Event.hallsEscaped in
@@ -399,39 +375,9 @@ playerDropsItem idx model =
       Nothing ->
         model
 
-playerUsesItem : Item -> Model -> Model
-playerUsesItem item model =
-  let
-    {kind} =
-      item
-
-    inventory' =
-      model.player.inventory
-      |> List.filter (\it -> not (it == item))
-
-    player =
-      model.player
-
-    player' =
-      { player | inventory = inventory' }
-
-  in case kind of
-    Item.Arm weapon' ->
-      { model | player = player' |> Warrior.wield weapon' }
-
-    Item.Shield armor' ->
-      { model | player = player' |> Warrior.wear armor' }
-
-    Item.Bottle liquid' ->
-      { model | player = player' |> Warrior.drink liquid' }
-
-    Item.Scroll spell' ->
-      { model | player = player' |> Warrior.cast spell' }
-              |> playerViewsField
-
-    -- maybe describe them?
-    Item.QuestItem _ ->
-      model 
+augmentVision : Model -> Model
+augmentVision model =
+  { model | player = model.player |> Warrior.augmentVision 1 }
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity

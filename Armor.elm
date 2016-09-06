@@ -1,50 +1,61 @@
 module Armor exposing (Armor, absorption, describe, tunic, suit)
 
-import Material exposing (Material)
+--import Material exposing (Material)
 
 import String
 
-type Kind = Suit
-          | Tunic
+type Armor = Suit
+           | Tunic
+           | Plate
+           | Enchanted Int Armor
 
-type alias Armor =
-  { kind : Kind
-  , material : Material
-  }
+tunic : Armor
+tunic = 
+  Tunic
 
-tunic : Material -> Armor
-tunic material =
-  { kind  = Tunic
-  , material = material
-  }
+suit : Armor
+suit =
+  Suit
 
-suit : Material -> Armor
-suit material =
-  { kind  = Suit
-  , material = material
-  }
+plate : Armor
+plate =
+  Plate
+
+enchant : Armor -> Armor
+enchant armor =
+  case armor of
+    Enchanted n armor' ->
+      Enchanted (n+1) armor'
+    
+    _ ->
+      Enchanted 1 armor
 
 absorption : Armor -> Int
-absorption {kind, material} =
-  let mult = (Material.resistance material) in
-  round (mult * baseResist kind)
+absorption armor =
+  case armor of
+    Tunic -> 
+      2
 
-baseResist : Kind -> Float
-baseResist family =
-  case family of
-    Tunic -> 2
-    Suit -> 5
+    Suit -> 
+      5
+
+    Plate -> 
+      7
+
+    Enchanted n armor' ->
+      n + absorption armor'
 
 describe : Armor -> String
-describe {kind,material} =
-  [Material.describe material, describeKind kind ]
-  |> String.join " "
-
-describeKind : Kind -> String
-describeKind family =
-  case family of
+describe armor =
+  case armor of
     Suit ->
       "suit"
 
     Tunic ->
       "tunic"
+
+    Plate ->
+      "plate"
+
+    Enchanted n armor' ->
+      "+" ++ (toString n) ++ " " ++ describe armor'

@@ -14,7 +14,6 @@ import Warrior
 import Creature
 import Species
 import Liquid
-import Material
 import Spell
 import ChallengeRating
 import Event exposing (Event)
@@ -660,29 +659,31 @@ furnishRoomFor purpose room depth model =
       else
         Liquid.holy (Liquid.water)
 
-    weaponMaterial =
-      Material.forWeaponry challenge
+    --weaponMaterial =
+    --  Material.forWeaponry challenge
 
-    armorMaterial =
-      Material.forArmor challenge
+    --armorMaterial =
+    --  Material.forArmor challenge
 
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.bottle liquid
-          , Item.armor (Armor.tunic armorMaterial)
-          , Item.weapon (Weapon.dagger weaponMaterial)
+          [ Item.scroll Spell.lux 
+          , Item.bottle liquid
+          , Item.armor (Armor.tunic)
+          , Item.weapon (Weapon.dagger)
           ]
 
         Barracks ->
-          [ Item.bottle liquid
-          , Item.weapon (Weapon.sword weaponMaterial)
-          , Item.armor (Armor.suit armorMaterial)
+          [ Item.scroll Spell.lux 
+          , Item.bottle liquid
+          , Item.weapon (Weapon.sword)
+          , Item.armor (Armor.suit)
           ]
 
         Library ->
-          [ Item.scroll Spell.lux ]
-
+          [ Item.scroll Spell.lux 
+          ]
 
     idRange =
       [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]

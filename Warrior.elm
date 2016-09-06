@@ -1,4 +1,4 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, cast, computeDamageAgainst, resistance, cardView)
+module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, computeDamageAgainst, resistance, cardView, augmentVision)
 
 import Configuration
 import Direction exposing (Direction(..))
@@ -8,7 +8,6 @@ import Armor exposing (Armor)
 import Item exposing (Item, ItemKind(..))
 import Action exposing (Action)
 import Liquid exposing (Liquid(..))
-import Spell exposing (Spell(..))
 
 import Graphics
 import Svg
@@ -117,11 +116,11 @@ drink liquid model =
       |> heal 10
       |> drink liquid'
 
-cast : Spell -> Model -> Model
-cast spell model =
-  case spell of
-    Lux ->
-      model |> augmentVision 1
+--cast : Spell -> Model -> Model
+--cast spell model =
+--  case spell of
+--    Lux ->
+--      model |> augmentVision 1
 
 wield : Weapon -> Model -> Model
 wield weapon model =
@@ -202,7 +201,7 @@ cardView (x,y) action model =
     resist =
       toString (resistance model)
 
-    stats = 
+    stats =
       [ Graphics.render "STATS" (x, y) "gray"
       , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) "lightgray"
       , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"

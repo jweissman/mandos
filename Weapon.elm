@@ -1,75 +1,55 @@
 module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe)
 
-import Material exposing (Material)
 import Util
 
 import String
 
-type Family = Sword
+type Weapon = Sword
             | Axe
             | Dagger
+            | Enchanted Int Weapon
             --| Rapier
             --| Mace
 
-type alias Weapon =
-  { family : Family
-  , material : Material
-  }
+axe : Weapon
+axe =
+  Axe
 
-axe : Material -> Weapon
-axe material =
-  { family = Axe
-  , material = material
-  }
+dagger : Weapon
+dagger =
+  Dagger
 
-dagger : Material -> Weapon
-dagger material =
-  { family  = Dagger
-  , material = material
-  }
+sword : Weapon
+sword =
+  Sword
 
-sword : Material -> Weapon
-sword material =
-  { family  = Sword
-  , material = material
-  }
+enchant : Weapon -> Weapon
+enchant weapon =
+  case weapon of
+    Enchanted n weapon' ->
+      Enchanted (n+1) weapon'
+
+    _ ->
+      Enchanted 1 weapon
 
 averageDamage : Weapon -> Int
 averageDamage weapon =
   let
     dmgRange =
-      (baseDamage weapon.family)
+      (damageRange weapon)
 
     midpoint =
       (List.length dmgRange) // 2
 
-    avg = 
+    avg =
       Util.getAt dmgRange midpoint
       |> Maybe.withDefault 1
-      |> toFloat
   in
-     round (avg * (Material.strength weapon.material))
-
-damage : Int -> Int -> Weapon -> Int
-damage m n {family,material} =
-  let
-    multiplier =
-      (Material.strength material)
-
-    damage =
-      Util.sample m n 1 (baseDamage family)
-      |> toFloat
-  in
-    round (damage * multiplier)
+    avg
 
 describe : Weapon -> String
-describe {family,material} =
-  [Material.describe material, describeFamily family ]
-  |> String.join " "
-
-describeFamily : Family -> String
-describeFamily family =
-  case family of
+describe weapon =
+  case weapon of
     Sword ->
       "sword"
 
@@ -79,9 +59,24 @@ describeFamily family =
     Dagger ->
       "dagger"
 
-baseDamage : Family -> List Int
-baseDamage family =
-  case family of
-    Sword -> [2..8]
-    Dagger -> [1..4]
-    Axe -> [3..5]
+    Enchanted n weapon' ->
+      "+" ++ (toString n) ++ " " ++ (describe weapon')
+
+damage : Int -> Int -> Weapon -> Int
+damage m n weapon =
+  Util.sample m n 1 (damageRange weapon)
+
+damageRange weapon =
+  case weapon of
+    Sword -> 
+      [2..8]
+
+    Dagger -> 
+      [1..4]
+
+    Axe -> 
+      [3..5]
+
+    Enchanted n weapon' ->
+      (damageRange weapon')
+      |> List.map (\x -> x + n)

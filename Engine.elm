@@ -14,7 +14,8 @@ import Quest exposing (Quest)
 import Journal
 import Log
 import Status
-import Item
+import Item exposing (Item, ItemKind(..))
+import Spell exposing (Spell(..))
 import Action exposing (Action(..))
 
 import Set exposing (Set)
@@ -182,13 +183,83 @@ playerUses itemIdx model =
       model
 
     Just item ->
-      { model | world = model.world |> World.playerUsesItem item }
+      model
+      |> playerUsesItem item
+      --{ model | world = model.world |> World.playerUsesItem item }
+
+playerUsesItem : Item -> Engine -> Engine
+playerUsesItem item model =
+  let
+    world =
+      model.world
+
+    player =
+      world.player
+
+    inventory =
+      player.inventory
+
+    inventory' =
+      inventory
+      |> List.filter (\it -> not (it == item))
+
+    player' =
+      { player | inventory = inventory' }
+
+  in
+    case item.kind of
+      Item.Arm weapon' ->
+        { model | world =
+          { world | player = player' |> Warrior.wield weapon' }
+        }
+
+      Item.Shield armor' ->
+        { model | world =
+          { world | player = player' |> Warrior.wear armor' }
+        }
+
+      Item.Bottle liquid' ->
+        { model | world =
+          { world | player = player' |> Warrior.drink liquid' }
+        }
+
+      -- maybe describe them?
+      Item.QuestItem _ ->
+         model
+
+      Item.Scroll spell' ->
+        { model | world = { world | player = player' } } --|> Warrior.cast spell' }
+        --model
+        |> castSpell spell'
+        --|> playerViewsField
+
+castSpell : Spell -> Engine -> Engine
+castSpell spell model =
+  let world = model.world in
+  case spell of
+    Lux ->
+      model |> enhancePlayerVision
+      --{ model | world = 
+      --  { world | player = model.player |> Warrior.augmentVision 1 }
+      --          |> World.playerViewsField
+      --}
+
+    _ -> model
+
+enhancePlayerVision : Engine -> Engine
+enhancePlayerVision model =
+  --Debug.log "ENHANCE VISION"
+  { model | world = model.world 
+          |> World.augmentVision 
+          |> World.playerViewsField
+  }
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
   model
   |> followPaths
   |> updateQuests
+
 
 updateQuests : Engine -> Engine
 updateQuests model =
@@ -464,11 +535,16 @@ playerExplores model =
       else
         []
 
+    visibleThings =
+      visibleCreatures ++ visibleItems ++ visibleCoins
+
     gatherAndExplore =
       if model.world |> World.doesPlayerHaveCrystal then
         visibleCoins
+      else if (List.length visibleThings > 0) then
+        visibleThings
       else
-        visibleCreatures ++ visibleItems ++ visibleCoins ++ (frontier |> Set.toList)
+        frontier |> Set.toList
 
     ascendOrDescend =
       if model.world |> World.doesPlayerHaveCrystal then
