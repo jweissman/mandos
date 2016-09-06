@@ -1,4 +1,4 @@
-module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe)
+module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, enchant)
 
 import Util
 

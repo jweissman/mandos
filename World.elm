@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -181,7 +181,7 @@ playerCollectsCoins model =
 
 doesPlayerHaveCrystal model =
   model.player.inventory
-  |> List.any (\{kind} -> kind == Item.crystal) 
+  |> List.any (\{kind} -> kind == Item.crystal)
 
 playerEscapesHall : Model -> Model
 playerEscapesHall model =
@@ -378,6 +378,22 @@ playerDropsItem idx model =
 augmentVision : Model -> Model
 augmentVision model =
   { model | player = model.player |> Warrior.augmentVision 1 }
+
+enchantItem : Item -> Model -> Model
+enchantItem item model =
+  let 
+    player = 
+      model.player
+
+    inventory' = 
+      player.inventory
+      |> List.map (\it -> if it == item then Item.enchant it else it)
+
+    player' =
+      { player | inventory = inventory' }
+  in
+    { model | player = player' }
+
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity

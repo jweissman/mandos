@@ -158,6 +158,15 @@ playerActs idx model =
                 Drop ->
                   model |> playerDrops idx
 
+                Use item' act' ->
+                  -- item' -- scroll of enchantment
+                  -- action = Just (Use { position = (30,17), kind = Scroll Infuse, id = 300 } Enchant)
+                  Debug.log ("USE ITEM " ++ (Item.describe item'))
+                  model
+                  |> playerLosesItem item'
+                  |> playerEnchants item
+                  |> resetAction
+
                 _ ->
                   model
 
@@ -228,23 +237,50 @@ playerUsesItem item model =
          model
 
       Item.Scroll spell' ->
-        { model | world = { world | player = player' } } --|> Warrior.cast spell' }
-        --model
-        |> castSpell spell'
+        --{ model | world = { world | player = player' } } --|> Warrior.cast spell' }
+        model
+        |> castSpell item spell'
         --|> playerViewsField
 
-castSpell : Spell -> Engine -> Engine
-castSpell spell model =
+playerLosesItem : Item -> Engine -> Engine
+playerLosesItem item model =
+  let
+    world =
+      model.world
+
+    player =
+      world.player
+
+    inventory =
+      player.inventory
+
+    inventory' =
+      inventory
+      |> List.filter (\it -> not (it == item))
+
+    player' =
+      { player | inventory = inventory' }
+  in 
+    { model | world = { world | player = player' } }
+
+castSpell : Item -> Spell -> Engine -> Engine
+castSpell item spell model =
   let world = model.world in
   case spell of
     Lux ->
-      model |> enhancePlayerVision
+      model 
+      |> playerLosesItem item
+      |> enhancePlayerVision
+
+    Infuse ->
+      model 
+      |> waitForSelection (Action.use item (Action.enchant))
       --{ model | world = 
       --  { world | player = model.player |> Warrior.augmentVision 1 }
       --          |> World.playerViewsField
       --}
 
-    _ -> model
+    --_ -> model
 
 enhancePlayerVision : Engine -> Engine
 enhancePlayerVision model =
@@ -252,6 +288,13 @@ enhancePlayerVision model =
   { model | world = model.world 
           |> World.augmentVision 
           |> World.playerViewsField
+  }
+
+playerEnchants : Item -> Engine -> Engine
+playerEnchants item model =
+  --Debug.log ("PLAYER ENCHANTS " ++ (Item.describe item))
+  { model | world = model.world
+          |> World.enchantItem item
   }
 
 tick : Time.Time -> Engine -> Engine

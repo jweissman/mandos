@@ -631,8 +631,8 @@ assignRooms depth model =
     rooms' =
       model.rooms
       |> Util.mapEveryNth 4 (Room.assign Room.library)
-      |> Util.mapEveryNth 5 (Room.assign Room.barracks)
-      |> Util.mapEveryNth 6 (Room.assign Room.armory)
+      |> Util.mapEveryNth 3 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 2 (Room.assign Room.armory)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
@@ -659,30 +659,24 @@ furnishRoomFor purpose room depth model =
       else
         Liquid.holy (Liquid.water)
 
-    --weaponMaterial =
-    --  Material.forWeaponry challenge
-
-    --armorMaterial =
-    --  Material.forArmor challenge
-
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.scroll Spell.lux 
+          [ Item.scroll Spell.infuse 
           , Item.bottle liquid
           , Item.armor (Armor.tunic)
           , Item.weapon (Weapon.dagger)
           ]
 
         Barracks ->
-          [ Item.scroll Spell.lux 
+          [ Item.scroll Spell.infuse 
           , Item.bottle liquid
           , Item.weapon (Weapon.sword)
           , Item.armor (Armor.suit)
           ]
 
         Library ->
-          [ Item.scroll Spell.lux 
+          [ Item.scroll Spell.infuse 
           ]
 
     idRange =

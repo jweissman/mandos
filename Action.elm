@@ -1,4 +1,4 @@
-module Action exposing (Action(..), describe, question, defaultForItem, canPerform, drop)
+module Action exposing (Action(..), describe, question, defaultForItem, canPerform, drop, enchant, use)
 
 import Item exposing (Item, ItemKind(..))
 
@@ -10,9 +10,17 @@ type Action = Drop
             | Drink
             | Look
             | Read
+            | Enchant
+            | Use Item Action
 
 drop =
   Drop
+
+enchant =
+  Enchant
+
+use item action =
+  Use item action
 
 --throw =
 --  Throw
@@ -42,7 +50,8 @@ defaultForItem {kind} =
     QuestItem _ -> Look
 
 canPerform : Item -> Action -> Bool
-canPerform {kind} action =
+canPerform item action =
+  let {kind} = item in
   case action of
     Wield ->
       case kind of
@@ -69,7 +78,16 @@ canPerform {kind} action =
         QuestItem _ -> False
         _ -> True
 
-    _ -> True
+    Enchant ->
+      case kind of
+        Arm _ -> True
+        Shield _ -> True
+        _ -> False
+
+    Use item' action' ->
+      canPerform item action'
+
+    _ -> False
 
 describe : Action -> String
 describe action =
@@ -98,6 +116,12 @@ describe action =
     Read ->
       "Read"
 
+    Enchant ->
+      "Enchant"
+
+    Use item action' ->
+      describe action'
+
 question : Action -> String
 question action =
   case action of
@@ -124,3 +148,9 @@ question action =
 
     Read ->
       "What would you like to read?"
+
+    Enchant ->
+      "What would you like to enchant?"
+
+    Use item action' ->
+      "What would you like to " ++ (describe action') ++ " with " ++ (Item.describe item) ++ "?"

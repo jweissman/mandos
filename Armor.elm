@@ -1,4 +1,4 @@
-module Armor exposing (Armor, absorption, describe, tunic, suit)
+module Armor exposing (Armor, absorption, describe, tunic, suit, enchant)
 
 --import Material exposing (Material)
 

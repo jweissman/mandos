@@ -1,4 +1,4 @@
-module Spell exposing (Spell(..), describe, lux)
+module Spell exposing (Spell(..), describe, lux, infuse)
 
 type Spell = Lux
            | Infuse
