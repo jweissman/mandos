@@ -285,7 +285,7 @@ inventoryView (x,y) action model =
        ++ items
 
 horizontalRule (x,y) =
-  [ Graphics.render "" (x,y) "grey" ]
+  [ Graphics.render "---" (x,y) "grey" ]
 
 weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
 weaponView (x,y) action n weapon =
