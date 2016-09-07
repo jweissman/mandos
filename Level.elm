@@ -642,6 +642,7 @@ furnishRoomFor purpose room depth model =
           , Item.weapon (Weapon.sword)
           , Item.bottle liquid
           , Item.armor (Armor.suit)
+          , Item.weapon (Weapon.axe)
           ]
 
         Library ->

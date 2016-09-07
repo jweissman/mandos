@@ -1,6 +1,8 @@
-module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, enchant)
+module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, enchant, threatRange)
 
 import Util
+import Point exposing (Point)
+import Direction exposing (Direction)
 
 import String
 
@@ -29,6 +31,19 @@ enchant weapon =
 
     _ ->
       Enchanted 1 weapon
+
+threatRange : Point -> Direction -> Weapon -> List Point
+threatRange pt dir weapon =
+  case weapon of
+    Axe ->
+      Direction.directions
+      |> List.map (\dir -> pt |> Point.slide dir)
+
+    Enchanted n weapon' ->
+      threatRange pt dir weapon'
+
+    _ ->
+      [ pt |> Point.slide dir ]
 
 averageDamage : Weapon -> Int
 averageDamage weapon =
@@ -66,13 +81,13 @@ damage m n weapon =
 
 damageRange weapon =
   case weapon of
-    Sword -> 
+    Sword ->
       [2..8]
 
-    Dagger -> 
+    Dagger ->
       [1..4]
 
-    Axe -> 
+    Axe ->
       [3..5]
 
     Enchanted n weapon' ->

@@ -85,11 +85,9 @@ enchant : Item -> Item
 enchant item =
   case item.kind of
     Arm weapon ->
-      Debug.log "ENCHANT WEAPON"
       { item | kind = Arm (Weapon.enchant weapon) }
 
     Shield armor ->
-      Debug.log "ENCHANT ARMOR"
       { item | kind = Shield (Armor.enchant armor) }
 
     Bottle _ -> item
@@ -113,13 +111,3 @@ canApply item' item =
         False
     _ -> 
       False
-      --Debug.log "ENCHANT WEAPON"
-      --{ item | kind = Arm (Weapon.enchant weapon) }
-
-    --Shield armor ->
-    --  Debug.log "ENCHANT ARMOR"
-    --  { item | kind = Shield (Armor.enchant armor) }
-
-    --Bottle _ -> item
-    --Scroll _ -> item
-    --QuestItem _ -> item
