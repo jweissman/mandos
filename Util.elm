@@ -1,15 +1,51 @@
-module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample, zip)
+module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample, zip, filterChamp)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Set exposing (Set)
-import Mouse
+---import Mouse
 
 -- deterministically 'sample' a list based on two variables
 sample : Int -> Int -> a -> List a -> a
 sample m n zero ls =
   getAt ls ((m ^ 31 + n) % (max 1 (List.length ls - 1)))
   |> Maybe.withDefault zero
+
+filterChamp : List a -> List a
+filterChamp ls =
+  let champ' = champ 100 in
+  ls
+  |> List.indexedMap (\n a -> (n,a)) 
+  |> List.filter (\(n,_) -> 
+    getAt champ' n
+    |> Maybe.withDefault False)
+  |> List.map snd
+
+-- binary champernowne
+champernowne : Int -> Bool
+champernowne n =
+  getAt (champ n) n
+  |> Maybe.withDefault False
+
+--champernowne' = champ 10000
+
+champ : Int -> List Bool
+champ n =
+  List.concatMap toBools [1..n]
+
+toBools : Int -> List Bool
+toBools n =
+  let 
+    lsb = 
+      if n % 2 == 0 then 
+        [False] 
+      else 
+        [True] 
+  in
+    if n < 2 then
+      lsb
+    else
+      (toBools (n//2)) ++ lsb
 
 -- 
 --pick

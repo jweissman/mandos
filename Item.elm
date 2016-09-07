@@ -65,10 +65,10 @@ describe : Item -> String
 describe {kind} =
   case kind of
     Arm weapon' ->
-      "a " ++ Weapon.describe weapon'
+      Weapon.describe weapon'
 
     Shield armor' ->
-      "a " ++ Armor.describe armor'
+      Armor.describe armor'
 
     Bottle liquid ->
       "bottle of " ++ (Liquid.describe liquid)

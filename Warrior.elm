@@ -21,8 +21,9 @@ type alias Model =
   , direction : Direction
   , position : Point
   , gold : Int
-  , attack : Int
-  , defense : Int
+  , strength : Int
+  --, resistance : Int
+  --, defense : Int
   , steps : Int
   , weapon : Maybe Weapon
   , armor : Maybe Armor
@@ -41,8 +42,8 @@ init point =
   , direction = North
   , position = point
   , gold = 0
-  , attack = 4
-  , defense = 3
+  , strength = 5
+  --,  = 0
   , steps = 0
   , weapon = Nothing
   , armor = Nothing
@@ -55,17 +56,17 @@ power : Model -> Int
 power model =
   case model.weapon of
     Nothing ->
-      model.attack
+      model.strength
     Just weapon ->
-      model.attack + (Weapon.averageDamage weapon)
+      model.strength + (Weapon.averageDamage weapon)
 
 resistance : Model -> Int
 resistance model =
   case model.armor of
     Nothing ->
-      model.defense
+      model.strength
     Just armor ->
-      model.defense + (Armor.absorption armor)
+      model.strength + (Armor.absorption armor)
 
 -- helpers
 step : Direction -> Model -> Model
@@ -84,9 +85,9 @@ computeDamageAgainst defense model =
   let
     damage = case model.weapon of
       Just weapon ->
-        model.attack + Weapon.damage model.steps model.timesGearChanged weapon
+        model.strength + Weapon.damage model.steps model.timesGearChanged weapon
       Nothing ->
-        model.attack
+        model.strength
   in
     max 1 (damage - defense)
 
@@ -304,7 +305,7 @@ weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
 weaponView (x,y) action n weapon =
   let
     desc =
-      "a " ++ Weapon.describe weapon
+      Weapon.describe weapon
 
     message =
       case action of
@@ -331,7 +332,7 @@ armorView : Point -> Maybe Action -> Int -> Armor -> Svg.Svg a
 armorView (x,y) action n armor =
   let
     desc =
-      "a " ++ Armor.describe armor
+      Armor.describe armor
 
     message =
       case action of

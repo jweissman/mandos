@@ -1,11 +1,11 @@
-module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, imaginary, isCreature, item)
+module Entity exposing (Entity(..), view, describe, position, wall, floor, coin, player, monster, door, upstairs, downstairs, memory, entrance, crystal, imaginary, isCreature, item, grass)
 
 import Point exposing (Point)
+import Item
 import Creature
 import Warrior
 import String
 import Graphics
-import Item
 
 import Svg
 
@@ -20,9 +20,9 @@ type Entity = Monster Creature.Model
             | StairsDown Point
             | Memory Entity
             | Entrance Bool Point
-            --| Crystal Bool Point
             | Imaginary Entity
             | Item Item.Item
+            | Grass Point
 
 -- constructors
 wall point =
@@ -64,6 +64,9 @@ imaginary entity =
 item item' =
   Item item'
 
+grass pt =
+  Grass pt
+
 isCreature entity =
   case entity of
     Monster _ ->
@@ -94,6 +97,9 @@ describe entity =
 
     Door _ ->
       "a creaky door"
+
+    Grass _ ->
+      "a patch of grass"
 
     StairsUp _ ->
       "an upward-curving staircase"
@@ -160,6 +166,9 @@ color entity =
     Item _ ->
       "yellow"
 
+    Grass _ ->
+      "green"
+
 position : Entity -> Point.Point
 position entity =
   case entity of
@@ -199,6 +208,9 @@ position entity =
     Item item ->
       item.position
 
+    Grass pt ->
+      pt
+
 glyph : Entity -> String
 glyph entity =
   case entity of
@@ -235,8 +247,8 @@ glyph entity =
     Entrance _ _ ->
       "∞"
 
-    --Crystal _ _ ->
-    --  "∆"
+    Grass _ ->
+      "\""
 
     Item item ->
       Item.glyph item

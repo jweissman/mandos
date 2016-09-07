@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, navigable, crystalLocation)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation)
 
 
 import Point exposing (Point)
@@ -27,6 +27,8 @@ type alias Level = { walls : Set Point
                    , floors : Set Point
                    , doors : Set Point
                    , coins : Set Point
+                   , grass : Set Point
+
                    , creatures : List Creature.Model
                    , downstairs : Maybe Point
                    , upstairs : Maybe Point
@@ -46,6 +48,7 @@ init =
   , floors = Set.empty
   , doors = Set.empty
   , coins = Set.empty
+  , grass = Set.empty
   , creatures = []
   , upstairs = Nothing
   , downstairs = Nothing
@@ -107,6 +110,10 @@ isFloor : Point -> Level -> Bool
 isFloor pt model =
   Set.member pt model.floors
 
+isGrass : Point -> Level -> Bool
+isGrass pt model =
+  Set.member pt model.grass
+
 isStairsUp : Point -> Level -> Bool
 isStairsUp position model =
   case model.upstairs of
@@ -167,6 +174,12 @@ entitiesAt point model =
       else
         Nothing
 
+    grass =
+      if isGrass point model then
+        Just (Entity.grass point)
+      else
+        Nothing
+
     coin =
       if isCoin point model then
         Just (Entity.coin point)
@@ -211,6 +224,7 @@ entitiesAt point model =
       , downstairs
       , upstairs
       , entrance
+      , grass
       , item
       , monster
       ]
@@ -409,6 +423,7 @@ fromRooms roomCandidates =
     |> connectRooms rooms
     |> extrudeStairwells
     |> dropCoins
+    |> growGrass
 
 extrudeRooms : Level -> Level
 extrudeRooms model =
@@ -740,9 +755,75 @@ bestPath model =
   in
     Path.seek up down (\pt -> isWall pt model)
 
-navigable : Level -> Bool
-navigable level =
-  if List.length (bestPath level) == 0 then
-    False
+growGrass : Level -> Level
+growGrass model =
+  let
+    {floors, walls} =
+      model
+
+    seeds =
+      floors
+      |> Set.toList
+      |> Util.filterChamp --everyNth 2
+  in
+    seeds
+    |> List.foldr seedGrassAt model
+    |> evolveGrass 8
+    
+seedGrassAt : Point -> Level -> Level
+seedGrassAt pt model =
+  let
+    grass' =
+      Set.insert pt model.grass
+  in
+     { model | grass = grass' }
+
+removeGrassAt : Point -> Level -> Level
+removeGrassAt pt model =
+  let
+    grass' =
+      Set.remove pt model.grass
+  in
+     { model | grass = grass' }
+
+evolveGrass : Int -> Level -> Level
+evolveGrass n model =
+  if n < 0 then
+    model
   else
-    True
+    let 
+      model' = 
+        model.floors
+        |> Set.toList
+        |> List.foldr evolveGrassAt model
+    in 
+      evolveGrass (n-1) model'
+
+evolveGrassAt pt model =
+  let
+    neighbors =
+      Direction.directions
+      |> List.map (\dir -> Point.slide dir pt)
+      |> List.filter (\pt -> model |> isFloor pt)
+      |> List.filter (\pt -> model |> isGrass pt)
+      |> List.length
+  in
+    if neighbors > 3 then
+      model |> removeGrassAt pt
+    else if neighbors < 2 then
+      model |> removeGrassAt pt
+    else if neighbors == 3 then
+      model |> seedGrassAt pt
+    else -- 2 or 3 cells, we survive
+      model
+
+seedGrassAround : Point -> Level -> Level
+seedGrassAround pt model =
+  let
+    grass' =
+      Direction.directions
+      |> List.map (\dir -> Point.slide dir pt)
+      |> List.filter (\pt -> model |> isFloor pt)
+  in
+    grass'
+    |> List.foldr seedGrassAt model

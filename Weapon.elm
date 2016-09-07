@@ -9,6 +9,7 @@ import String
 type Weapon = Sword
             | Axe
             | Dagger
+            | Whip
             | Enchanted Int Weapon
 
 axe : Weapon
@@ -22,6 +23,10 @@ dagger =
 sword : Weapon
 sword =
   Sword
+
+whip : Weapon
+whip =
+  Whip
 
 enchant : Weapon -> Weapon
 enchant weapon =
@@ -41,6 +46,12 @@ threatRange pt dir weapon =
 
     Enchanted n weapon' ->
       threatRange pt dir weapon'
+
+    Whip ->
+      [ pt |> Point.slide dir 
+      , pt |> Point.slide dir |> Point.slide dir 
+      , pt |> Point.slide dir |> Point.slide dir |> Point.slide dir 
+      ]
 
     _ ->
       [ pt |> Point.slide dir ]
@@ -62,7 +73,6 @@ averageDamage weapon =
 
 describe : Weapon -> String
 describe weapon =
-  --"a " ++
   (case weapon of
     Sword ->
       "sword"
@@ -73,12 +83,16 @@ describe weapon =
     Dagger ->
       "dagger"
 
+    Whip ->
+      "whip"
+
     Enchanted n weapon' ->
       "+" ++ (toString n) ++ " " ++ (describe weapon'))
 
 damage : Int -> Int -> Weapon -> Int
 damage m n weapon =
-  Util.sample m n 1 (damageRange weapon)
+  let range = (damageRange weapon) in
+  Util.sample n m 0 range
 
 damageRange weapon =
   case weapon of
@@ -90,6 +104,9 @@ damageRange weapon =
 
     Axe ->
       [3..5]
+
+    Whip ->
+      [1..6]
 
     Enchanted n weapon' ->
       (damageRange weapon')

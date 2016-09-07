@@ -27,4 +27,4 @@ describe liquid =
     Potion effect ->
       case effect of
         GainLife ->
-          "Life"
+          "vitae"
