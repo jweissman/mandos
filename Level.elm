@@ -635,35 +635,33 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
-    challenge =
-      ChallengeRating.forDepth depth
-
-    liquid =
-      if depth < 7 then
-        Liquid.water
-      else
-        Liquid.holy (Liquid.water)
+    --challenge =
+    --  ChallengeRating.forDepth depth
 
     itemKinds =
       case purpose of
         Armory ->
           [ Item.bottle Liquid.lifePotion
-          , Item.armor (Armor.tunic)
-          , Item.weapon (Weapon.dagger)
+          , Item.armor Armor.tunic
+          , Item.weapon Weapon.dagger
+          , Item.armor Armor.suit
+          , Item.weapon Weapon.whip
           ]
 
         Barracks ->
           [ Item.scroll Spell.lux 
-          , Item.weapon (Weapon.sword)
-          , Item.bottle liquid
-          , Item.armor (Armor.suit)
-          , Item.weapon (Weapon.axe)
+          , Item.weapon Weapon.sword
+          , Item.bottle Liquid.water
+          , Item.armor Armor.plate
+          , Item.weapon Weapon.axe
           ]
 
         Library ->
           [ Item.scroll Spell.infuse 
-          , Item.bottle liquid
+          , Item.bottle Liquid.holyWater
           , Item.scroll Spell.lux 
+          , Item.bottle Liquid.lifePotion
+          , Item.scroll Spell.infuse 
           ]
 
     idRange =
@@ -678,7 +676,7 @@ furnishRoomFor purpose room depth model =
     targets =
       floors'
       |> Set.toList
-      |> Util.everyNth 7
+      |> Util.everyNth 17
   in
     furnishRoomWith items room model
 

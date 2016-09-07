@@ -1,4 +1,4 @@
-module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, enchant, threatRange)
+module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, whip, enchant, threatRange)
 
 import Util
 import Point exposing (Point)
