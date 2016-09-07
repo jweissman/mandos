@@ -6,7 +6,7 @@ import Entity exposing (Entity)
 import Graphics
 
 import Configuration
-import Event
+import Event exposing (Event(..))
 
 import Char
 import Task
@@ -35,7 +35,11 @@ main =
 
 -- MODEL
 
-type GameState = Splash | Generating | Playing | Death | Victory
+type GameState = Splash 
+               | Generating 
+               | Playing 
+               | Death String 
+               | Victory
 
 type alias Model =
   { engine : Engine
@@ -103,7 +107,7 @@ update message model =
                   },
                   Cmd.none)
 
-        Death ->
+        Death _ ->
           ({model | state = Splash}, Cmd.none)
 
         Victory ->
@@ -130,17 +134,25 @@ inferState model =
     won =
       model.engine.world.hallsEscaped
 
-    died =
-      model.engine.world.player.hp < 1
+    deathEvent =
+      model.engine.world
+      |> World.deathEvent
 
     state' =
       if won then
         Victory
       else
-        if died then
-          Death
-        else
-          Playing
+        case deathEvent of
+          Just event ->
+            case event of
+              Event.Death cause -> 
+                Death cause
+              _ ->
+                Death "unknown causes"
+
+          Nothing ->
+            Playing
+
   in
    { model | state = state' }
 
@@ -229,15 +241,16 @@ stateView model =
             Graphics.hero "YOU WON!" (25, 15)
           , Graphics.render "Congratulations!" (34, 20) "white"
           , Graphics.render "You escaped the Halls of Mandos!" (31, 22) "white"
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
-          , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 26) "lightgrey"
+          , Graphics.render ((toString kills) ++ " kills") (34, 27) "lightgrey"
           ]
 
-      Death ->
+      Death cause ->
           Engine.view model.engine ++
-          [ Graphics.hero "YOU DIED!" (23, 15)
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 25) "white"
-          , Graphics.render ((toString kills) ++ " kills") (34, 26) "white"
+          [ Graphics.hero "YOU DIED!" (22, 15)
+          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 20) "white"
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 26) "lightgrey"
+          , Graphics.render ((toString kills) ++ " kills") (34, 27) "lightgrey"
           ]
 
       Playing ->

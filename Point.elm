@@ -1,11 +1,11 @@
-module Point exposing (Point, x, y, slide, describe, distance, random, randomWithOffset, code, perimeter, grid, isAdjacent, towards, towards', adjacent, fromMouse)
+module Point exposing (Point, x, y, slide, describe, distance, random, randomWithOffset, code, perimeter, grid, isAdjacent, towards, towards', adjacent)
 
 import Direction exposing (Direction(..), directions)
-
-import Random
-import Set exposing (Set)
-import Mouse
 import Configuration
+
+import Set exposing (Set)
+import Random
+--import Mouse
 
 type alias Point = ( Int, Int )
 
@@ -136,13 +136,5 @@ towards' (ax,ay) (bx,by) =
         South
       else
         North
-
-
-fromMouse : Mouse.Position -> Point
-fromMouse {x,y} =
-  let scale = Configuration.viewScale in
-  ( x//scale
-  , (y//scale)+1
-  )
 
 

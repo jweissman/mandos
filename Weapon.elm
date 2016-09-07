@@ -1,12 +1,15 @@
-module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, enchant)
+module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, enchant, threatRange)
 
 import Util
+import Point exposing (Point)
+import Direction exposing (Direction)
 
 import String
 
 type Weapon = Sword
             | Axe
             | Dagger
+            | Whip
             | Enchanted Int Weapon
 
 axe : Weapon
@@ -21,6 +24,10 @@ sword : Weapon
 sword =
   Sword
 
+whip : Weapon
+whip =
+  Whip
+
 enchant : Weapon -> Weapon
 enchant weapon =
   case weapon of
@@ -29,6 +36,25 @@ enchant weapon =
 
     _ ->
       Enchanted 1 weapon
+
+threatRange : Point -> Direction -> Weapon -> List Point
+threatRange pt dir weapon =
+  case weapon of
+    Axe ->
+      Direction.directions
+      |> List.map (\dir -> pt |> Point.slide dir)
+
+    Enchanted n weapon' ->
+      threatRange pt dir weapon'
+
+    Whip ->
+      [ pt |> Point.slide dir 
+      , pt |> Point.slide dir |> Point.slide dir 
+      , pt |> Point.slide dir |> Point.slide dir |> Point.slide dir 
+      ]
+
+    _ ->
+      [ pt |> Point.slide dir ]
 
 averageDamage : Weapon -> Int
 averageDamage weapon =
@@ -47,7 +73,7 @@ averageDamage weapon =
 
 describe : Weapon -> String
 describe weapon =
-  case weapon of
+  (case weapon of
     Sword ->
       "sword"
 
@@ -57,23 +83,30 @@ describe weapon =
     Dagger ->
       "dagger"
 
+    Whip ->
+      "whip"
+
     Enchanted n weapon' ->
-      "+" ++ (toString n) ++ " " ++ (describe weapon')
+      "+" ++ (toString n) ++ " " ++ (describe weapon'))
 
 damage : Int -> Int -> Weapon -> Int
 damage m n weapon =
-  Util.sample m n 1 (damageRange weapon)
+  let range = (damageRange weapon) in
+  Util.sample n m 0 range
 
 damageRange weapon =
   case weapon of
-    Sword -> 
+    Sword ->
       [2..8]
 
-    Dagger -> 
+    Dagger ->
       [1..4]
 
-    Axe -> 
+    Axe ->
       [3..5]
+
+    Whip ->
+      [1..6]
 
     Enchanted n weapon' ->
       (damageRange weapon')

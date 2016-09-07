@@ -105,6 +105,8 @@ handleKeypress keyChar model =
           '7' -> playerActs 7
           '8' -> playerActs 8
           '9' -> playerActs 9
+          'd' -> waitForSelection (if action == Action.drop then Action.default else Action.drop)
+          'i' -> (if action == Action.drop then waitForSelection Action.default else resetAction)
           _ -> resetAction
 
       Nothing ->
@@ -214,9 +216,12 @@ playerActsOnItem item act model =
           model
 
     Use item' act' ->
-      model
-      |> playerApplies item' item
-      |> waitForSelection Action.default
+      if Item.canApply item' item then --Action.canPerform item' act' then
+        model
+        |> playerApplies item' item
+        |> waitForSelection Action.default
+      else
+        model
       --|> resetAction
 
     Default ->
@@ -375,11 +380,18 @@ resetAuto : Engine -> Engine
 resetAuto model =
   { model | auto = False }
 
+pointFromMouse : Mouse.Position -> Point
+pointFromMouse {x,y} =
+  let scale = Configuration.viewScale in
+  ( x//scale
+  , (y//scale)+1
+  )
+
 hoverAt : Mouse.Position -> Engine -> Engine
 hoverAt position model =
   let
     point =
-      Point.fromMouse position
+      pointFromMouse position
 
     isLit =
       List.member point (model.world.illuminated)

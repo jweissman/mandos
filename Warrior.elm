@@ -21,8 +21,9 @@ type alias Model =
   , direction : Direction
   , position : Point
   , gold : Int
-  , attack : Int
-  , defense : Int
+  , strength : Int
+  --, resistance : Int
+  --, defense : Int
   , steps : Int
   , weapon : Maybe Weapon
   , armor : Maybe Armor
@@ -41,8 +42,8 @@ init point =
   , direction = North
   , position = point
   , gold = 0
-  , attack = 1
-  , defense = 1
+  , strength = 5
+  --,  = 0
   , steps = 0
   , weapon = Nothing
   , armor = Nothing
@@ -55,17 +56,17 @@ power : Model -> Int
 power model =
   case model.weapon of
     Nothing ->
-      model.attack
+      model.strength
     Just weapon ->
-      model.attack + (Weapon.averageDamage weapon)
+      model.strength + (Weapon.averageDamage weapon)
 
 resistance : Model -> Int
 resistance model =
   case model.armor of
     Nothing ->
-      model.defense
+      model.strength
     Just armor ->
-      model.defense + (Armor.absorption armor)
+      model.strength + (Armor.absorption armor)
 
 -- helpers
 step : Direction -> Model -> Model
@@ -84,9 +85,9 @@ computeDamageAgainst defense model =
   let
     damage = case model.weapon of
       Just weapon ->
-        model.attack + Weapon.damage model.steps model.timesGearChanged weapon
+        model.strength + Weapon.damage model.steps model.timesGearChanged weapon
       Nothing ->
-        model.attack
+        model.strength
   in
     max 1 (damage - defense)
 
@@ -117,6 +118,19 @@ drink liquid model =
       model
       |> heal 10
       |> drink liquid'
+
+    Potion effect ->
+      case effect of
+        Liquid.GainLife ->
+          model
+          |> gainHp 2
+
+gainHp : Int -> Model -> Model
+gainHp n model =
+  let hp' = model.maxHp + n in
+  { model | hp = hp'
+          , maxHp = hp'
+        }
 
 wield : Weapon -> Model -> Model
 wield weapon model =
@@ -182,9 +196,9 @@ collectsItem item model =
         Nothing ->
           model |> wield weapon
         Just weapon' ->
-          if (Weapon.averageDamage weapon' < Weapon.averageDamage (weapon)) then
-             model |> wield weapon
-          else
+          --if (Weapon.averageDamage weapon' < Weapon.averageDamage (weapon)) then
+          --   model |> wield weapon
+          --else
             model'
 
     Shield armor ->
@@ -192,9 +206,9 @@ collectsItem item model =
         Nothing ->
           model |> wear armor
         Just armor' ->
-          if (Armor.absorption armor' < Armor.absorption (armor)) then
-            model |> wear armor
-          else
+          --if (Armor.absorption armor' < Armor.absorption (armor)) then
+          --  model |> wear armor
+          --else
             model'
 
     _ ->
@@ -247,7 +261,7 @@ cardView (x,y) action model =
       ]
 
     inventory =
-      inventoryView (x,y+7) action model
+      inventoryView (x,y+6) action model
   in
     stats
     ++ inventory
@@ -290,18 +304,21 @@ horizontalRule (x,y) =
 weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
 weaponView (x,y) action n weapon =
   let
+    desc =
+      Weapon.describe weapon
+
     message =
       case action of
         Nothing ->
           "- "
-          ++ Weapon.describe weapon
+          ++ desc
         Just action' ->
           "("
           ++ toString n
           ++ ") "
           ++ Action.describeWithDefault (Item.simple (Item.weapon weapon)) True action'
           ++ " "
-          ++ Weapon.describe weapon
+          ++ desc
 
     color =
       if action == Just Action.drop then

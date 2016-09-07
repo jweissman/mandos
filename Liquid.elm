@@ -1,13 +1,19 @@
-module Liquid exposing (Liquid(..), describe, water, holy)
+module Liquid exposing (Liquid(..), Effect(..), describe, water, holy, lifePotion)
+
+type Effect = GainLife
 
 type Liquid = Water
             | Blessed Liquid
+            | Potion Effect
 
 water =
   Water
 
 holy liquid =
   Blessed liquid
+
+lifePotion =
+  Potion GainLife
 
 describe : Liquid -> String
 describe liquid =
@@ -17,3 +23,8 @@ describe liquid =
 
     Blessed liquid' ->
       "holy " ++ (describe liquid')
+
+    Potion effect ->
+      case effect of
+        GainLife ->
+          "vitae"

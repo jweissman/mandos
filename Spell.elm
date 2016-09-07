@@ -13,7 +13,7 @@ describe : Spell -> String
 describe spell =
   case spell of
     Lux ->
-      "Illumination"
+      "lux"
 
     Infuse ->
-      "Enchantment"
+      "infuse"

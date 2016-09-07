@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks, deathEvent)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -206,22 +206,32 @@ playerAttacks direction model =
     {player} =
        model
 
-    attackedPosition =
-      player.position
-      |> slide direction
+    attackedPositions =
+      case player.weapon of
+        Just weapon ->
+          Weapon.threatRange player.position direction weapon
 
-    maybeCreature =
-      level model
-      |> Level.creatureAt attackedPosition
+        Nothing ->
+          [ player.position |> slide direction ]
+
+    creatures =
+      attackedPositions
+      |> List.map (\pt -> (level model) |> Level.creatureAt pt)
+      |> List.filterMap identity
+      --level model
+      --|> Level.creatureAt attackedPosition
   in
-    case maybeCreature of
-      Nothing ->
-        model
+    creatures
+    |> List.foldr (\creature -> playerAttacksCreature creature) model
+    |> removeDeceasedCreatures
+    --case maybeCreature of
+    --  Nothing ->
+    --    model
 
-      Just creature ->
-        model
-        |> playerAttacksCreature creature
-        |> removeDeceasedCreatures
+    --  Just creature ->
+    --    model
+    --    |> playerAttacksCreature creature
+    --    |> removeDeceasedCreatures
 
 playerAttacksCreature : Creature.Model -> Model -> Model
 playerAttacksCreature creature model =
@@ -406,10 +416,10 @@ augmentVision model =
 enchantItem : Item -> Model -> Model
 enchantItem item model =
   let
-    player = 
+    player =
       model.player
 
-    inventory' = 
+    inventory' =
       player.inventory
       |> List.map (\it -> if it == item then Item.enchant it else it)
 
@@ -427,21 +437,28 @@ enchantItem item model =
     armor' =
       case player.armor of
         Just armor ->
-          if Item.simple (Item.armor armor) == item then 
+          if Item.simple (Item.armor armor) == item then
             Just (Armor.enchant armor)
           else
             Just armor
 
         Nothing ->
           Nothing
-          
+
     player' =
-      { player | inventory = inventory' 
+      { player | inventory = inventory'
                , armor = armor'
                , weapon = weapon'
       }
   in
     { model | player = player' }
+
+
+deathEvent : Model -> Maybe Event
+deathEvent model =
+  model.events
+  |> List.filter (Event.isPlayerDeath)
+  |> List.head
 
 
 -- VIEW
