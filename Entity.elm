@@ -20,7 +20,7 @@ type Entity = Monster Creature.Model
             | StairsDown Point
             | Memory Entity
             | Entrance Bool Point
-            | Crystal Bool Point
+            --| Crystal Bool Point
             | Imaginary Entity
             | Item Item.Item
 
@@ -52,8 +52,8 @@ downstairs point =
 memory entity =
   Memory entity
 
-crystal taken pt =
-  Crystal taken pt
+crystal pt =
+  Item (Item.init pt Item.crystal -1)
 
 entrance open pt =
   Entrance open pt
@@ -66,9 +66,9 @@ item item' =
 
 isCreature entity =
   case entity of
-    Monster _ -> 
+    Monster _ ->
       True
-  
+
     _ ->
       False
 
@@ -106,12 +106,6 @@ describe entity =
 
     Imaginary entity ->
       "You imagine there is " ++ (describe entity) ++ " here"
-      
-    Crystal taken _ ->
-      if taken then
-        "a pedestal where the Crystal was"
-      else
-        "the shimmering Crystal"
 
     Entrance open _ ->
       if open then
@@ -143,7 +137,7 @@ color entity =
       "gold"
 
     Floor _ ->
-      "rgba(80,80,120,0.7)"
+      "rgba(160,160,240,0.5)"
 
     Door _ ->
       "orange"
@@ -159,9 +153,6 @@ color entity =
 
     Imaginary _ ->
       "green"
-
-    Crystal taken _ ->
-      if taken then "gray" else "white"
 
     Entrance open _ ->
       if open then "green" else "red"
@@ -195,9 +186,6 @@ position entity =
 
     StairsDown point ->
       point
-
-    Crystal _ pt ->
-      pt
 
     Entrance _ pt ->
       pt
@@ -237,7 +225,7 @@ glyph entity =
 
     StairsDown _ ->
       "<"
-    
+
     Memory e ->
       glyph e
 
@@ -247,8 +235,8 @@ glyph entity =
     Entrance _ _ ->
       "∞"
 
-    Crystal _ _ ->
-      "∆"
+    --Crystal _ _ ->
+    --  "∆"
 
     Item item ->
       Item.glyph item

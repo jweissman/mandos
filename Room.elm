@@ -1,4 +1,4 @@
-module Room exposing (Room, Purpose(..), generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center, corridor, assign, armory, barracks)
+module Room exposing (Room, Purpose(..), generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center, corridor, assign, armory, barracks, library)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -12,12 +12,16 @@ import Set exposing (Set)
 
 type Purpose = Armory
              | Barracks
+             | Library
 
 armory =
   Armory
 
 barracks =
   Barracks
+
+library =
+  Library
 
 type alias Room = { origin : Point
                   , width : Int
@@ -33,8 +37,11 @@ generate n =
 generate' : Random.Generator Room
 generate' =
   let
-    maxRoomSize =
-      8
+    width' =
+      Configuration.maxRoomWidth
+
+    height' =
+      Configuration.maxRoomHeight
 
     vWidth =
       Configuration.viewWidth // 2
@@ -43,13 +50,13 @@ generate' =
       Configuration.viewHeight // 2
 
     width =
-      Random.int 4 maxRoomSize
+      Random.int 4 width'
 
     height =
-      Random.int 4 maxRoomSize
+      Random.int 4 height'
 
     origin =
-      Point.randomWithOffset (3,4) (vWidth-maxRoomSize) (vHeight-maxRoomSize)
+      Point.randomWithOffset (3,4) (vWidth-width') (vHeight-height')
 
   in
     Random.map3 create origin width height
@@ -160,7 +167,6 @@ center {origin,width,height} =
 distance : Room -> Room -> Float
 distance a b =
   Point.distance (center a) (center b) 
-  --List.length (corridor a b))
 
 corridor : Room -> Room -> List Point
 corridor a b =

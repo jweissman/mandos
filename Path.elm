@@ -93,7 +93,3 @@ constructPath visited source destination =
                |> slide (Direction.invert direction)
            in
              [destination] ++ (constructPath visited source newDest)
-
-
----
-

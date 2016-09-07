@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, liberateCrystal, removeItem)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem)
 
 import Warrior
 import Creature
@@ -60,10 +60,10 @@ removeItem item depth model =
   model
   |> apply (Level.removeItem item) depth
 
-liberateCrystal : Int -> Dungeon -> Dungeon
-liberateCrystal depth model =
-  model
-  |> apply (Level.liberateCrystal) depth
+--liberateCrystal : Int -> Dungeon -> Dungeon
+--liberateCrystal depth model =
+--  model
+--  |> apply (Level.liberateCrystal) depth
 
 moveCreatures : Warrior.Model -> Int -> Dungeon -> (Dungeon, List Event, Warrior.Model)
 moveCreatures player depth model =

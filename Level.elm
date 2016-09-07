@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isCrystal, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, liberateCrystal, itemAt, removeItem, navigable)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, navigable, crystalLocation)
 
 
 import Point exposing (Point)
@@ -14,7 +14,8 @@ import Warrior
 import Creature
 import Species
 import Liquid
-import Material
+import Spell
+import ChallengeRating
 import Event exposing (Event)
 import Entity exposing (Entity)
 import Item exposing (Item)
@@ -29,7 +30,6 @@ type alias Level = { walls : Set Point
                    , creatures : List Creature.Model
                    , downstairs : Maybe Point
                    , upstairs : Maybe Point
-                   , crystal : Maybe (Point, Bool)
                    , entrance : Maybe (Point, Bool)
 
                    , items : List Item
@@ -49,7 +49,6 @@ init =
   , creatures = []
   , upstairs = Nothing
   , downstairs = Nothing
-  , crystal = Nothing
   , entrance = Nothing
   , rooms = []
   , viewed = []
@@ -132,14 +131,6 @@ isEntrance position model =
     Nothing ->
       False
 
-isCrystal : Point -> Level -> Bool
-isCrystal position model =
-  case model.crystal of
-    Just (pt,_) ->
-      position == pt
-    Nothing ->
-      False
-
 hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
   List.member point model.viewed
@@ -204,16 +195,6 @@ entitiesAt point model =
       else
         Nothing
 
-    crystal =
-      if isCrystal point model then
-        case model.crystal of
-          Nothing ->
-            Nothing
-          Just (pt,taken) ->
-            Just (Entity.crystal taken point)
-      else
-        Nothing
-
     item =
       case itemAt point model of
         Just item' ->
@@ -230,7 +211,6 @@ entitiesAt point model =
       , downstairs
       , upstairs
       , entrance
-      , crystal
       , item
       , monster
       ]
@@ -248,6 +228,13 @@ itemAt : Point -> Level -> Maybe Item
 itemAt pt model =
   model.items
   |> List.filter (\item -> pt == (item.position))
+  |> List.head
+
+crystalLocation : Level -> Maybe Point
+crystalLocation model =
+  model.items
+  |> List.filter (\{kind} -> kind == Item.crystal)
+  |> List.map .position
   |> List.head
 
 -- HELPERS (for update)
@@ -409,14 +396,6 @@ removeItem item model =
   in
     { model | items = items' }
 
-liberateCrystal : Level -> Level
-liberateCrystal model =
-  { model | crystal = case model.crystal of
-      Nothing -> Nothing
-      Just (pt,taken) ->
-        Just (pt, True)
-    }
-
 -- GENERATE
 
 fromRooms : List Room -> Level
@@ -557,11 +536,13 @@ emplaceDownstairs point model =
 
 emplaceCrystal : Point -> Level -> Level
 emplaceCrystal point model =
-  { model | crystal = Just (point, False)
+  let crystal = Item.init point Item.crystal -1 in
+  { model | items = model.items ++ [ crystal ]
           , downstairs = Nothing
           }
           |> addWallsAround point
           |> removeWall point
+          |> addFloor point
 
 emplaceEntrance : Point -> Level -> Level
 emplaceEntrance point model =
@@ -576,6 +557,9 @@ removeWall pt model =
 
 removeFloor pt model =
   { model | floors = Set.remove pt model.floors }
+
+addFloor pt model =
+  { model | floors = Set.insert pt model.floors }
 
 addWallsAround pt model =
   let
@@ -616,8 +600,9 @@ assignRooms depth model =
   let
     rooms' =
       model.rooms
-      |> Util.mapEveryNth 4 (Room.assign Room.armory)
-      |> Util.mapEveryNth 5 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 4 (Room.assign Room.library)
+      |> Util.mapEveryNth 3 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 2 (Room.assign Room.armory)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
@@ -635,51 +620,34 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
+    challenge =
+      ChallengeRating.forDepth depth
+
     liquid =
       if depth < 7 then
         Liquid.water
       else
         Liquid.holy (Liquid.water)
 
-    weaponMaterial =
-      if depth < 1 then
-        Material.wood
-      else if depth < 3 then
-        Material.bronze
-      else if depth < 7 then
-        Material.iron
-      else if depth < 9 then
-        Material.steel
-      else
-        Material.mandium
-
-    armorMaterial =
-      if depth < 1 then
-        Material.cloth
-      else if depth < 3 then
-        Material.leather
-      else if depth < 5 then
-        Material.bronze
-      else if depth < 7 then
-        Material.iron
-      else if depth < 9 then
-        Material.steel
-      else
-        Material.mandium
-
-
     itemKinds =
       case purpose of
         Armory ->
           [ Item.bottle liquid
-          , Item.armor (Armor.tunic armorMaterial)
-          , Item.weapon (Weapon.dagger weaponMaterial)
+          , Item.armor (Armor.tunic)
+          , Item.weapon (Weapon.dagger)
           ]
 
         Barracks ->
-          [ Item.bottle liquid
-          , Item.weapon (Weapon.sword weaponMaterial)
-          , Item.armor (Armor.suit armorMaterial)
+          [ Item.scroll Spell.lux 
+          , Item.weapon (Weapon.sword)
+          , Item.bottle liquid
+          , Item.armor (Armor.suit)
+          ]
+
+        Library ->
+          [ Item.scroll Spell.infuse 
+          , Item.bottle liquid
+          , Item.scroll Spell.lux 
           ]
 
     idRange =
@@ -715,11 +683,11 @@ spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
   let
     species =
-      Species.level depth
+      Species.level (ChallengeRating.forDepth depth)
 
     creatures' =
       model.rooms
-      |> Util.everyNth 4
+      |> Util.everyNth 3
       |> List.map Room.center
       |> List.map3 (\species' n pt -> Creature.init species' n pt) species [0..99]
   in
@@ -732,10 +700,12 @@ bestPath model =
       case model.downstairs of
         Just pt ->
           pt
+
         Nothing ->
-          case model.crystal of
-            Just (pt,_) ->
+          case (crystalLocation model) of
+            Just pt ->
               pt
+
             Nothing ->
               origin
 

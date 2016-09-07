@@ -3,7 +3,7 @@ module Liquid exposing (Liquid(..), describe, water, holy)
 type Liquid = Water
             | Blessed Liquid
 
-water = 
+water =
   Water
 
 holy liquid =
@@ -12,6 +12,8 @@ holy liquid =
 describe : Liquid -> String
 describe liquid =
   case liquid of
-    Water -> "water"
+    Water -> 
+      "water"
+
     Blessed liquid' ->
       "holy " ++ (describe liquid')

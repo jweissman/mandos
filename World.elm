@@ -1,10 +1,12 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerUsesItem, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 import Optics
-import Warrior
 import Creature
+import Warrior
+import Weapon
+import Armor
 import Entity exposing (Entity)
 import Room exposing (Room)
 import Dungeon exposing (Dungeon)
@@ -15,6 +17,7 @@ import Event exposing (..)
 import Util
 import Configuration
 import Item exposing (Item)
+import Spell exposing (Spell(..))
 
 import Set exposing (Set)
 import String
@@ -31,7 +34,6 @@ type alias Model =
   , events : Log.Model
   , debugPath : List Point
   , illuminated : List Point
-  , crystalTaken : Bool
   , hallsEscaped : Bool
   , showMap : Bool
   }
@@ -46,7 +48,6 @@ init =
   , events = Log.init
   , debugPath = []
   , illuminated = []
-  , crystalTaken = False
   , hallsEscaped = False
   , showMap = False
   }
@@ -107,8 +108,9 @@ entrances model =
 
 crystals : Model -> List Point
 crystals model =
-  case (level model).crystal of
-    Just (pt,_) -> [pt]
+  let location = (level model) |> Level.crystalLocation in
+  case location of
+    Just pt -> [pt]
     Nothing -> []
 
 -- PREDICATES/QUERIES
@@ -143,7 +145,6 @@ playerSteps direction model =
     |> playerAscendsOrDescends
     |> playerCollectsCoins
     |> playerCollectsItems
-    |> playerLiberatesCrystal
     |> playerEscapesHall
 
 playerMoves : Direction -> Model -> Model
@@ -179,25 +180,9 @@ playerCollectsCoins model =
                 , events  = model.events ++ [event]
         }
 
-playerLiberatesCrystal : Model -> Model
-playerLiberatesCrystal model =
-  let
-    isCrystal =
-      level model
-      |> Level.isCrystal model.player.position
-
-    dungeon' =
-      model.dungeon
-      |> Dungeon.liberateCrystal model.depth
-  in
-    if model.crystalTaken || (not isCrystal) then
-      model
-    else
-      let event = Event.crystalTaken in
-      { model | crystalTaken = True
-              , dungeon = dungeon'
-              , events = model.events ++ [event]
-      }
+doesPlayerHaveCrystal model =
+  model.player.inventory
+  |> List.any (\{kind} -> kind == Item.crystal)
 
 playerEscapesHall : Model -> Model
 playerEscapesHall model =
@@ -205,8 +190,9 @@ playerEscapesHall model =
     isEntrance =
       level model
       |> Level.isEntrance model.player.position
+
   in
-    if model.crystalTaken && isEntrance then
+    if (model |> doesPlayerHaveCrystal) && isEntrance then
       let event = Event.hallsEscaped in
       { model | hallsEscaped = True
               , events = model.events ++ [event]
@@ -343,9 +329,12 @@ illuminate source model =
       |> Set.fromList
       |> Set.union (Set.union (walls model) (doors model))
 
+    power =
+      model.player.visionRadius
+
   in
     source
-    |> Optics.illuminate perimeter blockers
+    |> Optics.illuminate power perimeter blockers
 
 playerCollectsItems : Model -> Model
 playerCollectsItems model =
@@ -363,36 +352,9 @@ playerCollectsItems model =
   else
     model
 
-playerDropsItem : Int -> Model -> Model
-playerDropsItem idx model =
+playerDropsItem : Item -> Model -> Model
+playerDropsItem item model =
   let
-    maybeItem =
-      Util.getAt model.player.inventory idx
-  in
-    case maybeItem of
-      Just item ->
-        let
-          inventory' =
-            model.player.inventory
-            |> List.filter (\it -> not (it == item))
-
-          player =
-            model.player
-
-          player' =
-            { player | inventory = inventory' }
-        in
-          { model | player = player' }
-
-      Nothing ->
-        model
-
-playerUsesItem : Item -> Model -> Model
-playerUsesItem item model =
-  let
-    {kind} =
-      item
-
     inventory' =
       model.player.inventory
       |> List.filter (\it -> not (it == item))
@@ -402,16 +364,85 @@ playerUsesItem item model =
 
     player' =
       { player | inventory = inventory' }
+  in
+    { model | player = player' }
 
-  in case kind of
-    Item.Arm weapon' ->
-      { model | player = player' |> Warrior.wield weapon' }
+playerWields : Item -> Model -> Model
+playerWields item model =
+  case item.kind of
+    Item.Arm weapon ->
+      { model | player = model.player |> Warrior.wield weapon }
 
-    Item.Shield armor' ->
-      { model | player = player' |> Warrior.wear armor' }
+    _ -> model
 
-    Item.Bottle liquid' ->
-      { model | player = player' |> Warrior.drink liquid' }
+playerWears : Item -> Model -> Model
+playerWears item model =
+  case item.kind of
+    Item.Shield armor ->
+      { model | player = model.player |> Warrior.wear armor }
+
+    _ -> model
+
+playerDrinks : Item -> Model -> Model
+playerDrinks item model =
+  case item.kind of
+    Item.Bottle liquid ->
+      { model | player = model.player |> Warrior.drink liquid }
+
+    _ -> model
+
+playerSheathesWeapon : Model -> Model
+playerSheathesWeapon model =
+  { model | player = model.player |> Warrior.sheatheWeapon }
+
+playerTakesOffArmor : Model -> Model
+playerTakesOffArmor model =
+  { model | player = model.player |> Warrior.takeOffArmor }
+
+augmentVision : Model -> Model
+augmentVision model =
+  { model | player = model.player |> Warrior.augmentVision 1 }
+
+enchantItem : Item -> Model -> Model
+enchantItem item model =
+  let
+    player = 
+      model.player
+
+    inventory' = 
+      player.inventory
+      |> List.map (\it -> if it == item then Item.enchant it else it)
+
+    weapon' =
+      case player.weapon of
+        Just weapon ->
+          if Item.simple (Item.weapon weapon) == item then
+            Just (Weapon.enchant weapon)
+          else
+            Just weapon
+
+        Nothing ->
+          Nothing
+
+    armor' =
+      case player.armor of
+        Just armor ->
+          if Item.simple (Item.armor armor) == item then 
+            Just (Armor.enchant armor)
+          else
+            Just armor
+
+        Nothing ->
+          Nothing
+          
+    player' =
+      { player | inventory = inventory' 
+               , armor = armor'
+               , weapon = weapon'
+      }
+  in
+    { model | player = player' }
+
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity

@@ -14,7 +14,8 @@ import Quest exposing (Quest)
 import Journal
 import Log
 import Status
-import Item
+import Item exposing (Item, ItemKind(..))
+import Spell exposing (Spell(..))
 import Action exposing (Action(..))
 
 import Set exposing (Set)
@@ -34,7 +35,6 @@ type alias Engine =
   , quests : List Quest
   , action : Maybe Action
   }
-
 
 init : Engine
 init =
@@ -117,66 +117,197 @@ handleKeypress keyChar model =
           't' -> telepath
           'x' -> playerExplores
           'd' -> waitForSelection Action.drop
-          '0' -> playerUses 0
-          '1' -> playerUses 1
-          '2' -> playerUses 2
-          '3' -> playerUses 3
-          '4' -> playerUses 4
-          '5' -> playerUses 5
-          '6' -> playerUses 6
-          '7' -> playerUses 7
-          '8' -> playerUses 8
-          '9' -> playerUses 9
+          'i' -> waitForSelection Action.default
           _ -> reset
+
+
+--toggleInventory : Engine -> Engine
+--toggleInventory model =
+--  { model | inventoryOpen = not model.inventoryOpen }
 
 waitForSelection : Action -> Engine -> Engine
 waitForSelection action model =
-  if List.length model.world.player.inventory > 0 then
-    { model | action = Just action }
-  else
-    model
+  let
+    nothingToSelect =
+      List.length model.world.player.inventory == 0
+      && model.world.player.weapon == Nothing
+      && model.world.player.armor == Nothing
+  in
+    if nothingToSelect then
+      model
+    else
+      { model | action = Just action }
+
+isEquipped : Item -> Engine -> Bool
+isEquipped item model =
+  let
+    player =
+      model.world.player
+
+    isArmor =
+      case player.armor of
+        Nothing ->
+          False
+        Just armor ->
+          item == (Item.simple (Item.armor armor))
+
+    isWeapon =
+      case player.weapon of
+        Nothing ->
+          False
+        Just weapon ->
+          item == (Item.simple (Item.weapon weapon))
+  in
+    isArmor
+    || isWeapon
 
 playerActs : Int -> Engine -> Engine
 playerActs idx model =
-  case model.action of
-    Nothing ->
-      model
+  let
+    maybeItem =
+      model.world.player
+      |> Warrior.itemAtIndex idx
+      --Util.getAt model.world.player.inventory idx
+  in
+    case maybeItem of
+      Nothing ->
+        model
 
-    Just act ->
-      case act of
-        Drop ->
-          model |> playerDrops idx
+      Just item ->
+        case model.action of
+          Nothing ->
+            model
 
+          Just act ->
+            model |> playerActsOnItem item act
+
+playerActsOnItem : Item -> Action -> Engine -> Engine
+playerActsOnItem item act model =
+  case act of
+    Drop ->
+      { model | world = model.world |> World.playerDropsItem item }
+
+    Wear ->
+      { model | world = model.world |> World.playerWears item }
+              |> playerLosesItem item
+
+    TakeOff ->
+      { model | world = model.world |> World.playerTakesOffArmor }
+
+    Wield ->
+      { model | world = model.world |> World.playerWields item }
+              |> playerLosesItem item
+
+    Sheathe ->
+      { model | world = model.world |> World.playerSheathesWeapon }
+
+    Drink ->
+      { model | world = model.world |> World.playerDrinks item }
+              |> playerLosesItem item
+
+    Read ->
+      case item.kind of
+        Scroll spell -> 
+          model 
+          |> castSpell item spell
         _ ->
           model
 
+    Use item' act' ->
+      model
+      |> playerApplies item' item
+      |> waitForSelection Action.default
+      --|> resetAction
 
-playerDrops : Int -> Engine -> Engine
-playerDrops idx model =
-  { model | world = model.world |> World.playerDropsItem idx }
+    Default ->
+      let
+        equipped =
+          isEquipped item model
+
+        action' =
+          Action.defaultForItem equipped item
+      in
+        model
+        |> playerActsOnItem item action'
+
+    _ ->
+      model
+
+playerApplies : Item -> Item -> Engine -> Engine
+playerApplies item' item model =
+  case item'.kind of
+    Scroll spell ->
+      case spell of
+        Infuse ->
+          --Debug.log ("USE ITEM " ++ (Item.describe item'))
+          --Debug.log ("ON ITEM " ++ (Item.describe item))
+          model
+          |> playerLosesItem item'
+          |> playerEnchants item
+
+        _ ->
+          model
+    _ -> 
+      model
 
 resetAction : Engine -> Engine
 resetAction model =
   { model | action = Nothing }
 
-playerUses : Int -> Engine -> Engine
-playerUses itemIdx model =
+playerLosesItem : Item -> Engine -> Engine
+playerLosesItem item model =
   let
-    maybeItem =
-      Util.getAt model.world.player.inventory itemIdx
+    world =
+      model.world
 
-  in case maybeItem of
-    Nothing ->
+    player =
+      world.player
+
+    inventory =
+      player.inventory
+
+    inventory' =
+      inventory
+      |> List.filter (\it -> not (it == item))
+
+    player' =
+      { player | inventory = inventory' }
+  in
+    { model | world = { world | player = player' } }
+
+castSpell : Item -> Spell -> Engine -> Engine
+castSpell item spell model =
+  let world = model.world in
+  case spell of
+    Lux ->
       model
+      |> playerLosesItem item
+      |> enhancePlayerVision
 
-    Just item ->
-      { model | world = model.world |> World.playerUsesItem item }
+    Infuse ->
+      --Debug.log "CAST SPELL"
+      model
+      |> waitForSelection (Action.use item (Action.enchant))
+
+enhancePlayerVision : Engine -> Engine
+enhancePlayerVision model =
+  { model | world = model.world
+          |> World.augmentVision
+          |> World.playerViewsField
+  }
+
+playerEnchants : Item -> Engine -> Engine
+playerEnchants item model =
+  { model | world = model.world
+          |> World.enchantItem item
+  }
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
   model
   |> followPaths
   |> updateQuests
+
 
 updateQuests : Engine -> Engine
 updateQuests model =
@@ -414,13 +545,22 @@ playerExplores model =
     playerPos =
       model.world.player.position
 
-    byDistanceFromPlayer =
-      (\c -> Point.distance playerPos c)
+    walls' =
+      World.walls model.world
 
-    (explored,unexplored) =
-      let viewed' = (World.viewed model.world) in
+    byDistanceFromPlayer =
+      (\pt -> Point.distance playerPos pt)
+
+    viewed =
+      World.viewed model.world
+
+    (explored,unexploredFloorsAndDoors) =
       (Set.union (World.floors model.world) (World.doors model.world))
-      |> Set.partition (\p -> List.member p viewed')
+      |> Set.partition (\p -> List.member p viewed)
+
+    unexplored =
+      (unexploredFloorsAndDoors)
+      |> Set.union (World.walls model.world |> Set.filter (\pt -> not (List.member pt viewed)))
 
     frontier =
       explored
@@ -443,11 +583,19 @@ playerExplores model =
       else
         []
 
+    visibleThings =
+      visibleCreatures ++ visibleItems ++ visibleCoins
+
     gatherAndExplore =
-      visibleCreatures ++ visibleItems ++ visibleCoins ++ (frontier |> Set.toList)
+      if model.world |> World.doesPlayerHaveCrystal then
+        visibleCoins
+      else if (List.length visibleThings > 0) then
+        visibleThings
+      else
+        frontier |> Set.toList
 
     ascendOrDescend =
-      if model.world.crystalTaken then
+      if model.world |> World.doesPlayerHaveCrystal then
         World.upstairs model.world ++ World.entrances model.world
       else
         if Set.size frontier == 0 then
@@ -517,7 +665,7 @@ view model =
 
     character =
       model.world.player
-      |> Warrior.cardView (55, 5 + (List.length model.quests)) (model.action)
+      |> Warrior.cardView (55, 5 + (List.length model.quests)+1) (model.action)
 
     log =
       Log.view (2, 37) model.world.events
