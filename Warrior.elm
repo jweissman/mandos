@@ -307,8 +307,14 @@ weaponView (x,y) action n weapon =
           ++ Action.describeWithDefault (Item.simple (Item.weapon weapon)) True action'
           ++ " "
           ++ Weapon.describe weapon
+
+    color =
+      if action == Just Action.drop then
+        "red"
+      else
+        "lightgray"
   in
-    Graphics.render message (x,y) "lightgray"
+    Graphics.render message (x,y) color
 
 armorView : Point -> Maybe Action -> Int -> Armor -> Svg.Svg a
 armorView (x,y) action n armor =
@@ -328,8 +334,14 @@ armorView (x,y) action n armor =
           ++ Action.describeWithDefault (Item.simple (Item.armor armor)) True action'
           ++ " "
           ++ desc
+
+    color =
+      if action == Just Action.drop then
+        "red"
+      else
+        "lightgray"
   in
-    Graphics.render message (x,y) "lightgray"
+    Graphics.render message (x,y) color
 
 equipmentView (x,y) action model =
   case model.weapon of
@@ -370,7 +382,10 @@ inventoryItemView (x,y) action n item =
 
         Just act ->
           if act |> Action.canPerform item then
-            "lightgrey"
+            if act == Action.drop then
+              "red"
+            else
+              "lightgrey"
           else
             "darkgrey"
   in

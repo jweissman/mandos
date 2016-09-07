@@ -216,7 +216,8 @@ playerActsOnItem item act model =
     Use item' act' ->
       model
       |> playerApplies item' item
-      |> resetAction
+      |> waitForSelection Action.default
+      --|> resetAction
 
     Default ->
       let
@@ -238,8 +239,8 @@ playerApplies item' item model =
     Scroll spell ->
       case spell of
         Infuse ->
-          Debug.log ("USE ITEM " ++ (Item.describe item'))
-          Debug.log ("ON ITEM " ++ (Item.describe item))
+          --Debug.log ("USE ITEM " ++ (Item.describe item'))
+          --Debug.log ("ON ITEM " ++ (Item.describe item))
           model
           |> playerLosesItem item'
           |> playerEnchants item
