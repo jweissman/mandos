@@ -1,4 +1,4 @@
-module Action exposing (Action(..), describe, question, defaultForItem, canPerform, drop, enchant, use)
+module Action exposing (Action(..), describe, question, defaultForItem, canPerform, drop, enchant, use, default, describeWithDefault)
 
 import Item exposing (Item, ItemKind(..))
 
@@ -12,9 +12,15 @@ type Action = Drop
             | Read
             | Enchant
             | Use Item Action
+            | Default
+            | Sheathe
+            | TakeOff
 
 drop =
   Drop
+
+default =
+  Default
 
 enchant =
   Enchant
@@ -40,11 +46,13 @@ use item action =
 --read =
 --  Read
 
-defaultForItem : Item -> Action
-defaultForItem {kind} =
+defaultForItem : Bool -> Item -> Action
+defaultForItem equipped {kind} =
   case kind of
-    Arm _ -> Wield
-    Shield _ -> Wear
+    Arm _ -> 
+      if equipped then Sheathe else Wield
+    Shield _ -> 
+      if equipped then TakeOff else Wear
     Bottle _ -> Drink
     Scroll _ -> Read
     QuestItem _ -> Look
@@ -53,6 +61,9 @@ canPerform : Item -> Action -> Bool
 canPerform item action =
   let {kind} = item in
   case action of
+    Default ->
+      True
+
     Wield ->
       case kind of
         Arm _ -> True
@@ -111,7 +122,7 @@ describe action =
       "Drink"
 
     Look ->
-      "Search"
+      "Inspect"
 
     Read ->
       "Read"
@@ -119,14 +130,30 @@ describe action =
     Enchant ->
       "Enchant"
 
+    Sheathe ->
+      "Sheathe"
+
+    TakeOff ->
+      "Take off"
+
     Use item action' ->
       describe action'
+
+    Default -> 
+      "[Default]"
+
+describeWithDefault : Item -> Bool -> Action -> String
+describeWithDefault item equipped action =
+  case action of
+    Default ->
+      describe (defaultForItem equipped item)
+    _ -> describe action
 
 question : Action -> String
 question action =
   case action of
     Drop ->
-      "What would you like to drop?"
+      "What would you like to get rid of?"
 
     Throw ->
       "What would you like to throw?"
@@ -152,5 +179,14 @@ question action =
     Enchant ->
       "What would you like to enchant?"
 
+    Sheathe ->
+      "What would you like to sheathe?"
+
+    TakeOff ->
+      "What would you like to take off?"
+
     Use item action' ->
       "What would you like to " ++ (describe action') ++ " with " ++ (Item.describe item) ++ "?"
+
+    Default ->
+      "What would you like to do?"

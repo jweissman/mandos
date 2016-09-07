@@ -1,6 +1,7 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, computeDamageAgainst, resistance, cardView, augmentVision)
+module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, computeDamageAgainst, resistance, cardView, augmentVision, itemAtIndex, sheatheWeapon, takeOffArmor)
 
 import Configuration
+import Util
 import Direction exposing (Direction(..))
 import Point exposing (Point, slide)
 import Weapon exposing (Weapon)
@@ -134,6 +135,32 @@ wield weapon model =
     Nothing ->
       { model | weapon = Just weapon }
 
+
+sheatheWeapon : Model -> Model
+sheatheWeapon model =
+  case model.weapon of
+    Nothing ->
+      model
+
+    Just weapon ->
+      { model | weapon = Nothing
+              , inventory = model.inventory ++ [Item.init (0,0) (Item.weapon weapon) (1000000 + model.timesGearChanged)]
+              , timesGearChanged = model.timesGearChanged + 1
+            }
+
+
+takeOffArmor : Model -> Model
+takeOffArmor model =
+  case model.armor of
+    Nothing ->
+      model
+
+    Just armor ->
+      { model | armor = Nothing
+              , inventory = model.inventory ++ [Item.init (0,0) (Item.armor armor) (1000000 + model.timesGearChanged)]
+              , timesGearChanged = model.timesGearChanged + 1
+            }
+
 wear : Armor -> Model -> Model
 wear armor model =
   case model.armor of
@@ -178,23 +205,40 @@ collectsItem item model =
     _ ->
       model'
 
--- VIEW
+itemAtIndex : Int -> Model -> Maybe Item
+itemAtIndex idx model =
+  case model.weapon of
+    Just weapon' ->
+      case model.armor of
+        Just armor' ->
+          if idx == 0 then
+            Just (Item.simple (Item.weapon weapon'))
+          else if idx == 1 then
+            Just (Item.simple (Item.armor armor'))
+          else
+            Util.getAt model.inventory (idx-2)
 
+        Nothing ->
+          if idx == 0 then
+            Just (Item.simple (Item.weapon weapon'))
+          else
+            Util.getAt model.inventory (idx-1)
+
+    Nothing ->
+      case model.armor of
+        Just armor' ->
+          if idx == 0 then
+            Just (Item.simple (Item.armor armor'))
+          else
+            Util.getAt model.inventory (idx-1)
+
+        Nothing ->
+          Util.getAt model.inventory idx
+
+-- VIEW
 cardView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
 cardView (x,y) action model =
   let
-    wielding =
-      case model.weapon of
-        Nothing -> "(none)"
-        Just weapon ->
-          Weapon.describe weapon
-
-    wearing =
-      case model.armor of
-        Nothing -> "(none)"
-        Just armor ->
-          Armor.describe armor
-
     strength =
       toString (power model)
 
@@ -207,42 +251,117 @@ cardView (x,y) action model =
       , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"
       ]
 
-    equipment =
-      if not (model.weapon == Nothing && model.armor == Nothing) then
-        equipmentView (x,y+5) wielding wearing
-      else
-        []
-
     inventory =
-      if (List.length model.inventory) > 0 then
-        inventoryView (x,y+10) action model.inventory
-      else
-        []
+      inventoryView (x,y+7) action model
   in
-    stats ++ equipment ++ inventory
+    stats
+    ++ inventory
 
-equipmentView (x,y) wielding wearing =
-  [ Graphics.render "EQUIPMENT" (x, y) "gray"
-  , Graphics.render ("WEAPON: " ++ wielding) (x, y+2) "lightgray"
-  , Graphics.render (" ARMOR: " ++ wearing) (x, y+3) "lightgray"
-  ]
+inventoryView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
+inventoryView (x,y) action model =
+  let
+    header =
+      [ Graphics.render "GEAR" (x, y) "gray" ]
+  in
+  if model.armor == Nothing && model.weapon == Nothing then
+    if List.length model.inventory > 0 then
+      header
+      ++ (List.indexedMap (inventoryItemView (x,y+2) action) model.inventory)
+    else
+      []
+  else
+    let
+      equipment =
+        equipmentView (x,y+2) action model
 
-inventoryView : Point -> Maybe Action -> List Item -> List (Svg.Svg a)
-inventoryView (x,y) action items =
-    [ Graphics.render "INVENTORY" (x, y) "gray"
-    ] ++
-    (List.indexedMap (inventoryItemView (x,y+2) action) items)
+      hr =
+        horizontalRule (x,y+2+equipCount) --(List.length equipment))
+
+      equipCount =
+        List.length equipment
+
+      items =
+        List.map2 (inventoryItemView (x,y+3) action) [equipCount..9] model.inventory
+
+    in
+       header
+       ++ equipment
+       ++ hr
+       ++ items
+
+horizontalRule (x,y) =
+  [ Graphics.render "------------" (x,y) "grey" ]
+
+weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
+weaponView (x,y) action n weapon =
+  let
+    message =
+      case action of
+        Nothing ->
+          "- "
+          ++ Weapon.describe weapon
+        Just action' ->
+          "("
+          ++ toString n
+          ++ ") "
+          ++ Action.describeWithDefault (Item.simple (Item.weapon weapon)) True action'
+          ++ " "
+          ++ Weapon.describe weapon
+  in
+    Graphics.render message (x,y) "lightgray"
+
+armorView : Point -> Maybe Action -> Int -> Armor -> Svg.Svg a
+armorView (x,y) action n armor =
+  let
+    desc =
+      Armor.describe armor
+
+    message =
+      case action of
+        Nothing ->
+          "- "
+          ++ desc
+        Just action' ->
+          "("
+          ++ toString n
+          ++ ") "
+          ++ Action.describeWithDefault (Item.simple (Item.armor armor)) True action'
+          ++ " "
+          ++ desc
+  in
+    Graphics.render message (x,y) "lightgray"
+
+equipmentView (x,y) action model =
+  case model.weapon of
+    Just weapon' ->
+      case model.armor of
+        Just armor' ->
+          [ weaponView (x,y) action 0 weapon', armorView (x,y+1) action 1 armor' ]
+        Nothing ->
+          [ weaponView (x,y) action 0 weapon' ]
+
+    Nothing ->
+      case model.armor of
+        Just armor' ->
+          [ armorView (x,y) action 0 armor' ]
+        Nothing ->
+          [ ]
 
 inventoryItemView: Point -> Maybe Action -> Int -> Item -> Svg.Svg a
 inventoryItemView (x,y) action n item =
   let
-    action' =
-      action |> Maybe.withDefault (Action.defaultForItem item)
-
     desc =
-      "(" ++ (toString n) ++ ") "
-      ++ (Action.describe action')  ++ " "
-      ++ (Item.describe item)
+      case action of
+        Nothing ->
+          "- " ++ (Item.describe item)
+
+        Just action' ->
+          "("
+          ++ (toString n)
+          ++ ") "
+          ++ Action.describeWithDefault item False action'
+          ++ " "
+          ++ Item.describe item
 
     color =
       case action of
@@ -254,6 +373,5 @@ inventoryItemView (x,y) action n item =
             "lightgrey"
           else
             "darkgrey"
-
   in
     Graphics.render desc (x,y+n) color

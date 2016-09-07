@@ -16,4 +16,4 @@ maxRoomHeight = 8
 
 -- character
 visionRadius = 2
-inventoryLimit = 10
+inventoryLimit = 6

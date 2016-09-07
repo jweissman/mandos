@@ -1,10 +1,12 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 import Optics
-import Warrior
 import Creature
+import Warrior
+import Weapon
+import Armor
 import Entity exposing (Entity)
 import Room exposing (Room)
 import Dungeon exposing (Dungeon)
@@ -351,29 +353,54 @@ playerCollectsItems model =
   else
     model
 
-playerDropsItem : Int -> Model -> Model
-playerDropsItem idx model =
+-- todo need to check we aren't dropping equipment
+--      (could be disabled?)
+playerDropsItem : Item -> Model -> Model
+playerDropsItem item model =
   let
-    maybeItem =
-      Util.getAt model.player.inventory idx
+    inventory' =
+      model.player.inventory
+      |> List.filter (\it -> not (it == item))
+
+    player =
+      model.player
+
+    player' =
+      { player | inventory = inventory' }
   in
-    case maybeItem of
-      Just item ->
-        let
-          inventory' =
-            model.player.inventory
-            |> List.filter (\it -> not (it == item))
+    { model | player = player' }
 
-          player =
-            model.player
+playerWields : Item -> Model -> Model
+playerWields item model =
+  case item.kind of
+    Item.Arm weapon ->
+      { model | player = model.player |> Warrior.wield weapon }
 
-          player' =
-            { player | inventory = inventory' }
-        in
-          { model | player = player' }
+    _ -> model
 
-      Nothing ->
-        model
+playerWears : Item -> Model -> Model
+playerWears item model =
+  case item.kind of
+    Item.Shield armor ->
+      { model | player = model.player |> Warrior.wear armor }
+
+    _ -> model
+
+playerDrinks : Item -> Model -> Model
+playerDrinks item model =
+  case item.kind of
+    Item.Bottle liquid ->
+      { model | player = model.player |> Warrior.drink liquid }
+
+    _ -> model
+
+playerSheathesWeapon : Model -> Model
+playerSheathesWeapon model =
+  { model | player = model.player |> Warrior.sheatheWeapon }
+
+playerTakesOffArmor : Model -> Model
+playerTakesOffArmor model =
+  { model | player = model.player |> Warrior.takeOffArmor }
 
 augmentVision : Model -> Model
 augmentVision model =
@@ -381,7 +408,7 @@ augmentVision model =
 
 enchantItem : Item -> Model -> Model
 enchantItem item model =
-  let 
+  let
     player = 
       model.player
 
@@ -389,8 +416,33 @@ enchantItem item model =
       player.inventory
       |> List.map (\it -> if it == item then Item.enchant it else it)
 
+    weapon' =
+      case player.weapon of
+        Just weapon ->
+          if Item.simple (Item.weapon weapon) == item then
+            Just (Weapon.enchant weapon)
+          else
+            Just weapon
+
+        Nothing ->
+          Nothing
+
+    armor' =
+      case player.armor of
+        Just armor ->
+          if Item.simple (Item.armor armor) == item then 
+            Just (Armor.enchant armor)
+          else
+            Just armor
+
+        Nothing ->
+          Nothing
+          
     player' =
-      { player | inventory = inventory' }
+      { player | inventory = inventory' 
+               , armor = armor'
+               , weapon = weapon'
+      }
   in
     { model | player = player' }
 

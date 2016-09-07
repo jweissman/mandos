@@ -36,7 +36,6 @@ type alias Engine =
   , action : Maybe Action
   }
 
-
 init : Engine
 init =
   { world = World.init
@@ -118,30 +117,57 @@ handleKeypress keyChar model =
           't' -> telepath
           'x' -> playerExplores
           'd' -> waitForSelection Action.drop
-          '0' -> playerUses 0
-          '1' -> playerUses 1
-          '2' -> playerUses 2
-          '3' -> playerUses 3
-          '4' -> playerUses 4
-          '5' -> playerUses 5
-          '6' -> playerUses 6
-          '7' -> playerUses 7
-          '8' -> playerUses 8
-          '9' -> playerUses 9
+          'i' -> waitForSelection Action.default
           _ -> reset
+
+
+--toggleInventory : Engine -> Engine
+--toggleInventory model =
+--  { model | inventoryOpen = not model.inventoryOpen }
 
 waitForSelection : Action -> Engine -> Engine
 waitForSelection action model =
-  if List.length model.world.player.inventory > 0 then
-    { model | action = Just action }
-  else
-    model
+  let
+    nothingToSelect =
+      List.length model.world.player.inventory == 0
+      && model.world.player.weapon == Nothing
+      && model.world.player.armor == Nothing
+  in
+    if nothingToSelect then
+      model
+    else
+      { model | action = Just action }
+
+isEquipped : Item -> Engine -> Bool
+isEquipped item model =
+  let
+    player =
+      model.world.player
+
+    isArmor =
+      case player.armor of
+        Nothing ->
+          False
+        Just armor ->
+          item == (Item.simple (Item.armor armor))
+
+    isWeapon =
+      case player.weapon of
+        Nothing ->
+          False
+        Just weapon ->
+          item == (Item.simple (Item.weapon weapon))
+  in
+    isArmor
+    || isWeapon
 
 playerActs : Int -> Engine -> Engine
 playerActs idx model =
   let
     maybeItem =
-      Util.getAt model.world.player.inventory idx
+      model.world.player
+      |> Warrior.itemAtIndex idx
+      --Util.getAt model.world.player.inventory idx
   in
     case maybeItem of
       Nothing ->
@@ -153,94 +179,79 @@ playerActs idx model =
             model
 
           Just act ->
-            if Action.canPerform item act then
-              case act of
-                Drop ->
-                  model |> playerDrops idx
+            model |> playerActsOnItem item act
 
-                Use item' act' ->
-                  -- item' -- scroll of enchantment
-                  -- action = Just (Use { position = (30,17), kind = Scroll Infuse, id = 300 } Enchant)
-                  Debug.log ("USE ITEM " ++ (Item.describe item'))
-                  model
-                  |> playerLosesItem item'
-                  |> playerEnchants item
-                  |> resetAction
+playerActsOnItem : Item -> Action -> Engine -> Engine
+playerActsOnItem item act model =
+  case act of
+    Drop ->
+      { model | world = model.world |> World.playerDropsItem item }
 
-                _ ->
-                  model
+    Wear ->
+      { model | world = model.world |> World.playerWears item }
+              |> playerLosesItem item
 
-           else
-             model
+    TakeOff ->
+      { model | world = model.world |> World.playerTakesOffArmor }
 
-playerDrops : Int -> Engine -> Engine
-playerDrops idx model =
-  { model | world = model.world |> World.playerDropsItem idx }
+    Wield ->
+      { model | world = model.world |> World.playerWields item }
+              |> playerLosesItem item
+
+    Sheathe ->
+      { model | world = model.world |> World.playerSheathesWeapon }
+
+    Drink ->
+      { model | world = model.world |> World.playerDrinks item }
+              |> playerLosesItem item
+
+    Read ->
+      case item.kind of
+        Scroll spell -> 
+          model 
+          |> castSpell item spell
+        _ ->
+          model
+
+    Use item' act' ->
+      model
+      |> playerApplies item' item
+      |> resetAction
+
+    Default ->
+      let
+        equipped =
+          isEquipped item model
+
+        action' =
+          Action.defaultForItem equipped item
+      in
+        model
+        |> playerActsOnItem item action'
+
+    _ ->
+      model
+
+playerApplies : Item -> Item -> Engine -> Engine
+playerApplies item' item model =
+  case item'.kind of
+    Scroll spell ->
+      case spell of
+        Infuse ->
+          Debug.log ("USE ITEM " ++ (Item.describe item'))
+          Debug.log ("ON ITEM " ++ (Item.describe item))
+          model
+          |> playerLosesItem item'
+          |> playerEnchants item
+
+        _ ->
+          model
+    _ -> 
+      model
 
 resetAction : Engine -> Engine
 resetAction model =
   { model | action = Nothing }
-
-playerUses : Int -> Engine -> Engine
-playerUses itemIdx model =
-  let
-    maybeItem =
-      Util.getAt model.world.player.inventory itemIdx
-
-  in case maybeItem of
-    Nothing ->
-      model
-
-    Just item ->
-      model
-      |> playerUsesItem item
-      --{ model | world = model.world |> World.playerUsesItem item }
-
-playerUsesItem : Item -> Engine -> Engine
-playerUsesItem item model =
-  let
-    world =
-      model.world
-
-    player =
-      world.player
-
-    inventory =
-      player.inventory
-
-    inventory' =
-      inventory
-      |> List.filter (\it -> not (it == item))
-
-    player' =
-      { player | inventory = inventory' }
-
-  in
-    case item.kind of
-      Item.Arm weapon' ->
-        { model | world =
-          { world | player = player' |> Warrior.wield weapon' }
-        }
-
-      Item.Shield armor' ->
-        { model | world =
-          { world | player = player' |> Warrior.wear armor' }
-        }
-
-      Item.Bottle liquid' ->
-        { model | world =
-          { world | player = player' |> Warrior.drink liquid' }
-        }
-
-      -- maybe describe them?
-      Item.QuestItem _ ->
-         model
-
-      Item.Scroll spell' ->
-        --{ model | world = { world | player = player' } } --|> Warrior.cast spell' }
-        model
-        |> castSpell item spell'
-        --|> playerViewsField
 
 playerLosesItem : Item -> Engine -> Engine
 playerLosesItem item model =
@@ -260,7 +271,7 @@ playerLosesItem item model =
 
     player' =
       { player | inventory = inventory' }
-  in 
+  in
     { model | world = { world | player = player' } }
 
 castSpell : Item -> Spell -> Engine -> Engine
@@ -268,31 +279,24 @@ castSpell item spell model =
   let world = model.world in
   case spell of
     Lux ->
-      model 
+      model
       |> playerLosesItem item
       |> enhancePlayerVision
 
     Infuse ->
-      model 
+      --Debug.log "CAST SPELL"
+      model
       |> waitForSelection (Action.use item (Action.enchant))
-      --{ model | world = 
-      --  { world | player = model.player |> Warrior.augmentVision 1 }
-      --          |> World.playerViewsField
-      --}
-
-    --_ -> model
 
 enhancePlayerVision : Engine -> Engine
 enhancePlayerVision model =
-  --Debug.log "ENHANCE VISION"
-  { model | world = model.world 
-          |> World.augmentVision 
+  { model | world = model.world
+          |> World.augmentVision
           |> World.playerViewsField
   }
 
 playerEnchants : Item -> Engine -> Engine
 playerEnchants item model =
-  --Debug.log ("PLAYER ENCHANTS " ++ (Item.describe item))
   { model | world = model.world
           |> World.enchantItem item
   }
@@ -660,7 +664,7 @@ view model =
 
     character =
       model.world.player
-      |> Warrior.cardView (55, 5 + (List.length model.quests)) (model.action)
+      |> Warrior.cardView (55, 5 + (List.length model.quests)+1) (model.action)
 
     log =
       Log.view (2, 37) model.world.events
