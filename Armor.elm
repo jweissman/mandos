@@ -47,6 +47,7 @@ absorption armor =
 
 describe : Armor -> String
 describe armor =
+  --"a " ++
   case armor of
     Suit ->
       "suit"

@@ -248,7 +248,7 @@ stateView model =
       Death cause ->
           Engine.view model.engine ++
           [ Graphics.hero "YOU DIED!" (22, 15)
-          , Graphics.render ("You valiantly fought, but were " ++ cause) (25, 20) "white"
+          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 20) "white"
           , Graphics.render ((toString steps) ++ " steps taken") (34, 26) "lightgrey"
           , Graphics.render ((toString kills) ++ " kills") (34, 27) "lightgrey"
           ]

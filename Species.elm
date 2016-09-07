@@ -39,7 +39,7 @@ power species =
 resistance : Species -> Int
 resistance species =
   case species of
-    Rat    -> 2
+    Rat    -> 1
     Snake  -> 3
     Monkey -> 4
     Bandit -> 5
@@ -79,7 +79,7 @@ adjective species =
 hp : Species -> Int
 hp species =
   case species of
-    Rat -> 5
+    Rat -> 3
     Snake -> 7
     Monkey -> 10
     Bandit -> 14

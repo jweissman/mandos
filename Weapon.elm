@@ -62,7 +62,8 @@ averageDamage weapon =
 
 describe : Weapon -> String
 describe weapon =
-  case weapon of
+  --"a " ++
+  (case weapon of
     Sword ->
       "sword"
 
@@ -73,7 +74,7 @@ describe weapon =
       "dagger"
 
     Enchanted n weapon' ->
-      "+" ++ (toString n) ++ " " ++ (describe weapon')
+      "+" ++ (toString n) ++ " " ++ (describe weapon'))
 
 damage : Int -> Int -> Weapon -> Int
 damage m n weapon =

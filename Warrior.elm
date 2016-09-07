@@ -41,8 +41,8 @@ init point =
   , direction = North
   , position = point
   , gold = 0
-  , attack = 2
-  , defense = 2
+  , attack = 4
+  , defense = 3
   , steps = 0
   , weapon = Nothing
   , armor = Nothing
@@ -303,18 +303,21 @@ horizontalRule (x,y) =
 weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
 weaponView (x,y) action n weapon =
   let
+    desc =
+      "a " ++ Weapon.describe weapon
+
     message =
       case action of
         Nothing ->
           "- "
-          ++ Weapon.describe weapon
+          ++ desc
         Just action' ->
           "("
           ++ toString n
           ++ ") "
           ++ Action.describeWithDefault (Item.simple (Item.weapon weapon)) True action'
           ++ " "
-          ++ Weapon.describe weapon
+          ++ desc
 
     color =
       if action == Just Action.drop then
@@ -328,7 +331,7 @@ armorView : Point -> Maybe Action -> Int -> Armor -> Svg.Svg a
 armorView (x,y) action n armor =
   let
     desc =
-      Armor.describe armor
+      "a " ++ Armor.describe armor
 
     message =
       case action of

@@ -682,17 +682,34 @@ addItem item model =
 
 spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
+  model.rooms
+  |> List.foldr (spawnCreaturesForRoom depth) model
+  
+spawnCreaturesForRoom : Int -> Room -> Level -> Level
+spawnCreaturesForRoom depth room model =
   let
     species =
       Species.level (ChallengeRating.forDepth depth)
 
+    (_,floors) =
+      Room.layout room
+
+    spawnTargets =
+      floors
+      |> Set.toList
+      |> Util.everyNth 9
+
+    creatureCount =
+      1 + (List.length (model.creatures))
+
+    spawnCount =
+      1 + (creatureCount % 5)
+
     creatures' =
-      model.rooms
-      |> Util.everyNth 2
-      |> List.map Room.center
-      |> List.map3 (\species' n pt -> Creature.init species' n pt) species [0..99]
+      spawnTargets
+      |> List.map3 (\species n pt -> Creature.init species n pt) species [(creatureCount)..(creatureCount+spawnCount)]
   in
-    { model | creatures = creatures' }
+    { model | creatures = model.creatures ++ creatures' }
 
 bestPath : Level -> List Point
 bestPath model =
