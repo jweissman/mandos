@@ -53,7 +53,6 @@ completed world (Quest goal _) =
   case goal of
     FindCrystal ->
       world |> World.doesPlayerHaveCrystal
-      --world.crystalTaken
 
     Escape ->
       world.hallsEscaped

@@ -28,24 +28,6 @@ enchant =
 use item action =
   Use item action
 
---throw =
---  Throw
---
---identify =
---  Identify
---
---wield =
---  Wield
---
---wear =
---  Wear
---
---drink =
---  Drink
---
---read =
---  Read
-
 defaultForItem : Bool -> Item -> Action
 defaultForItem equipped {kind} =
   case kind of

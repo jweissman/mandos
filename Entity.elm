@@ -107,12 +107,6 @@ describe entity =
     Imaginary entity ->
       "You imagine there is " ++ (describe entity) ++ " here"
 
-    --Crystal taken _ ->
-    --  if taken then
-    --    "a pedestal where the Crystal was"
-    --  else
-    --    "the shimmering Crystal"
-
     Entrance open _ ->
       if open then
         "an open heavy metal gateway and daylight beyond"
@@ -160,9 +154,6 @@ color entity =
     Imaginary _ ->
       "green"
 
-    --Crystal taken _ ->
-    --  if taken then "gray" else "white"
-
     Entrance open _ ->
       if open then "green" else "red"
 
@@ -195,9 +186,6 @@ position entity =
 
     StairsDown point ->
       point
-
-    --Crystal _ pt ->
-    --  pt
 
     Entrance _ pt ->
       pt

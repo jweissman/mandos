@@ -118,12 +118,6 @@ drink liquid model =
       |> heal 10
       |> drink liquid'
 
---cast : Spell -> Model -> Model
---cast spell model =
---  case spell of
---    Lux ->
---      model |> augmentVision 1
-
 wield : Weapon -> Model -> Model
 wield weapon model =
   case model.weapon of
@@ -276,7 +270,7 @@ inventoryView (x,y) action model =
         equipmentView (x,y+2) action model
 
       hr =
-        horizontalRule (x,y+2+equipCount) --(List.length equipment))
+        horizontalRule (x,y+2+equipCount)
 
       equipCount =
         List.length equipment

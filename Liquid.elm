@@ -2,7 +2,6 @@ module Liquid exposing (Liquid(..), describe, water, holy)
 
 type Liquid = Water
             | Blessed Liquid
-            --| Glowing Liquid
 
 water =
   Water

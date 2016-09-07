@@ -145,7 +145,6 @@ playerSteps direction model =
     |> playerAscendsOrDescends
     |> playerCollectsCoins
     |> playerCollectsItems
-    --|> playerLiberatesCrystal
     |> playerEscapesHall
 
 playerMoves : Direction -> Model -> Model
@@ -353,8 +352,6 @@ playerCollectsItems model =
   else
     model
 
--- todo need to check we aren't dropping equipment
---      (could be disabled?)
 playerDropsItem : Item -> Model -> Model
 playerDropsItem item model =
   let

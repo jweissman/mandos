@@ -12,8 +12,7 @@ type ItemKind = Arm Weapon
               | Shield Armor
               | Bottle Liquid
               | Scroll Spell
-              --| Crystal
-              | QuestItem QuestItemKind -- rtring
+              | QuestItem QuestItemKind
 
 weapon weapon' =
   Arm weapon'
@@ -41,8 +40,6 @@ init pt kind id =
   , id = id
   }
 
--- simple ctor for cases where id/point aren't really relevant...?
--- where we need an item to wrap a weapon/armor keep everything 'the same' or close enough
 simple kind =
   { position = (0,0), kind = kind, id = -101 }
 

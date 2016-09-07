@@ -167,7 +167,6 @@ center {origin,width,height} =
 distance : Room -> Room -> Float
 distance a b =
   Point.distance (center a) (center b) 
-  --List.length (corridor a b))
 
 corridor : Room -> Room -> List Point
 corridor a b =

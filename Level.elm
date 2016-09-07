@@ -30,7 +30,6 @@ type alias Level = { walls : Set Point
                    , creatures : List Creature.Model
                    , downstairs : Maybe Point
                    , upstairs : Maybe Point
-                   --, crystal : Maybe (Point, Bool)
                    , entrance : Maybe (Point, Bool)
 
                    , items : List Item
@@ -50,7 +49,6 @@ init =
   , creatures = []
   , upstairs = Nothing
   , downstairs = Nothing
-  --, crystal = Nothing
   , entrance = Nothing
   , rooms = []
   , viewed = []
@@ -133,14 +131,6 @@ isEntrance position model =
     Nothing ->
       False
 
---isCrystal : Point -> Level -> Bool
---isCrystal position model =
---  case model.crystal of
---    Just (pt,_) ->
---      position == pt
---    Nothing ->
---      False
-
 hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
   List.member point model.viewed
@@ -205,16 +195,6 @@ entitiesAt point model =
       else
         Nothing
 
-    --crystal =
-    --  if isCrystal point model then
-    --    case model.crystal of
-    --      Nothing ->
-    --        Nothing
-    --      Just (pt,taken) ->
-    --        Just (Entity.crystal taken point)
-    --  else
-    --    Nothing
-
     item =
       case itemAt point model of
         Just item' ->
@@ -231,7 +211,6 @@ entitiesAt point model =
       , downstairs
       , upstairs
       , entrance
-      --, crystal
       , item
       , monster
       ]
@@ -255,7 +234,7 @@ crystalLocation : Level -> Maybe Point
 crystalLocation model =
   model.items
   |> List.filter (\{kind} -> kind == Item.crystal)
-  |> List.map .position --(\{position} -> position)
+  |> List.map .position
   |> List.head
 
 -- HELPERS (for update)
@@ -417,15 +396,6 @@ removeItem item model =
   in
     { model | items = items' }
 
---liberateCrystal : Level -> Level
---liberateCrystal model =
---  { model |
---  crystal = case model.crystal of
---      Nothing -> Nothing
---      Just (pt,taken) ->
---        Just (pt, True)
---    }
-
 -- GENERATE
 
 fromRooms : List Room -> Level
@@ -567,7 +537,7 @@ emplaceDownstairs point model =
 emplaceCrystal : Point -> Level -> Level
 emplaceCrystal point model =
   let crystal = Item.init point Item.crystal -1 in
-  { model | items = model.items ++ [ crystal ] --crystal = Just (point, False)
+  { model | items = model.items ++ [ crystal ]
           , downstairs = Nothing
           }
           |> addWallsAround point

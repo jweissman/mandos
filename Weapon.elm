@@ -8,8 +8,6 @@ type Weapon = Sword
             | Axe
             | Dagger
             | Enchanted Int Weapon
-            --| Rapier
-            --| Mace
 
 axe : Weapon
 axe =
