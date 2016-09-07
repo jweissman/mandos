@@ -35,13 +35,14 @@ type alias Model =
 
 init : Point -> Model
 init point =
-  { hp = 200
-  , maxHp = 200
+  let hp = Configuration.startingHitPoints in
+  { hp = hp
+  , maxHp = hp
   , direction = North
   , position = point
   , gold = 0
-  , attack = 100
-  , defense = 50
+  , attack = 1
+  , defense = 1
   , steps = 0
   , weapon = Nothing
   , armor = Nothing
@@ -290,7 +291,7 @@ inventoryView (x,y) action model =
        ++ items
 
 horizontalRule (x,y) =
-  [ Graphics.render "------------" (x,y) "grey" ]
+  [ Graphics.render "" (x,y) "grey" ]
 
 weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
 weaponView (x,y) action n weapon =

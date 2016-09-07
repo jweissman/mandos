@@ -662,21 +662,22 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.scroll Spell.infuse 
-          , Item.bottle liquid
+          [ Item.bottle liquid
           , Item.armor (Armor.tunic)
           , Item.weapon (Weapon.dagger)
           ]
 
         Barracks ->
-          [ Item.scroll Spell.infuse 
-          , Item.bottle liquid
+          [ Item.scroll Spell.lux 
           , Item.weapon (Weapon.sword)
+          , Item.bottle liquid
           , Item.armor (Armor.suit)
           ]
 
         Library ->
           [ Item.scroll Spell.infuse 
+          , Item.bottle liquid
+          , Item.scroll Spell.lux 
           ]
 
     idRange =
