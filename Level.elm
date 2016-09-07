@@ -600,9 +600,9 @@ assignRooms depth model =
   let
     rooms' =
       model.rooms
-      |> Util.mapEveryNth 4 (Room.assign Room.library)
-      |> Util.mapEveryNth 3 (Room.assign Room.barracks)
-      |> Util.mapEveryNth 2 (Room.assign Room.armory)
+      |> Util.mapEveryNth 5 (Room.assign Room.library)
+      |> Util.mapEveryNth 7 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 9 (Room.assign Room.armory)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }

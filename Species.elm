@@ -30,21 +30,21 @@ power : Species -> Int
 power species =
   case species of
     Rat    -> 2
-    Snake  -> 3
     Monkey -> 3
-    Bandit -> 4
-    Tiger  -> 5
-    Dragon -> 9
+    Snake  -> 4
+    Bandit -> 5
+    Tiger  -> 6
+    Dragon -> 10
 
 resistance : Species -> Int
 resistance species =
   case species of
     Rat    -> 2
-    Snake  -> 2
-    Monkey -> 3
-    Bandit -> 3
-    Tiger  -> 5
-    Dragon -> 9
+    Snake  -> 3
+    Monkey -> 4
+    Bandit -> 5
+    Tiger  -> 7
+    Dragon -> 10
 
 glyph : Species -> Char
 glyph species =
