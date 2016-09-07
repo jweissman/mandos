@@ -328,7 +328,7 @@ creatureAttacks creature (model, events, player) =
     if pos == player.position then
        (model, events, player)
        |> playerTakesDamage creature dmg
-       |> playerDies
+       |> playerDies ("killed by " ++ (Creature.describe creature))
     else
       (model, events, player)
 
@@ -342,9 +342,9 @@ playerTakesDamage creature amount (model, events, player) =
   in
     (model, event :: events, player')
 
-playerDies (model, events, player) =
+playerDies cause (model, events, player) =
   if not (isAlive player) then
-    let event = Event.death in
+    let event = Event.death cause in
     (model, event :: events, player)
   else
     (model, events, player)
@@ -632,7 +632,7 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.bottle liquid
+          [ Item.bottle Liquid.lifePotion
           , Item.armor (Armor.tunic)
           , Item.weapon (Weapon.dagger)
           ]
@@ -687,7 +687,7 @@ spawnCreatures depth model =
 
     creatures' =
       model.rooms
-      |> Util.everyNth 3
+      |> Util.everyNth 2
       |> List.map Room.center
       |> List.map3 (\species' n pt -> Creature.init species' n pt) species [0..99]
   in

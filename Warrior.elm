@@ -41,8 +41,8 @@ init point =
   , direction = North
   , position = point
   , gold = 0
-  , attack = 1
-  , defense = 1
+  , attack = 2
+  , defense = 2
   , steps = 0
   , weapon = Nothing
   , armor = Nothing
@@ -118,6 +118,19 @@ drink liquid model =
       |> heal 10
       |> drink liquid'
 
+    Potion effect ->
+      case effect of
+        Liquid.GainLife ->
+          model
+          |> gainHp 2
+
+gainHp : Int -> Model -> Model
+gainHp n model =
+  let hp' = model.maxHp + n in
+  { model | hp = hp'
+          , maxHp = hp'
+        }
+
 wield : Weapon -> Model -> Model
 wield weapon model =
   case model.weapon of
@@ -182,9 +195,9 @@ collectsItem item model =
         Nothing ->
           model |> wield weapon
         Just weapon' ->
-          if (Weapon.averageDamage weapon' < Weapon.averageDamage (weapon)) then
-             model |> wield weapon
-          else
+          --if (Weapon.averageDamage weapon' < Weapon.averageDamage (weapon)) then
+          --   model |> wield weapon
+          --else
             model'
 
     Shield armor ->
@@ -192,9 +205,9 @@ collectsItem item model =
         Nothing ->
           model |> wear armor
         Just armor' ->
-          if (Armor.absorption armor' < Armor.absorption (armor)) then
-            model |> wear armor
-          else
+          --if (Armor.absorption armor' < Armor.absorption (armor)) then
+          --  model |> wear armor
+          --else
             model'
 
     _ ->
@@ -247,7 +260,7 @@ cardView (x,y) action model =
       ]
 
     inventory =
-      inventoryView (x,y+7) action model
+      inventoryView (x,y+6) action model
   in
     stats
     ++ inventory

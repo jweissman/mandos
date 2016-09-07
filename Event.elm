@@ -1,4 +1,4 @@
-module Event exposing (Event, describe, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, ascend, descend, crystalTaken, hallsEscaped, isEnemyKill, pickupItem)
+module Event exposing (Event(..), describe, awaken, pickupCoin, attack, killEnemy, defend, enemyEngaged, death, ascend, descend, crystalTaken, hallsEscaped, isEnemyKill, isPlayerDeath, pickupItem)
 
 import Creature
 import Item exposing (Item)
@@ -12,7 +12,7 @@ type Event
   | AttackEnemy Creature.Model Int
   | KillEnemy Creature.Model
   | DefendEnemy Creature.Model Int
-  | Death
+  | Death String
   | Descend Int
   | Ascend Int
   | CrystalTaken
@@ -38,8 +38,8 @@ killEnemy target =
 defend target damage =
   DefendEnemy target damage
 
-death =
-  Death
+death cause =
+  Death cause
 
 descend level =
   Descend level
@@ -60,6 +60,11 @@ pickupItem item =
 isEnemyKill event =
   case event of
     KillEnemy _ -> True
+    _ -> False
+
+isPlayerDeath event =
+  case event of
+    Death _ -> True
     _ -> False
 
 describe : Event -> String
@@ -83,8 +88,8 @@ describe event =
     DefendEnemy enemy dmg ->
       "You are attacked by " ++ (Creature.describe enemy) ++ " for " ++ (toString dmg) ++ " damage."
 
-    Death ->
-      "You were slain..."
+    Death cause ->
+      "You were slain by " ++ cause
 
     Ascend lvl ->
       "You ascend to level " ++ (toString lvl)

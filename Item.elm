@@ -1,4 +1,4 @@
-module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, bottle, scroll, crystal, enchant, simple)
+module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, bottle, scroll, crystal, enchant, simple, canApply)
 
 import Point exposing (Point)
 import Weapon exposing (Weapon)
@@ -95,3 +95,31 @@ enchant item =
     Bottle _ -> item
     Scroll _ -> item
     QuestItem _ -> item
+
+canApply item' item =
+  case item'.kind of
+    Scroll spell ->
+      if spell == Spell.infuse then
+        case item.kind of
+          Arm _ -> 
+            True
+
+          Shield _ -> 
+            True
+
+          _ -> 
+            False
+      else
+        False
+    _ -> 
+      False
+      --Debug.log "ENCHANT WEAPON"
+      --{ item | kind = Arm (Weapon.enchant weapon) }
+
+    --Shield armor ->
+    --  Debug.log "ENCHANT ARMOR"
+    --  { item | kind = Shield (Armor.enchant armor) }
+
+    --Bottle _ -> item
+    --Scroll _ -> item
+    --QuestItem _ -> item

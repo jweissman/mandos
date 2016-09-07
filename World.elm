@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks, deathEvent)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
@@ -442,6 +442,13 @@ enchantItem item model =
       }
   in
     { model | player = player' }
+
+
+deathEvent : Model -> Maybe Event
+deathEvent model =
+  model.events
+  |> List.filter (Event.isPlayerDeath)
+  |> List.head
 
 
 -- VIEW
