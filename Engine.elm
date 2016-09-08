@@ -17,6 +17,7 @@ import Status
 import Item exposing (Item, ItemKind(..))
 import Spell exposing (Spell(..))
 import Action exposing (Action(..))
+import Palette
 
 import Set exposing (Set)
 import Time
@@ -670,7 +671,7 @@ view model =
           model |> hoverMessage
 
     note =
-      Graphics.render debugMsg (25,1) "rgba(160,160,160,0.6)"
+      Graphics.render debugMsg (25,1) Palette.accentLighter
 
     quests =
       Journal.view (55,2) model.world model.quests

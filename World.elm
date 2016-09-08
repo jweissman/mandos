@@ -1,5 +1,6 @@
 module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks, deathEvent)
 
+import Palette
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 import Optics
@@ -136,12 +137,14 @@ entitiesAt pt model =
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
+  let model' = model |> playerAttacks direction in
   if not (canPlayerStep direction model) then
     model
-    |> playerAttacks direction
+    --|> playerAttacks direction
     |> playerDestroysWalls direction
   else
     model
+    --|> playerAttacks direction
     |> playerMoves direction
     |> playerAscendsOrDescends
     |> playerCollectsCoins
@@ -534,14 +537,14 @@ highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
   let
     pathColor =
-      "rgba(128,128,192,0.85)"
+      Palette.tertiary' 0 0.7
     targetColor =
-      "rgba(128,128,192,0.3)"
+      Palette.tertiary' 2 0.7
   in
 
     case cells of
       [] -> []
-      [x] -> [highlightCell x pathColor]
+      [x] -> [highlightCell x targetColor]
       a :: b :: _ ->
         let
           tail =
@@ -549,7 +552,7 @@ highlightCells cells =
               Nothing -> []
               Just rest -> highlightCells rest
         in
-          (highlightCell a targetColor) :: tail
+          (highlightCell a pathColor) :: tail
 
 highlightCell (x,y) color =
   Graphics.render "@" (x,y) color

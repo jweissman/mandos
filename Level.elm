@@ -621,10 +621,10 @@ assignRooms depth model =
   let
     rooms' =
       model.rooms
-      |> Util.mapEveryNth 5 (Room.assign Room.library)
-      |> Util.mapEveryNth 7 (Room.assign Room.barracks)
-      |> Util.mapEveryNth 9 (Room.assign Room.armory)
-      |> Util.mapEveryNth 13 (Room.assign Room.miningCamp)
+      |> Util.mapEveryNth 3 (Room.assign Room.library)
+      |> Util.mapEveryNth 4 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 5 (Room.assign Room.armory)
+      |> Util.mapEveryNth 6 (Room.assign Room.miningCamp)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
@@ -642,9 +642,6 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
-    --challenge =
-    --  ChallengeRating.forDepth depth
-
     itemKinds =
       case purpose of
         Armory ->
@@ -656,7 +653,7 @@ furnishRoomFor purpose room depth model =
           ]
 
         Barracks ->
-          [ Item.scroll Spell.lux 
+          [ Item.scroll Spell.lux
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
           , Item.weapon Weapon.axe
@@ -664,19 +661,19 @@ furnishRoomFor purpose room depth model =
           ]
 
         Library ->
-          [ Item.scroll Spell.lux 
+          [ Item.scroll Spell.lux
           , Item.bottle Liquid.water
-          , Item.scroll Spell.infuse 
+          , Item.scroll Spell.infuse
           , Item.armor Armor.tunic
           , Item.bottle Liquid.lifePotion
           ]
 
         MiningCamp ->
-          [ Item.weapon Weapon.pick 
+          [ Item.weapon Weapon.pick
           , Item.bottle Liquid.water
-          , Item.scroll Spell.lux 
+          , Item.scroll Spell.lux
           , Item.bottle Liquid.lifePotion
-          , Item.weapon Weapon.whip 
+          , Item.weapon Weapon.whip
           ]
     idRange =
       [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]
@@ -711,7 +708,7 @@ spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
   model.rooms
   |> List.foldr (spawnCreaturesForRoom depth) model
-  
+
 spawnCreaturesForRoom : Int -> Room -> Level -> Level
 spawnCreaturesForRoom depth room model =
   let
@@ -776,12 +773,12 @@ growGrass model =
     seeds =
       floors
       |> Set.toList
-      |> Util.filterChamp --everyNth 2
+      |> Util.filterChamp
   in
     seeds
     |> List.foldr seedGrassAt model
     |> evolveGrass 8
-    
+
 seedGrassAt : Point -> Level -> Level
 seedGrassAt pt model =
   let
@@ -803,12 +800,12 @@ evolveGrass n model =
   if n < 0 then
     model
   else
-    let 
-      model' = 
+    let
+      model' =
         model.floors
         |> Set.toList
         |> List.foldr evolveGrassAt model
-    in 
+    in
       evolveGrass (n-1) model'
 
 evolveGrassAt pt model =
