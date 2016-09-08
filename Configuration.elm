@@ -11,8 +11,8 @@ viewWidth = 100
 viewHeight = 60
 
 -- dungeon
-maxRoomWidth = 15
-maxRoomHeight = 8
+maxRoomWidth = 16
+maxRoomHeight = 12
 
 -- character
 visionRadius = 2

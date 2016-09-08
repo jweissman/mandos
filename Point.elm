@@ -1,4 +1,4 @@
-module Point exposing (Point, x, y, slide, describe, distance, random, randomWithOffset, code, perimeter, grid, isAdjacent, towards, towards', adjacent)
+module Point exposing (Point, slide, describe, distance, random, randomWithOffset, code, perimeter, grid, isAdjacent, towards, towards', adjacent)
 
 import Direction exposing (Direction(..), directions)
 import Configuration
@@ -9,8 +9,8 @@ import Random
 
 type alias Point = ( Int, Int )
 
-x (x',_) = x'
-y (_,y') = y'
+--x (x',_) = x'
+--y (_,y') = y'
 
 adjacent : Point -> List Point
 adjacent pt =

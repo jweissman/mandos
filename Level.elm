@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation, extrude)
 
 
 import Point exposing (Point)
@@ -482,12 +482,18 @@ connectRooms' (a, b) model =
 extrudeCorridor : List Point -> Level -> Level
 extrudeCorridor pts model =
   pts
-  |> List.foldr extrudeCorridor' model
+  |> List.foldr extrude model
 
-extrudeCorridor' pt model =
-  { model | floors = Set.insert pt model.floors  }
-          |> addWallsAround pt
-          |> removeWall pt
+--extrudeCorridor' pt model =
+--  { model | floors = Set.insert pt model.floors  }
+--          |> addWallsAround pt
+--          |> removeWall pt
+
+extrude pt model =
+  model
+  |> addFloor pt
+  |> addWallsAround pt
+  |> removeWall pt
 
 -- doors
 emplaceDoor : Point -> Level -> Level
@@ -618,6 +624,7 @@ assignRooms depth model =
       |> Util.mapEveryNth 5 (Room.assign Room.library)
       |> Util.mapEveryNth 7 (Room.assign Room.barracks)
       |> Util.mapEveryNth 9 (Room.assign Room.armory)
+      |> Util.mapEveryNth 13 (Room.assign Room.miningCamp)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
@@ -641,8 +648,8 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.bottle Liquid.lifePotion
-          , Item.armor Armor.tunic
+          [ Item.bottle Liquid.water
+          , Item.bottle Liquid.water
           , Item.weapon Weapon.dagger
           , Item.armor Armor.suit
           , Item.weapon Weapon.whip
@@ -652,18 +659,25 @@ furnishRoomFor purpose room depth model =
           [ Item.scroll Spell.lux 
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
-          , Item.armor Armor.plate
           , Item.weapon Weapon.axe
+          , Item.armor Armor.plate
           ]
 
         Library ->
-          [ Item.scroll Spell.infuse 
-          , Item.bottle Liquid.holyWater
-          , Item.scroll Spell.lux 
-          , Item.bottle Liquid.lifePotion
+          [ Item.scroll Spell.lux 
+          , Item.bottle Liquid.water
           , Item.scroll Spell.infuse 
+          , Item.armor Armor.tunic
+          , Item.bottle Liquid.lifePotion
           ]
 
+        MiningCamp ->
+          [ Item.weapon Weapon.pick 
+          , Item.bottle Liquid.water
+          , Item.scroll Spell.lux 
+          , Item.bottle Liquid.lifePotion
+          , Item.weapon Weapon.whip 
+          ]
     idRange =
       [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]
 

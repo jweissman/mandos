@@ -1,4 +1,4 @@
-module Weapon exposing (Weapon, damage, describe, averageDamage, dagger, sword, axe, whip, enchant, threatRange)
+module Weapon exposing (Weapon, damage, describe, averageDamage, threatRange, destroyWalls, dagger, sword, axe, whip, pick, enchant)
 
 import Util
 import Point exposing (Point)
@@ -10,6 +10,7 @@ type Weapon = Sword
             | Axe
             | Dagger
             | Whip
+            | Pick
             | Enchanted Int Weapon
 
 axe : Weapon
@@ -28,6 +29,10 @@ whip : Weapon
 whip =
   Whip
 
+pick : Weapon
+pick =
+  Pick
+
 enchant : Weapon -> Weapon
 enchant weapon =
   case weapon of
@@ -36,6 +41,12 @@ enchant weapon =
 
     _ ->
       Enchanted 1 weapon
+
+destroyWalls : Weapon -> Bool
+destroyWalls weapon =
+  case weapon of
+    Pick -> True
+    _ -> False
 
 threatRange : Point -> Direction -> Weapon -> List Point
 threatRange pt dir weapon =
@@ -48,9 +59,9 @@ threatRange pt dir weapon =
       threatRange pt dir weapon'
 
     Whip ->
-      [ pt |> Point.slide dir 
-      , pt |> Point.slide dir |> Point.slide dir 
-      , pt |> Point.slide dir |> Point.slide dir |> Point.slide dir 
+      [ pt |> Point.slide dir
+      , pt |> Point.slide dir |> Point.slide dir
+      , pt |> Point.slide dir |> Point.slide dir |> Point.slide dir
       ]
 
     _ ->
@@ -86,6 +97,9 @@ describe weapon =
     Whip ->
       "whip"
 
+    Pick ->
+      "pick"
+
     Enchanted n weapon' ->
       "+" ++ (toString n) ++ " " ++ (describe weapon'))
 
@@ -107,6 +121,9 @@ damageRange weapon =
 
     Whip ->
       [1..6]
+
+    Pick ->
+      [0..1]
 
     Enchanted n weapon' ->
       (damageRange weapon')

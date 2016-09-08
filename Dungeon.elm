@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall)
 
 import Warrior
 import Creature
@@ -95,3 +95,7 @@ purge depth model =
 playerSees : List Point -> Int -> Dungeon -> Dungeon
 playerSees pts depth model =
   model |> apply (Level.playerSees pts) depth
+
+playerDestroysWall : Point -> Int -> Dungeon -> Dungeon
+playerDestroysWall pt depth model =
+  model |> apply (Level.extrude pt) depth

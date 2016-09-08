@@ -27,6 +27,8 @@ type alias Model =
   , steps : Int
   , weapon : Maybe Weapon
   , armor : Maybe Armor
+  -- , ring : Maybe Ring
+  -- , helm : Maybe Helm
   , inventory : List Item
   , timesGearChanged : Int
   , visionRadius : Int

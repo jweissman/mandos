@@ -139,6 +139,7 @@ playerSteps direction model =
   if not (canPlayerStep direction model) then
     model
     |> playerAttacks direction
+    |> playerDestroysWalls direction
   else
     model
     |> playerMoves direction
@@ -218,20 +219,10 @@ playerAttacks direction model =
       attackedPositions
       |> List.map (\pt -> (level model) |> Level.creatureAt pt)
       |> List.filterMap identity
-      --level model
-      --|> Level.creatureAt attackedPosition
   in
     creatures
     |> List.foldr (\creature -> playerAttacksCreature creature) model
     |> removeDeceasedCreatures
-    --case maybeCreature of
-    --  Nothing ->
-    --    model
-
-    --  Just creature ->
-    --    model
-    --    |> playerAttacksCreature creature
-    --    |> removeDeceasedCreatures
 
 playerAttacksCreature : Creature.Model -> Model -> Model
 playerAttacksCreature creature model =
@@ -264,6 +255,34 @@ removeDeceasedCreatures model =
   in
     { model | dungeon = dungeon'
             , events = model.events ++ events' }
+
+playerDestroysWalls : Direction -> Model -> Model
+playerDestroysWalls direction model =
+  let
+    pt =
+      model.player.position 
+      |> Point.slide direction
+
+    isWall =
+      Set.member pt (walls model)
+
+    destructive =
+      case model.player.weapon of
+        Just weapon ->
+          Weapon.destroyWalls weapon
+        Nothing ->
+          False
+
+    dungeon' =
+      model.dungeon
+      |> Dungeon.playerDestroysWall pt model.depth
+
+  in 
+    if isWall && destructive then
+      { model | dungeon = dungeon'
+              , player = model.player |> Warrior.step direction }
+    else
+      model
 
 playerAscendsOrDescends : Model -> Model
 playerAscendsOrDescends model =
