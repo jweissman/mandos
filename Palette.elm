@@ -1,30 +1,30 @@
 module Palette exposing (..)
 
 primary' shade alpha = rgba (purple' shade alpha)
-primary        = rgb (purple 0)
-primaryLighter   = rgb (purple 1)
-primaryLight = rgb (purple 2)
+primary        = rgb (purple 2)
+primaryLighter   = rgb (purple 0)
+primaryLight = rgb (purple 1)
 primaryDark    = rgb (purple 3)
 primaryDarker  = rgb (purple 4)
 
 secondary' shade alpha = rgba (yellow' shade alpha)
-secondary        = rgb (yellow 0)
-secondaryLighter   = rgb (yellow 1)
-secondaryLight = rgb (yellow 2)
+secondary        = rgb (yellow 2)
+secondaryLighter   = rgb (yellow 0)
+secondaryLight = rgb (yellow 1)
 secondaryDark    = rgb (yellow 3)
 secondaryDarker  = rgb (yellow 4)
 
 tertiary' shade alpha = rgba (blue' shade alpha)
-tertiary         = rgb (blue 0)
-tertiaryLighter    = rgb (blue 1)
-tertiaryLight  = rgb (blue 2)
+tertiary         = rgb (blue 2)
+tertiaryLighter    = rgb (blue 0)
+tertiaryLight  = rgb (blue 1)
 tertiaryDark     = rgb (blue 3)
 tertiaryDarker   = rgb (blue 4)
 
-accent        = rgb (green 0)
+accent        = rgb (green 2)
 accent' shade alpha = rgba (green' shade alpha)
-accentLighter   = rgb (green 1)
-accentLight = rgb (green 2)
+accentLighter   = rgb (green 0)
+accentLight = rgb (green 1)
 accentDark    = rgb (green 3)
 accentDarker  = rgb (green 4)
 
@@ -67,40 +67,39 @@ green' shade alpha =
   let (r,g,b) = green shade in
   (r,g,b,alpha)
 
-
 purple : Int -> (Int,Int,Int)
 purple shade =
   case shade of
-   0 -> ( 97, 52, 97)
-   1 -> (181,157,181)
-   2 -> (130, 88,130)
-   3 -> ( 72, 25, 72)
-   _ -> ( 40,  3, 40)
-
+    2 -> (155, 58,102)
+    0 -> (228,175,199)
+    1 -> (197,113,151)
+    3 -> (115, 22, 64)
+    _ -> ( 70,  0, 32)
 
 yellow : Int -> (Int, Int, Int)
 yellow shade =
   case shade of
-    0 -> (150,127, 80)
-    1 -> (255,244,221)
-    2 -> (200,179,136)
-    3 -> (111, 87, 38)
-    _ -> ( 61, 43,  5)
+    2 -> (185,168, 69)
+    0 -> (255,247,196)
+    1 -> (235,221,134)
+    3 -> (137,121, 26)
+    _ -> ( 83, 71,  0)
 
 blue : Int -> (Int, Int, Int)
 blue shade =
   case shade of
-    0 -> ( 59, 70,101)
-    1 -> (164,170,186)
-    2 -> ( 96,107,134)
-    3 -> ( 31, 43, 74)
-    _ -> (  7, 17, 41)
+    2 -> ( 78, 55,126)
+    0 -> (173,159,201)
+    1 -> (118, 99,161)
+    3 -> ( 47, 25, 94)
+    _ -> ( 22,  5, 57)
 
 green : Int -> (Int, Int, Int)
 green shade =
   case shade of
-    0 -> (133,145, 78)
-    1 -> (242,248,215)
-    2 -> (182,193,131)
-    3 -> ( 95,107, 37)
-    _ -> ( 50, 59,  5)
+    2 -> (126,170, 63)
+    0 -> (218,241,185)
+    1 -> (178,216,123)
+    3 -> ( 84,126, 24)
+    _ -> ( 45, 76,  0)
+

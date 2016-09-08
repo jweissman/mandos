@@ -104,4 +104,4 @@ describe event =
       "The doors swing open and you emerge into daylight...!"
 
     PickupItem item ->
-      "You pick up " ++ (Item.describe item)
+      "You pick up the " ++ (Item.describe item)

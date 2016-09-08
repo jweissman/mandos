@@ -137,23 +137,21 @@ entitiesAt pt model =
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
-  let model' = model |> playerAttacks direction in
-  if not (canPlayerStep direction model) then
-    model
-    --|> playerAttacks direction
-    |> playerDestroysWalls direction
-  else
-    model
-    --|> playerAttacks direction
-    |> playerMoves direction
-    |> playerAscendsOrDescends
-    |> playerCollectsCoins
-    |> playerCollectsItems
-    |> playerEscapesHall
+  model
+  |> playerAttacks direction
+  |> playerDestroysWalls direction
+  |> playerMoves direction
+  |> playerAscendsOrDescends
+  |> playerCollectsCoins
+  |> playerCollectsItems
+  |> playerEscapesHall
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
-  { model | player = (Warrior.step direction model.player) }
+  if (canPlayerStep direction model) then
+    { model | player = (Warrior.step direction model.player) }
+  else
+    model
 
 canPlayerStep : Direction -> Model -> Bool
 canPlayerStep direction model =

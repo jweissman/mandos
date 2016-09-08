@@ -25,7 +25,7 @@ hero string (px,py) =
         , y (toString py)
         , fontSize "10"
         , fontFamily font 
-        , fill Palette.primaryLight
+        , fill "white" --Palette.primaryLighter
         ] [ Html.text string ]
 
 jumbo : String -> Point.Point -> Svg.Svg a
@@ -34,7 +34,7 @@ jumbo string (px,py) =
         , y (toString py)
         , fontSize "36"
         , fontFamily font
-        , fill (Palette.primary' 0 0.5)
+        , fill (Palette.primary' 3 0.8)
         ] [ Html.text string ]
 
 

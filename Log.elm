@@ -4,6 +4,7 @@ import Creature
 import Event exposing (Event)
 import Point exposing (Point)
 import Graphics
+import Palette
 
 import Svg 
 
@@ -27,7 +28,7 @@ view origin model =
       List.indexedMap (logLineView origin) notes
 
     header =
-      Graphics.render "EVENTS" origin "grey"
+      Graphics.render "EVENTS" origin "white"
 
   in
     [header] ++ logLines
@@ -35,4 +36,5 @@ view origin model =
 logLineView : Point -> Int -> String -> Svg.Svg a
 logLineView origin idx note =
   let (ox,oy) = origin in
-  Graphics.render note (ox,oy+1+idx) ("#" ++ (toString (9-idx)) ++ "808" ++ (toString (9-idx)) ++ "8")
+  Graphics.render note (ox,oy+1+idx) (Palette.rgb (Palette.purple idx))
+  --("#" ++ (toString (9-idx)) ++ "808" ++ (toString (9-idx)) ++ "8")

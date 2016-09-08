@@ -16,5 +16,5 @@ maxRoomHeight = 12
 
 -- character
 visionRadius = 2
-inventoryLimit = 6
+inventoryLimit = 20
 startingHitPoints = 14

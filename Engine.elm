@@ -96,19 +96,19 @@ handleKeypress keyChar model =
     case model.action of
       Just action ->
         model |> case keyChar of
-          '0' -> playerActs 0
-          '1' -> playerActs 1
-          '2' -> playerActs 2
-          '3' -> playerActs 3
-          '4' -> playerActs 4
-          '5' -> playerActs 5
-          '6' -> playerActs 6
-          '7' -> playerActs 7
-          '8' -> playerActs 8
-          '9' -> playerActs 9
+          --'0' -> playerActs 0
+          --'1' -> playerActs 1
+          --'2' -> playerActs 2
+          --'3' -> playerActs 3
+          --'4' -> playerActs 4
+          --'5' -> playerActs 5
+          --'6' -> playerActs 6
+          --'7' -> playerActs 7
+          --'8' -> playerActs 8
+          --'9' -> playerActs 9
           'd' -> waitForSelection (if action == Action.drop then Action.default else Action.drop)
           'i' -> (if action == Action.drop then waitForSelection Action.default else resetAction)
-          _ -> resetAction
+          _ -> playerActs (Util.fromAlpha keyChar) -- resetAction
 
       Nothing ->
         model |> case keyChar of

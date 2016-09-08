@@ -1,9 +1,26 @@
-module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample, zip, filterChamp)
+module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample, zip, filterChamp, toAlpha, fromAlpha)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
 import Set exposing (Set)
 ---import Mouse
+
+import String
+
+
+alphabet =
+  ['a','b','c','e','f','g','h','j','k','l','m','n','o','p','q','r','s','t','u','v','x','y','z','-']
+
+-- 0-26 should be 'a' thru 'z'
+toAlpha : Int -> String
+toAlpha idx =
+  let alpha = (getAt alphabet idx |> Maybe.withDefault '-') in
+  String.fromChar alpha
+
+fromAlpha : Char -> Int
+fromAlpha ch =
+  elemIndex ch alphabet
+  |> Maybe.withDefault -1
 
 -- deterministically 'sample' a list based on two variables
 sample : Int -> Int -> a -> List a -> a
@@ -118,3 +135,12 @@ takeWhile' predicate list =
                else [x]
 
 
+
+elemIndex : a -> List a -> Maybe Int
+elemIndex x = findIndex ((==)x)
+
+findIndex : (a -> Bool) -> List a -> Maybe Int
+findIndex p = List.head << findIndices p
+
+findIndices : (a -> Bool) -> List a -> List Int
+findIndices p = List.map fst << List.filter (\(i,x) -> p x) << List.indexedMap (,)

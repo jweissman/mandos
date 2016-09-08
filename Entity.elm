@@ -132,55 +132,45 @@ color : Entity -> String
 color entity =
   case entity of
     Monster _ ->
-      --"grey"
-      Palette.secondary
-
-    Player _ ->
-      Palette.primaryLighter
-      --"white"
-
-    Wall _ ->
-      Palette.tertiaryLight
-      --"darkgrey"
-
-    Coin _ ->
+      "white"
+      --Palette.accentLighter
+      
+    Item _ ->
       Palette.secondaryLight
 
+    Coin _ ->
+      "yellow"
+      --Palette.secondaryLighter
+
+    Player _ ->
+      "white"
+
+    Wall _ ->
+      Palette.tertiaryLighter
+
     Floor _ ->
+      Palette.primaryDark
+
+    Entrance open _ ->
       Palette.tertiaryLight
-      --"rgba(160,160,240,0.5)"
 
     Door _ ->
       Palette.tertiaryLight
-      --"orange"
 
     StairsUp _ ->
       Palette.tertiaryLight
-      --"lightgray"
 
     StairsDown _ ->
       Palette.tertiaryLight
-      --"lightgray"
+
+    Grass _ ->
+      Palette.accent
 
     Memory _ ->
-      Palette.primary' 3 0.8
-      --"rgba(80,80,120,0.4)"
+      Palette.tertiary' 2 0.5 --Dark
 
     Imaginary _ ->
       Palette.accent' 1 0.4
-      --"green"
-
-    Entrance open _ ->
-      Palette.accentLight
-      --if open then "green" else "red"
-
-    Item _ ->
-      Palette.secondaryLight
-      --"yellow"
-
-    Grass _ ->
-      Palette.accentLight
-      --"green"
 
 position : Entity -> Point.Point
 position entity =

@@ -9,6 +9,7 @@ import Armor exposing (Armor)
 import Item exposing (Item, ItemKind(..))
 import Action exposing (Action)
 import Liquid exposing (Liquid(..))
+import Palette
 
 import Graphics
 import Svg
@@ -245,6 +246,7 @@ itemAtIndex idx model =
 
         Nothing ->
           Util.getAt model.inventory idx
+  
 
 -- VIEW
 cardView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
@@ -257,9 +259,9 @@ cardView (x,y) action model =
       toString (resistance model)
 
     stats =
-      [ Graphics.render "STATS" (x, y) "gray"
-      , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) "lightgray"
-      , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) "lightgray"
+      [ Graphics.render "STATS" (x, y) "white"
+      , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) Palette.primaryLight
+      , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) Palette.primaryLight
       ]
 
     inventory =
@@ -271,28 +273,30 @@ cardView (x,y) action model =
 inventoryView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
 inventoryView (x,y) action model =
   let
+    act = 
+      not (action == Nothing)
     header =
-      [ Graphics.render "GEAR" (x, y) "gray" ]
+      [ Graphics.render "GEAR" (x, y) (if act then "white" else Palette.primaryLighter) ] --"white" ]
   in
   if model.armor == Nothing && model.weapon == Nothing then
     if List.length model.inventory > 0 then
       header
-      ++ (List.indexedMap (inventoryItemView (x,y+2) action) model.inventory)
+      ++ (List.indexedMap (inventoryItemView (x,y+1) action) model.inventory)
     else
       []
   else
     let
       equipment =
-        equipmentView (x,y+2) action model
+        equipmentView (x,y+1) action model
 
       hr =
-        horizontalRule (x,y+2+equipCount)
+        horizontalRule (x,y+1+equipCount)
 
       equipCount =
         List.length equipment
 
       items =
-        List.map2 (inventoryItemView (x,y+3) action) [equipCount..9] model.inventory
+        List.map2 (inventoryItemView (x,y+2) action) [equipCount..30] model.inventory
 
     in
        header
@@ -301,13 +305,16 @@ inventoryView (x,y) action model =
        ++ items
 
 horizontalRule (x,y) =
-  [ Graphics.render "---" (x,y) "grey" ]
+  [ Graphics.render "---" (x,y) inactive ]
 
 weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
 weaponView (x,y) action n weapon =
   let
     desc =
       Weapon.describe weapon
+
+    asItem =
+      (Item.simple (Item.weapon weapon))
 
     message =
       case action of
@@ -316,17 +323,25 @@ weaponView (x,y) action n weapon =
           ++ desc
         Just action' ->
           "("
-          ++ toString n
+          ++ Util.toAlpha n
           ++ ") "
-          ++ Action.describeWithDefault (Item.simple (Item.weapon weapon)) True action'
+          ++ Action.describeWithDefault asItem True action'
           ++ " "
           ++ desc
 
     color =
-      if action == Just Action.drop then
-        "red"
-      else
-        "lightgray"
+      case action of
+        Nothing ->
+          default
+        
+        Just act ->
+          if act |> Action.canPerform asItem then
+            if act == Action.drop then
+              warning
+            else
+              active
+          else
+            inactive
   in
     Graphics.render message (x,y) color
 
@@ -336,6 +351,9 @@ armorView (x,y) action n armor =
     desc =
       Armor.describe armor
 
+    asItem =
+      (Item.simple (Item.armor armor))
+
     message =
       case action of
         Nothing ->
@@ -343,17 +361,25 @@ armorView (x,y) action n armor =
           ++ desc
         Just action' ->
           "("
-          ++ toString n
+          ++ Util.toAlpha n
           ++ ") "
-          ++ Action.describeWithDefault (Item.simple (Item.armor armor)) True action'
+          ++ Action.describeWithDefault asItem True action'
           ++ " "
           ++ desc
 
     color =
-      if action == Just Action.drop then
-        "red"
-      else
-        "lightgray"
+      case action of
+        Nothing ->
+          default
+        
+        Just act ->
+          if act |> Action.canPerform asItem then
+            if act == Action.drop then
+              warning
+            else
+              active
+          else
+            inactive
   in
     Graphics.render message (x,y) color
 
@@ -383,7 +409,7 @@ inventoryItemView (x,y) action n item =
 
         Just action' ->
           "("
-          ++ (toString n)
+          ++ (Util.toAlpha n)
           ++ ") "
           ++ Action.describeWithDefault item False action'
           ++ " "
@@ -392,15 +418,21 @@ inventoryItemView (x,y) action n item =
     color =
       case action of
         Nothing ->
-          "lightgrey"
+          default
 
         Just act ->
           if act |> Action.canPerform item then
             if act == Action.drop then
-              "red"
+              warning
             else
-              "lightgrey"
+              active
           else
-            "darkgrey"
+            inactive
   in
     Graphics.render desc (x,y+n) color
+
+
+default = Palette.primaryLight
+active = Palette.primaryLighter
+inactive = Palette.primary
+warning = "red" -- Palette.tertiary
