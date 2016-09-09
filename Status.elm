@@ -20,7 +20,7 @@ view (x,y) model =
     life =
       lifeView (x+10,y) model.player.hp model.player.maxHp
   in
-    level 
+    level
     ++ gold
     ++ life
 
@@ -43,28 +43,3 @@ lifeView (x,y) hp maxHp =
   , Graphics.render "/" (x+4,y) Palette.bright
   , Graphics.render (toString maxHp) (x+5,y) Palette.bright
   ]
-  --let
-  --  mandos =
-  --    "| MANDOS v0.1"
-
-  --  level =
-  --    "LEVEL: " ++ toString model.depth
-
-  --  gold =
-  --    "GOLD: " ++ toString model.player.gold
-
-  --  hp =
-  --    "HP: " ++ toString model.player.hp ++ "/" ++ toString model.player.maxHp
-
-  --  parts =
-  --    [ mandos
-  --    , gold
-  --    , hp
-  --    , level
-  --    ]
-
-  --  message =
-  --    String.join "  |  " parts
-
-  --in
-  --   Graphics.render message (x,y) "lightgray"

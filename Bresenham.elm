@@ -1,7 +1,6 @@
 module Bresenham exposing (line)
 
 import Point exposing (Point)
---import Path
 
 line : Point -> Point -> List Point
 line (ax,ay) (bx,by) =
