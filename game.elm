@@ -231,8 +231,8 @@ stateView model =
       Generating ->
         [ jumbo
         , hero
-        , Graphics.render "Generating world, please wait..." (32, 35) Palette.secondaryLighter
-        , Graphics.render "(This may take a little while!)" (32, 38) Palette.secondaryLight
+        , Graphics.render "Generating world, please wait..." (32, 45) Palette.secondaryLighter
+        , Graphics.render "(This may take a little while!)" (32, 48) Palette.secondaryLight
         ]
 
       Victory ->
@@ -240,17 +240,17 @@ stateView model =
         ++ [
             Graphics.hero "YOU WON!" (18, 15)
           , Graphics.render "Congratulations!" (34, 20) Palette.secondaryLighter
-          , Graphics.render "You escaped the Halls of Mandos!" (31, 32) Palette.secondaryLight
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 36) Palette.secondaryLight
-          , Graphics.render ((toString kills) ++ " kills") (34, 37) Palette.secondaryLight
+          , Graphics.render "You escaped the Halls of Mandos!" (31, 42) Palette.secondaryLight
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 46) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (34, 47) Palette.secondaryLight
           ]
 
       Death cause ->
           Engine.view model.engine ++
           [ Graphics.hero "YOU DIED!" (16, 15)
-          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 30) Palette.bright
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 36) Palette.secondaryLight
-          , Graphics.render ((toString kills) ++ " kills") (34, 37) Palette.secondaryLight
+          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 40) Palette.bright
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 46) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (34, 47) Palette.secondaryLight
           ]
 
       Playing ->

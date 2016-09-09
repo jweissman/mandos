@@ -18,7 +18,9 @@ import Event exposing (..)
 import Util
 import Configuration
 import Item exposing (Item)
+import Inventory
 import Spell exposing (Spell(..))
+
 
 import Set exposing (Set)
 import String
@@ -138,18 +140,18 @@ entitiesAt pt model =
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
   model
-  |> playerAttacks direction
   |> playerDestroysWalls direction
   |> playerMoves direction
-  |> playerAscendsOrDescends
-  |> playerCollectsCoins
-  |> playerCollectsItems
-  |> playerEscapesHall
+  |> playerAttacks direction
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
   if (canPlayerStep direction model) then
     { model | player = (Warrior.step direction model.player) }
+    |> playerAscendsOrDescends
+    |> playerEscapesHall
+    |> playerCollectsCoins
+    |> playerCollectsItems
   else
     model
 
@@ -261,7 +263,7 @@ playerDestroysWalls : Direction -> Model -> Model
 playerDestroysWalls direction model =
   let
     pt =
-      model.player.position 
+      model.player.position
       |> Point.slide direction
 
     isWall =
@@ -278,7 +280,7 @@ playerDestroysWalls direction model =
       model.dungeon
       |> Dungeon.playerDestroysWall pt model.depth
 
-  in 
+  in
     if isWall && destructive then
       { model | dungeon = dungeon'
               , player = model.player |> Warrior.step direction }
@@ -368,7 +370,7 @@ illuminate source model =
 
 playerCollectsItems : Model -> Model
 playerCollectsItems model =
-  if List.length model.player.inventory < Configuration.inventoryLimit then
+  if Inventory.size model.player < Configuration.inventoryLimit then
     case (level model) |> Level.itemAt (model.player.position) of
       Nothing ->
         model

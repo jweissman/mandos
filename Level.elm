@@ -357,7 +357,7 @@ playerTakesDamage creature amount (model, events, player) =
     (model, event :: events, player')
 
 playerDies cause (model, events, player) =
-  if not (isAlive player) then
+  if not (isAlive player) && not (List.any Event.isPlayerDeath events) then
     let event = Event.death cause in
     (model, event :: events, player)
   else

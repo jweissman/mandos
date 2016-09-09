@@ -34,7 +34,7 @@ jumbo string (px,py) =
         , y (toString py)
         , fontSize "48"
         , fontFamily font
-        , fill (Palette.primary' 3 0.8)
+        , fill (Palette.primary' 1 0.4)
         ] [ Html.text string ]
 
 

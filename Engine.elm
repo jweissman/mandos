@@ -585,7 +585,8 @@ playerExplores model =
       |> List.filter (\pt -> Set.member pt (explored))
 
     visibleItems =
-      if List.length model.world.player.inventory < Configuration.inventoryLimit then
+      --if List.length model.world.player.inventory < Configuration.inventoryLimit then
+      if Inventory.size model.world.player < Configuration.inventoryLimit then
         (World.items model.world)
         |> List.map .position
         |> List.filter (\pt -> Set.member pt (explored))

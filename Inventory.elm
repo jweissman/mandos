@@ -1,4 +1,4 @@
-module Inventory exposing (view, itemAtIndex)
+module Inventory exposing (view, itemAtIndex, size)
 
 import Util
 import Point exposing (Point)
@@ -14,15 +14,18 @@ import Dict exposing (Dict)
 import Svg
 
 -- HELPERS
+size : Model -> Int
+size model =
+  model |> organize |> Dict.size
 
 organize : Model -> Dict String (Int, Item)
 organize model =
-  let 
-    countItems = \it dict -> 
-      dict 
-      |> Dict.update (Item.describe it) (\entry -> 
-        case entry of 
-          Nothing -> 
+  let
+    countItems = \it dict ->
+      dict
+      |> Dict.update (Item.describe it) (\entry ->
+        case entry of
+          Nothing ->
             Just (1,it)
 
           Just (ct',it') ->
@@ -35,11 +38,11 @@ organize model =
 organizedItemAt : Int -> Model -> Maybe Item
 organizedItemAt idx model =
   let
-    inv = 
+    inv =
       model |> organize |> Dict.values
 
-    maybeName = 
-      Util.getAt inv idx 
+    maybeName =
+      Util.getAt inv idx
   in
     case maybeName of
       Nothing ->
@@ -83,7 +86,7 @@ itemAtIndex idx model =
 view : Point -> Maybe Action -> Model -> List (Svg.Svg a)
 view (x,y) action model =
   let
-    act = 
+    act =
       not (action == Nothing)
 
     header =
@@ -92,7 +95,7 @@ view (x,y) action model =
   if model.armor == Nothing && model.weapon == Nothing then
     if List.length model.inventory > 0 then
       header
-      ++ (List.indexedMap (\n (ct,it) -> inventoryItemView (x,y+2) action n ct it) (model |> organize |> Dict.values))
+      ++ (List.indexedMap (\n (ct,it) -> itemView (x,y+2) action n ct it) (model |> organize |> Dict.values))
     else
       []
   else
@@ -107,7 +110,7 @@ view (x,y) action model =
         List.length equipment
 
       items =
-        List.map2 (\n (ct,it) -> inventoryItemView (x,y+3) action n ct it) [equipCount..30] (model |> organize |> Dict.values)
+        List.map2 (\n (ct,it) -> itemView (x,y+3) action n ct it) [equipCount..30] (model |> organize |> Dict.values)
 
     in
        header
@@ -129,7 +132,7 @@ weaponView (x,y) action n weapon =
 
     color =
       itemColor action True asItem
-      
+
   in
     Graphics.render message (x,y) color
 
@@ -144,7 +147,7 @@ armorView (x,y) action n armor =
 
     color =
       itemColor action True asItem
-      
+
   in
     Graphics.render message (x,y) color
 
@@ -164,8 +167,8 @@ equipmentView (x,y) action model =
         Nothing ->
           [ ]
 
-inventoryItemView: Point -> Maybe Action -> Int -> Int -> Item -> Svg.Svg a
-inventoryItemView (x,y) action idx count item =
+itemView: Point -> Maybe Action -> Int -> Int -> Item -> Svg.Svg a
+itemView (x,y) action idx count item =
   let
     message = 
       itemMessage idx action False item 
@@ -208,24 +211,3 @@ itemMessage n action equipped item =
       ++ Action.describeWithDefault item equipped action'
       ++ " "
       ++ Item.describe item
-
-
---isEquipped : Item -> Model -> Bool
---isEquipped item player =
---  let
---    isArmor =
---      case player.armor of
---        Nothing ->
---          False
---        Just armor ->
---          item == (Item.simple (Item.armor armor))
---
---    isWeapon =
---      case player.weapon of
---        Nothing ->
---          False
---        Just weapon ->
---          item == (Item.simple (Item.weapon weapon))
---  in
---    isArmor
---    || isWeapon
