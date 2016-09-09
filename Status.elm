@@ -3,34 +3,68 @@ module Status exposing (view)
 import World
 import Graphics
 import Point exposing (Point)
+import Palette
 
 import String
 import Svg
 
-view : Point -> World.Model -> Svg.Svg a
+view : Point -> World.Model -> List (Svg.Svg a)
 view (x,y) model =
   let
-    mandos =
-      "| MANDOS v0.1"
-
     level =
-      "LEVEL: " ++ toString model.depth
+      levelView (x,y) model.depth
 
     gold =
-      "GOLD: " ++ toString model.player.gold
+      goldView (x+5,y) model.player.gold
 
-    hp =
-      "HP: " ++ toString model.player.hp ++ "/" ++ toString model.player.maxHp
-
-    parts =
-      [ mandos
-      , gold
-      , hp
-      , level
-      ]
-
-    message =
-      String.join "  |  " parts
-
+    life =
+      lifeView (x+10,y) model.player.hp model.player.maxHp
   in
-     Graphics.render message (x,y) "lightgray"
+    level 
+    ++ gold
+    ++ life
+
+levelView : Point -> Int -> List (Svg.Svg a)
+levelView (x,y) depth =
+  [ Graphics.render "LEVEL" (x,y) Palette.primaryLighter
+  , Graphics.render (toString (depth+1)) (x+3,y) Palette.bright
+  ]
+
+goldView : Point -> Int -> List (Svg.Svg a)
+goldView (x,y) amt =
+  [ Graphics.render "GOLD" (x,y) Palette.secondaryLighter
+  , Graphics.render ((toString amt) ++ "p") (x+3,y) Palette.bright
+  ]
+
+lifeView : Point -> Int -> Int -> List (Svg.Svg a)
+lifeView (x,y) hp maxHp =
+  [ Graphics.render "LIFE" (x,y) Palette.accentLighter
+  , Graphics.render (toString hp) (x+3,y) Palette.bright
+  , Graphics.render "/" (x+4,y) Palette.bright
+  , Graphics.render (toString maxHp) (x+5,y) Palette.bright
+  ]
+  --let
+  --  mandos =
+  --    "| MANDOS v0.1"
+
+  --  level =
+  --    "LEVEL: " ++ toString model.depth
+
+  --  gold =
+  --    "GOLD: " ++ toString model.player.gold
+
+  --  hp =
+  --    "HP: " ++ toString model.player.hp ++ "/" ++ toString model.player.maxHp
+
+  --  parts =
+  --    [ mandos
+  --    , gold
+  --    , hp
+  --    , level
+  --    ]
+
+  --  message =
+  --    String.join "  |  " parts
+
+  --in
+  --   Graphics.render message (x,y) "lightgray"

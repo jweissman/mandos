@@ -684,7 +684,7 @@ view model =
       Log.view (2, 44) model.world.events
 
     status =
-      Status.view (0,1) model.world
+      Status.view (1,1) model.world
 
     rightBar =
       quests
@@ -693,7 +693,8 @@ view model =
 
   in
     worldView
-    ++ [status, note]
+    ++ status
+    ++ [note]
     ++ rightBar
     ++ log
 
