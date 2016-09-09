@@ -4,6 +4,7 @@ import Point exposing (Point)
 import Quest exposing (Quest)
 import World
 import Graphics
+import Palette
 
 import Svg
 
@@ -20,11 +21,11 @@ view (x,y) world quests =
       quests
 
     title =
-      (Graphics.render "QUESTS" (x,y) "grey")
+      (Graphics.render "QUESTS" (x,y) Palette.tertiaryLighter)
   in
     title ::
-      (questGroupView (x,y+1) active "[ ]" "lightgrey") ++
-      (questGroupView (x,y+1+(List.length active)) completed "[x]" "darkgrey")
+      (questGroupView (x,y+1) active "[ ]" Palette.active) ++
+      (questGroupView (x,y+1+(List.length active)) completed "[x]" Palette.inactive)
 
 questGroupView (x,y) quests prefix color =
   (quests

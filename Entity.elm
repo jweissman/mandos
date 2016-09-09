@@ -6,6 +6,7 @@ import Creature
 import Warrior
 import String
 import Graphics
+import Palette
 
 import Svg
 
@@ -130,44 +131,44 @@ view entity =
 color : Entity -> String
 color entity =
   case entity of
-    Monster _ ->
-      "grey"
-
     Player _ ->
-      "white"
+      Palette.bright
 
-    Wall _ ->
-      "darkgrey"
+    Monster _ ->
+      Palette.dim
+      
+    Item _ ->
+      Palette.secondaryLight
 
     Coin _ ->
-      "gold"
+      Palette.alert
+
+    Wall _ ->
+      Palette.tertiaryLighter
 
     Floor _ ->
-      "rgba(160,160,240,0.5)"
-
-    Door _ ->
-      "orange"
-
-    StairsUp _ ->
-      "lightgray"
-
-    StairsDown _ ->
-      "lightgray"
-
-    Memory _ ->
-      "rgba(80,80,120,0.4)"
-
-    Imaginary _ ->
-      "green"
+      Palette.primaryDark
 
     Entrance open _ ->
-      if open then "green" else "red"
+      Palette.tertiaryLight
 
-    Item _ ->
-      "yellow"
+    Door _ ->
+      Palette.tertiaryLight
+
+    StairsUp _ ->
+      Palette.tertiaryLight
+
+    StairsDown _ ->
+      Palette.tertiaryLight
 
     Grass _ ->
-      "green"
+      Palette.accent
+
+    Memory _ ->
+      Palette.tertiary' 2 0.5 --Dark
+
+    Imaginary _ ->
+      Palette.accent' 1 0.4
 
 position : Entity -> Point.Point
 position entity =
@@ -245,7 +246,7 @@ glyph entity =
       glyph e
 
     Entrance _ _ ->
-      "∞"
+      "="
 
     Grass _ ->
       "\""

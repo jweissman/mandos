@@ -17,6 +17,8 @@ import Status
 import Item exposing (Item, ItemKind(..))
 import Spell exposing (Spell(..))
 import Action exposing (Action(..))
+import Palette
+import Inventory
 
 import Set exposing (Set)
 import Time
@@ -95,19 +97,16 @@ handleKeypress keyChar model =
     case model.action of
       Just action ->
         model |> case keyChar of
-          '0' -> playerActs 0
-          '1' -> playerActs 1
-          '2' -> playerActs 2
-          '3' -> playerActs 3
-          '4' -> playerActs 4
-          '5' -> playerActs 5
-          '6' -> playerActs 6
-          '7' -> playerActs 7
-          '8' -> playerActs 8
-          '9' -> playerActs 9
-          'd' -> waitForSelection (if action == Action.drop then Action.default else Action.drop)
-          'i' -> (if action == Action.drop then waitForSelection Action.default else resetAction)
-          _ -> resetAction
+          'd' ->
+            let act' = (if action == Action.drop then Action.default else Action.drop) in
+            waitForSelection act'
+          'i' ->
+            if action == Action.drop then
+              waitForSelection Action.default
+            else
+              resetAction
+          _ ->
+            playerActs (Util.fromAlpha keyChar)
 
       Nothing ->
         model |> case keyChar of
@@ -122,23 +121,18 @@ handleKeypress keyChar model =
           'i' -> waitForSelection Action.default
           _ -> reset
 
-
---toggleInventory : Engine -> Engine
---toggleInventory model =
---  { model | inventoryOpen = not model.inventoryOpen }
-
 waitForSelection : Action -> Engine -> Engine
 waitForSelection action model =
-  let
-    nothingToSelect =
-      List.length model.world.player.inventory == 0
-      && model.world.player.weapon == Nothing
-      && model.world.player.armor == Nothing
-  in
-    if nothingToSelect then
-      model
-    else
-      { model | action = Just action }
+  --let
+  --  nothingToSelect =
+  --    List.length model.world.player.inventory == 0
+  --    && model.world.player.weapon == Nothing
+  --    && model.world.player.armor == Nothing
+  --in
+  --  if nothingToSelect then
+  --    model
+  --  else
+  { model | action = Just action }
 
 isEquipped : Item -> Engine -> Bool
 isEquipped item model =
@@ -168,12 +162,12 @@ playerActs idx model =
   let
     maybeItem =
       model.world.player
-      |> Warrior.itemAtIndex idx
-      --Util.getAt model.world.player.inventory idx
+      |> Inventory.itemAtIndex idx
   in
     case maybeItem of
       Nothing ->
         model
+        |> resetAction
 
       Just item ->
         case model.action of
@@ -181,7 +175,10 @@ playerActs idx model =
             model
 
           Just act ->
-            model |> playerActsOnItem item act
+            if Action.canPerform (isEquipped item model) item act then
+              model |> playerActsOnItem item act
+            else
+              model
 
 playerActsOnItem : Item -> Action -> Engine -> Engine
 playerActsOnItem item act model =
@@ -209,8 +206,8 @@ playerActsOnItem item act model =
 
     Read ->
       case item.kind of
-        Scroll spell -> 
-          model 
+        Scroll spell ->
+          model
           |> castSpell item spell
         _ ->
           model
@@ -252,7 +249,7 @@ playerApplies item' item model =
 
         _ ->
           model
-    _ -> 
+    _ ->
       model
 
 resetAction : Engine -> Engine
@@ -588,7 +585,8 @@ playerExplores model =
       |> List.filter (\pt -> Set.member pt (explored))
 
     visibleItems =
-      if List.length model.world.player.inventory < Configuration.inventoryLimit then
+      --if List.length model.world.player.inventory < Configuration.inventoryLimit then
+      if Inventory.size model.world.player < Configuration.inventoryLimit then
         (World.items model.world)
         |> List.map .position
         |> List.filter (\pt -> Set.member pt (explored))
@@ -670,29 +668,35 @@ view model =
           model |> hoverMessage
 
     note =
-      Graphics.render debugMsg (25,1) "rgba(160,160,160,0.6)"
+      Graphics.render debugMsg (25,1) Palette.accentLighter
 
     quests =
-      Journal.view (55,2) model.world model.quests
+      Journal.view (65,2) model.world model.quests --world.player
 
     character =
       model.world.player
-      |> Warrior.cardView (55, 5 + (List.length model.quests)+1) (model.action)
+      |> Warrior.cardView (65, 5+(List.length model.quests)) (model.action)
+
+    inventory =
+      Inventory.view (65, 10+(List.length model.quests)) model.action model.world.player --model.world
 
     log =
-      Log.view (2, 37) model.world.events
+      Log.view (2, 44) model.world.events
 
     status =
-      Status.view (0,1) model.world
+      Status.view (1,1) model.world
 
     rightBar =
       quests
       ++ character
-      ++ log
+      ++ inventory
+
   in
     worldView
-    ++ [status, note]
+    ++ status
+    ++ [note]
     ++ rightBar
+    ++ log
 
 
 hoverMessage : Engine -> String

@@ -1,6 +1,7 @@
 module Graphics exposing (render, hero, jumbo)
 
 import Point
+import Palette
 
 import Html
 
@@ -22,18 +23,18 @@ hero : String -> Point.Point -> Svg.Svg a
 hero string (px,py) =
   text' [ x (toString px)
         , y (toString py)
-        , fontSize "9"
+        , fontSize "14"
         , fontFamily font 
-        , fill "white"
+        , fill Palette.bright
         ] [ Html.text string ]
 
 jumbo : String -> Point.Point -> Svg.Svg a
 jumbo string (px,py) =
   text' [ x (toString px)
         , y (toString py)
-        , fontSize "35"
-        , fontFamily font 
-        , fill "rgba(192,192,192,0.3)"
+        , fontSize "48"
+        , fontFamily font
+        , fill (Palette.primary' 1 0.4)
         ] [ Html.text string ]
 
 

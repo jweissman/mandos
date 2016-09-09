@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation, extrude)
 
 
 import Point exposing (Point)
@@ -357,7 +357,7 @@ playerTakesDamage creature amount (model, events, player) =
     (model, event :: events, player')
 
 playerDies cause (model, events, player) =
-  if not (isAlive player) then
+  if not (isAlive player) && not (List.any Event.isPlayerDeath events) then
     let event = Event.death cause in
     (model, event :: events, player)
   else
@@ -482,12 +482,18 @@ connectRooms' (a, b) model =
 extrudeCorridor : List Point -> Level -> Level
 extrudeCorridor pts model =
   pts
-  |> List.foldr extrudeCorridor' model
+  |> List.foldr extrude model
 
-extrudeCorridor' pt model =
-  { model | floors = Set.insert pt model.floors  }
-          |> addWallsAround pt
-          |> removeWall pt
+--extrudeCorridor' pt model =
+--  { model | floors = Set.insert pt model.floors  }
+--          |> addWallsAround pt
+--          |> removeWall pt
+
+extrude pt model =
+  model
+  |> addFloor pt
+  |> addWallsAround pt
+  |> removeWall pt
 
 -- doors
 emplaceDoor : Point -> Level -> Level
@@ -615,9 +621,10 @@ assignRooms depth model =
   let
     rooms' =
       model.rooms
-      |> Util.mapEveryNth 5 (Room.assign Room.library)
-      |> Util.mapEveryNth 7 (Room.assign Room.barracks)
-      |> Util.mapEveryNth 9 (Room.assign Room.armory)
+      |> Util.mapEveryNth 3 (Room.assign Room.library)
+      |> Util.mapEveryNth 4 (Room.assign Room.barracks)
+      |> Util.mapEveryNth 5 (Room.assign Room.armory)
+      |> Util.mapEveryNth 6 (Room.assign Room.miningCamp)
       |> List.indexedMap (\id room -> { room | id = id })
   in
     { model | rooms = rooms' }
@@ -635,37 +642,39 @@ furnishRoom depth room model =
 furnishRoomFor : Purpose -> Room -> Int -> Level -> Level
 furnishRoomFor purpose room depth model =
   let
-    challenge =
-      ChallengeRating.forDepth depth
-
-    liquid =
-      if depth < 7 then
-        Liquid.water
-      else
-        Liquid.holy (Liquid.water)
-
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.bottle Liquid.lifePotion
-          , Item.armor (Armor.tunic)
-          , Item.weapon (Weapon.dagger)
+          [ Item.bottle Liquid.water
+          , Item.bottle Liquid.water
+          , Item.weapon Weapon.dagger
+          , Item.armor Armor.suit
+          , Item.weapon Weapon.whip
           ]
 
         Barracks ->
-          [ Item.scroll Spell.lux 
-          , Item.weapon (Weapon.sword)
-          , Item.bottle liquid
-          , Item.armor (Armor.suit)
-          , Item.weapon (Weapon.axe)
+          [ Item.scroll Spell.lux
+          , Item.weapon Weapon.sword
+          , Item.bottle Liquid.water
+          , Item.weapon Weapon.axe
+          , Item.armor Armor.plate
           ]
 
         Library ->
-          [ Item.scroll Spell.infuse 
-          , Item.bottle liquid
-          , Item.scroll Spell.lux 
+          [ Item.scroll Spell.lux
+          , Item.bottle Liquid.water
+          , Item.scroll Spell.infuse
+          , Item.armor Armor.tunic
+          , Item.bottle Liquid.lifePotion
           ]
 
+        MiningCamp ->
+          [ Item.weapon Weapon.pick
+          , Item.bottle Liquid.water
+          , Item.scroll Spell.lux
+          , Item.bottle Liquid.lifePotion
+          , Item.weapon Weapon.whip
+          ]
     idRange =
       [(depth*10000)+(room.id*100)..(depth)*10000+((room.id+1)*100)]
 
@@ -678,7 +687,7 @@ furnishRoomFor purpose room depth model =
     targets =
       floors'
       |> Set.toList
-      |> Util.everyNth 7
+      |> Util.everyNth 17
   in
     furnishRoomWith items room model
 
@@ -699,7 +708,7 @@ spawnCreatures : Int -> Level -> Level
 spawnCreatures depth model =
   model.rooms
   |> List.foldr (spawnCreaturesForRoom depth) model
-  
+
 spawnCreaturesForRoom : Int -> Room -> Level -> Level
 spawnCreaturesForRoom depth room model =
   let
@@ -764,12 +773,12 @@ growGrass model =
     seeds =
       floors
       |> Set.toList
-      |> Util.filterChamp --everyNth 2
+      |> Util.filterChamp
   in
     seeds
     |> List.foldr seedGrassAt model
-    |> evolveGrass 8
-    
+    |> evolveGrass 25
+
 seedGrassAt : Point -> Level -> Level
 seedGrassAt pt model =
   let
@@ -791,39 +800,34 @@ evolveGrass n model =
   if n < 0 then
     model
   else
-    let 
-      model' = 
+    let
+      (add,remove) =
         model.floors
         |> Set.toList
-        |> List.foldr evolveGrassAt model
-    in 
-      evolveGrass (n-1) model'
+        |> List.foldr (evolveGrassAt model) ([],[])
 
-evolveGrassAt pt model =
+      model' =
+        (add |> List.foldr seedGrassAt model)
+    in
+      (remove |> List.foldr removeGrassAt model')
+
+evolveGrassAt model pt (add,remove) =
   let
     neighbors =
       Direction.directions
       |> List.map (\dir -> Point.slide dir pt)
-      |> List.filter (\pt -> model |> isFloor pt)
       |> List.filter (\pt -> model |> isGrass pt)
       |> List.length
-  in
-    if neighbors > 3 then
-      model |> removeGrassAt pt
-    else if neighbors < 2 then
-      model |> removeGrassAt pt
-    else if neighbors == 3 then
-      model |> seedGrassAt pt
-    else -- 2 or 3 cells, we survive
-      model
 
-seedGrassAround : Point -> Level -> Level
-seedGrassAround pt model =
-  let
-    grass' =
-      Direction.directions
-      |> List.map (\dir -> Point.slide dir pt)
-      |> List.filter (\pt -> model |> isFloor pt)
+    alive =
+      Set.member pt model.grass
   in
-    grass'
-    |> List.foldr seedGrassAt model
+    if alive then
+      if neighbors < 5 || 6 < neighbors then
+        (add, pt :: remove)
+      else
+        (add, remove)
+    else if neighbors == 5 || neighbors == 6 then
+      (pt :: add, remove)
+    else
+      (add, remove)

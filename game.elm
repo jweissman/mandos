@@ -4,9 +4,9 @@ import World
 import Dungeon exposing (Dungeon)
 import Entity exposing (Entity)
 import Graphics
-
 import Configuration
 import Event exposing (Event(..))
+import Palette
 
 import Char
 import Task
@@ -171,7 +171,7 @@ view : Model -> Html Msg
 view model =
   let
     bgStyle = [
-      ( "background-color", "#280828"
+      ( "background-color", Palette.primaryDarker
       )
     ]
   in
@@ -201,16 +201,16 @@ box viewModel =
 stateView model =
   let
     hero =
-      Graphics.hero "MANDOS" (27,10)
+      Graphics.hero "MANDOS" (22,14)
 
     jumbo =
-      Graphics.jumbo "@" (30,30)
+      Graphics.jumbo "@" (28,38)
 
     anyKey =
-      Graphics.render "press any key to play" (33, 20) "lightgreen"
+      Graphics.render "press any key to play" (34, 32) Palette.bright
 
     trademark =
-      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (27, 34) "darkgray"
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 46) Palette.tertiaryLighter
 
     steps =
       model.engine.world.player.steps
@@ -231,26 +231,26 @@ stateView model =
       Generating ->
         [ jumbo
         , hero
-        , Graphics.render "Generating world, please wait..." (32, 15) "lightgreen"
-        , Graphics.render "(This may take a little while!)" (32, 20) "white"
+        , Graphics.render "Generating world, please wait..." (32, 45) Palette.secondaryLighter
+        , Graphics.render "(This may take a little while!)" (32, 48) Palette.secondaryLight
         ]
 
       Victory ->
         Engine.view model.engine
         ++ [
-            Graphics.hero "YOU WON!" (25, 15)
-          , Graphics.render "Congratulations!" (34, 20) "white"
-          , Graphics.render "You escaped the Halls of Mandos!" (31, 22) "white"
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 26) "lightgrey"
-          , Graphics.render ((toString kills) ++ " kills") (34, 27) "lightgrey"
+            Graphics.hero "YOU WON!" (18, 15)
+          , Graphics.render "Congratulations!" (34, 20) Palette.secondaryLighter
+          , Graphics.render "You escaped the Halls of Mandos!" (31, 42) Palette.secondaryLight
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 46) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (34, 47) Palette.secondaryLight
           ]
 
       Death cause ->
           Engine.view model.engine ++
-          [ Graphics.hero "YOU DIED!" (22, 15)
-          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 20) "white"
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 26) "lightgrey"
-          , Graphics.render ((toString kills) ++ " kills") (34, 27) "lightgrey"
+          [ Graphics.hero "YOU DIED!" (16, 15)
+          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 40) Palette.bright
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 46) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (34, 47) Palette.secondaryLight
           ]
 
       Playing ->

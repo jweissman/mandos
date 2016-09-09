@@ -1,5 +1,6 @@
 module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks, deathEvent)
 
+import Palette
 import Point exposing (Point, slide)
 import Direction exposing (Direction)
 import Optics
@@ -17,7 +18,9 @@ import Event exposing (..)
 import Util
 import Configuration
 import Item exposing (Item)
+import Inventory
 import Spell exposing (Spell(..))
+
 
 import Set exposing (Set)
 import String
@@ -136,20 +139,21 @@ entitiesAt pt model =
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
 playerSteps direction model =
-  if not (canPlayerStep direction model) then
-    model
-    |> playerAttacks direction
-  else
-    model
-    |> playerMoves direction
-    |> playerAscendsOrDescends
-    |> playerCollectsCoins
-    |> playerCollectsItems
-    |> playerEscapesHall
+  model
+  |> playerDestroysWalls direction
+  |> playerMoves direction
+  |> playerAttacks direction
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
-  { model | player = (Warrior.step direction model.player) }
+  if (canPlayerStep direction model) then
+    { model | player = (Warrior.step direction model.player) }
+    |> playerAscendsOrDescends
+    |> playerEscapesHall
+    |> playerCollectsCoins
+    |> playerCollectsItems
+  else
+    model
 
 canPlayerStep : Direction -> Model -> Bool
 canPlayerStep direction model =
@@ -218,20 +222,10 @@ playerAttacks direction model =
       attackedPositions
       |> List.map (\pt -> (level model) |> Level.creatureAt pt)
       |> List.filterMap identity
-      --level model
-      --|> Level.creatureAt attackedPosition
   in
     creatures
     |> List.foldr (\creature -> playerAttacksCreature creature) model
     |> removeDeceasedCreatures
-    --case maybeCreature of
-    --  Nothing ->
-    --    model
-
-    --  Just creature ->
-    --    model
-    --    |> playerAttacksCreature creature
-    --    |> removeDeceasedCreatures
 
 playerAttacksCreature : Creature.Model -> Model -> Model
 playerAttacksCreature creature model =
@@ -264,6 +258,34 @@ removeDeceasedCreatures model =
   in
     { model | dungeon = dungeon'
             , events = model.events ++ events' }
+
+playerDestroysWalls : Direction -> Model -> Model
+playerDestroysWalls direction model =
+  let
+    pt =
+      model.player.position
+      |> Point.slide direction
+
+    isWall =
+      Set.member pt (walls model)
+
+    destructive =
+      case model.player.weapon of
+        Just weapon ->
+          Weapon.destroyWalls weapon
+        Nothing ->
+          False
+
+    dungeon' =
+      model.dungeon
+      |> Dungeon.playerDestroysWall pt model.depth
+
+  in
+    if isWall && destructive then
+      { model | dungeon = dungeon'
+              , player = model.player |> Warrior.step direction }
+    else
+      model
 
 playerAscendsOrDescends : Model -> Model
 playerAscendsOrDescends model =
@@ -348,7 +370,7 @@ illuminate source model =
 
 playerCollectsItems : Model -> Model
 playerCollectsItems model =
-  if List.length model.player.inventory < Configuration.inventoryLimit then
+  if Inventory.size model.player < Configuration.inventoryLimit then
     case (level model) |> Level.itemAt (model.player.position) of
       Nothing ->
         model
@@ -515,14 +537,14 @@ highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
   let
     pathColor =
-      "rgba(128,128,192,0.85)"
+      Palette.tertiary' 0 0.7
     targetColor =
-      "rgba(128,128,192,0.3)"
+      Palette.tertiary' 2 0.7
   in
 
     case cells of
       [] -> []
-      [x] -> [highlightCell x pathColor]
+      [x] -> [highlightCell x targetColor]
       a :: b :: _ ->
         let
           tail =
@@ -530,7 +552,7 @@ highlightCells cells =
               Nothing -> []
               Just rest -> highlightCells rest
         in
-          (highlightCell a targetColor) :: tail
+          (highlightCell a pathColor) :: tail
 
 highlightCell (x,y) color =
   Graphics.render "@" (x,y) color

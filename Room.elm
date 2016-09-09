@@ -1,4 +1,4 @@
-module Room exposing (Room, Purpose(..), generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center, corridor, assign, armory, barracks, library)
+module Room exposing (Room, Purpose(..), generate, overlaps, layout, filterOverlaps, network, directionBetween, distance, center, corridor, assign, armory, barracks, library, miningCamp)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -13,6 +13,7 @@ import Set exposing (Set)
 type Purpose = Armory
              | Barracks
              | Library
+             | MiningCamp
 
 armory =
   Armory
@@ -22,6 +23,9 @@ barracks =
 
 library =
   Library
+
+miningCamp =
+  MiningCamp
 
 type alias Room = { origin : Point
                   , width : Int
