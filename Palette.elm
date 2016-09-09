@@ -4,13 +4,13 @@ warning  = "red"
 alert    = "yellow"
 info     = bright
 
-default  = dark
-active   = bright --tertiaryLight
-inactive = dim --"darkgrey"
+active   = bright --tertiaryLighter
+inactive = "darkgrey" --"darkgrey"
+default  = "lightgrey" --secondaryLight
 
-bright   = "white"
-dim      = "lightgrey"
-dark     = "darkgrey" --tertiaryDark
+bright   = "white" --secondaryLighter --"white"
+dim      = "lightgray" --"lightgrey"
+dark     = "darkgrey" --secondaryLight --"darkgrey" --tertiaryDark
 
 primary' shade alpha = rgba (purple' shade alpha)
 primaryLighter = rgb (purple 0)
@@ -82,36 +82,35 @@ green' shade alpha =
 purple : Int -> (Int,Int,Int)
 purple shade =
   case shade of
-    0 -> (228,175,199)
-    1 -> (197,113,151)
-    2 -> (155, 58,102)
-    3 -> (115, 22, 64)
-    _ -> ( 70,  0, 32)
+   2 -> (154, 25,103)
+   0 -> (233,179,212)
+   1 -> (190, 77,145)
+   3 -> (106,  0, 64)
+   _ -> ( 35,  0, 21)
 
 yellow : Int -> (Int, Int, Int)
 yellow shade =
   case shade of
-    0 -> (255,247,196)
-    1 -> (235,221,134)
-    2 -> (185,168, 69)
-    3 -> (137,121, 26)
-    _ -> ( 83, 71,  0)
+   2 -> (196,173, 32)
+   0 -> (255,247,195)
+   1 -> (241,221, 97)
+   3 -> (134,116,  0)
+   _ -> ( 44, 38,  0)
 
 blue : Int -> (Int, Int, Int)
 blue shade =
   case shade of
-    0 -> (173,159,201)
-    1 -> (118, 99,161)
-    2 -> ( 78, 55,126)
-    3 -> ( 47, 25, 94)
-    _ -> ( 22,  5, 57)
-
+   2 -> ( 65, 33,134)
+   0 -> (191,176,223)
+   1 -> (104, 77,165)
+   3 -> ( 35,  9, 92)
+   _ -> ( 10,  1, 30)
 green : Int -> (Int, Int, Int)
 green shade =
   case shade of
-    0 -> (218,241,185)
-    1 -> (178,216,123)
-    2 -> (126,170, 63)
-    3 -> ( 84,126, 24)
-    _ -> ( 45, 76,  0)
+   2 -> (136,184, 30)
+   0 -> (231,249,190)
+   1 -> (184,226, 91)
+   3 -> ( 87,126,  0)
+   _ -> ( 28, 41,  0)
 

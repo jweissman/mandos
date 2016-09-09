@@ -1,4 +1,4 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, computeDamageAgainst, resistance, cardView, augmentVision, itemAtIndex, sheatheWeapon, takeOffArmor)
+module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wear, computeDamageAgainst, resistance, cardView, augmentVision, sheatheWeapon, takeOffArmor)
 
 import Configuration
 import Util
@@ -135,15 +135,15 @@ gainHp n model =
   { model | hp = hp'
           , maxHp = hp'
         }
-
 sortInventory : Model -> Model
 sortInventory model =
-  let inventory' = model.inventory |> List.sortBy (\item -> Item.describe item) in
-  { model | inventory = inventory' }
+  model
+  --let inventory' = model.inventory |> List.sortBy (\item -> Item.describe item) in
+  --{ model | inventory = inventory' }
 
-addToInventory item model = 
-  let 
-    model' = 
+addToInventory item model =
+  let
+    model' =
       { model | inventory = model.inventory ++ [item] }
   in
     model' |> sortInventory
@@ -209,9 +209,7 @@ collectsItem item model =
   let
     model' =
       model |> addToInventory item
-      --{ model | inventory = model.inventory ++ [item] }
-      --        |> sortInventory
-  in 
+  in
     case item.kind of
       Arm weapon ->
         case model.weapon of
@@ -230,78 +228,6 @@ collectsItem item model =
       _ ->
         model'
 
-organizedInventory : Model -> Dict String (Int, Item) --List (Int, Item)
-organizedInventory model =
-  let 
-    countItems = \it dict -> 
-      dict 
-      |> Dict.update (Item.describe it) (\entry -> 
-        case entry of 
-          Nothing -> 
-            Just (1,it)
-          Just (ct',it') ->
-            Just (ct' + 1, it')
-      )
-  in
-    model.inventory
-    |> List.foldr countItems Dict.empty
-
-organizedInventoryItemAt : Int -> Model -> Maybe Item
-organizedInventoryItemAt idx model =
-  let
-    inv = 
-      model 
-      |> organizedInventory
-      |> Dict.values
-
-    maybeName = 
-      Util.getAt inv idx 
-  in
-    case maybeName of
-      Nothing ->
-        Nothing
-
-      Just (_,item) ->
-        Just item
-        --model.inventory
-        --|> List.filter (\it -> (Item.describe it) == name)
-        --|> List.head
-
-itemAtIndex : Int -> Model -> Maybe Item
-itemAtIndex idx model =
-  case model.weapon of
-    Just weapon' ->
-      case model.armor of
-        Just armor' ->
-          if idx == 0 then
-            Just (Item.simple (Item.weapon weapon'))
-          else if idx == 1 then
-            Just (Item.simple (Item.armor armor'))
-          else
-            model |> organizedInventoryItemAt (idx-2)
-            --Util.getAt model.inventory (idx-2)
-
-        Nothing ->
-          if idx == 0 then
-            Just (Item.simple (Item.weapon weapon'))
-          else
-            model |> organizedInventoryItemAt (idx-1)
-            --Util.getAt model.inventory (idx-1)
-
-    Nothing ->
-      case model.armor of
-        Just armor' ->
-          if idx == 0 then
-            Just (Item.simple (Item.armor armor'))
-          else
-            model |> organizedInventoryItemAt (idx-1)
-            --Util.getAt model.inventory (idx-1)
-
-        Nothing ->
-          model |> organizedInventoryItemAt idx
-          --Util.getAt model.inventory idx
-  
-
 -- VIEW
 cardView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
 cardView (x,y) action model =
@@ -312,144 +238,16 @@ cardView (x,y) action model =
     resist =
       toString (resistance model)
 
-    stats =
-      [ Graphics.render "STATS" (x, y) Palette.dim
-      , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) Palette.inactive
-      , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) Palette.inactive
-      ]
-
-    inventory =
-      inventoryView (x,y+6) action model
   in
-    stats
-    ++ inventory
+    [ Graphics.render "STATS" (x, y) Palette.primaryLighter
+    , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) Palette.active
+    , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) Palette.active
+    ]
 
-inventoryView : Point -> Maybe Action -> Model -> List (Svg.Svg a)
-inventoryView (x,y) action model =
-  let
-    act = 
-      not (action == Nothing)
+    --inventory =
+    --  Inventory.view (x,y+6) action model
+  --in
+  --  stats
+  --  ++ inventory
 
-    header =
-      [ Graphics.render "GEAR" (x, y) (if act then Palette.bright else Palette.dim) ] --"white" ]
-  in
-  if model.armor == Nothing && model.weapon == Nothing then
-    if List.length model.inventory > 0 then
-      header
-      ++ (List.indexedMap (\n (ct,it) -> inventoryItemView (x,y+2) action n ct it) (model |> organizedInventory |> Dict.values))
-    else
-      []
-  else
-    let
-      equipment =
-        equipmentView (x,y+2) action model
 
-      hr =
-        horizontalRule (x,y+2+equipCount)
-
-      equipCount =
-        List.length equipment
-
-      items =
-        List.map2 (\n (ct,it) -> inventoryItemView (x,y+3) action n ct it) [equipCount..30] (model |> organizedInventory |> Dict.values)
-        --List.map2 (\n (ct,it) -> inventoryItemView (x,y+3) action n ct it) [equipCount..30] model.inventory
-
-    in
-       header
-       ++ equipment
-       ++ hr
-       ++ items
-
-horizontalRule (x,y) =
-  [ Graphics.render "---" (x,y) Palette.inactive ]
-
-weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
-weaponView (x,y) action n weapon =
-  let
-    asItem =
-      (Item.simple (Item.weapon weapon))
-
-    message =
-      itemMessage n action True asItem
-
-    color =
-      itemColor action asItem
-      
-  in
-    Graphics.render message (x,y) color
-
-armorView : Point -> Maybe Action -> Int -> Armor -> Svg.Svg a
-armorView (x,y) action n armor =
-  let
-    asItem =
-      (Item.simple (Item.armor armor))
-
-    message =
-      itemMessage n action True asItem
-
-    color =
-      itemColor action asItem
-      
-  in
-    Graphics.render message (x,y) color
-
-equipmentView (x,y) action model =
-  case model.weapon of
-    Just weapon' ->
-      case model.armor of
-        Just armor' ->
-          [ weaponView (x,y) action 0 weapon', armorView (x,y+1) action 1 armor' ]
-        Nothing ->
-          [ weaponView (x,y) action 0 weapon' ]
-
-    Nothing ->
-      case model.armor of
-        Just armor' ->
-          [ armorView (x,y) action 0 armor' ]
-        Nothing ->
-          [ ]
-
-inventoryItemView: Point -> Maybe Action -> Int -> Int -> Item -> Svg.Svg a
-inventoryItemView (x,y) action idx count item =
-  let
-    message = 
-      itemMessage idx action False item 
-
-    desc =
-      if count > 1 then
-        message ++ " (x" ++ (toString count) ++ ")"
-      else
-        message
-
-    color =
-      itemColor action item
-      
-  in
-    Graphics.render desc (x,y+idx) color
-
-itemColor action item =
-  case action of
-    Nothing ->
-      Palette.default
-
-    Just act ->
-      if act |> Action.canPerform item then
-        if act == Action.drop then
-          Palette.warning
-        else
-          Palette.active
-      else
-        Palette.inactive
-
-itemMessage n action equipped item =
-  case action of
-    Nothing ->
-      "- "
-      ++ Item.describe item
-    Just action' ->
-      "("
-      ++ Util.toAlpha n
-      ++ ") "
-      ++ Action.describeWithDefault item equipped action'
-      ++ " "
-      ++ Item.describe item

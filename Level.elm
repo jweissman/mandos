@@ -777,7 +777,7 @@ growGrass model =
   in
     seeds
     |> List.foldr seedGrassAt model
-    |> evolveGrass 8
+    |> evolveGrass 25
 
 seedGrassAt : Point -> Level -> Level
 seedGrassAt pt model =
@@ -801,38 +801,33 @@ evolveGrass n model =
     model
   else
     let
-      model' =
+      (add,remove) =
         model.floors
         |> Set.toList
-        |> List.foldr evolveGrassAt model
-    in
-      evolveGrass (n-1) model'
+        |> List.foldr (evolveGrassAt model) ([],[])
 
-evolveGrassAt pt model =
+      model' =
+        (add |> List.foldr seedGrassAt model)
+    in
+      (remove |> List.foldr removeGrassAt model')
+
+evolveGrassAt model pt (add,remove) =
   let
     neighbors =
       Direction.directions
       |> List.map (\dir -> Point.slide dir pt)
-      |> List.filter (\pt -> model |> isFloor pt)
       |> List.filter (\pt -> model |> isGrass pt)
       |> List.length
-  in
-    if neighbors > 3 then
-      model |> removeGrassAt pt
-    else if neighbors < 2 then
-      model |> removeGrassAt pt
-    else if neighbors == 3 then
-      model |> seedGrassAt pt
-    else -- 2 or 3 cells, we survive
-      model
 
-seedGrassAround : Point -> Level -> Level
-seedGrassAround pt model =
-  let
-    grass' =
-      Direction.directions
-      |> List.map (\dir -> Point.slide dir pt)
-      |> List.filter (\pt -> model |> isFloor pt)
+    alive =
+      Set.member pt model.grass
   in
-    grass'
-    |> List.foldr seedGrassAt model
+    if alive then
+      if neighbors < 5 || 6 < neighbors then
+        (add, pt :: remove)
+      else
+        (add, remove)
+    else if neighbors == 5 || neighbors == 6 then
+      (pt :: add, remove)
+    else
+      (add, remove)

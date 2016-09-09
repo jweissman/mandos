@@ -210,7 +210,7 @@ stateView model =
       Graphics.render "press any key to play" (34, 32) Palette.bright
 
     trademark =
-      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 46) Palette.tertiary
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 46) Palette.tertiaryLighter
 
     steps =
       model.engine.world.player.steps

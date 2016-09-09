@@ -39,12 +39,13 @@ defaultForItem equipped {kind} =
     Scroll _ -> Read
     QuestItem _ -> Look
 
-canPerform : Item -> Action -> Bool
-canPerform item action =
+canPerform : Bool -> Item -> Action -> Bool
+canPerform equipped item action =
   let {kind} = item in
   case action of
     Default ->
-      True
+      -- todo check if equipped? (e.g., cursed items?)
+      canPerform equipped item (defaultForItem False item)
 
     Wield ->
       case kind of
@@ -69,7 +70,7 @@ canPerform item action =
     Drop ->
       case kind of
         QuestItem _ -> False
-        _ -> True
+        _ -> not equipped
 
     Enchant ->
       case kind of
@@ -78,7 +79,7 @@ canPerform item action =
         _ -> False
 
     Use item' action' ->
-      canPerform item action'
+      canPerform equipped item action'
 
     _ -> False
 

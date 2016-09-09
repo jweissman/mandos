@@ -21,7 +21,7 @@ view (x,y) world quests =
       quests
 
     title =
-      (Graphics.render "QUESTS" (x,y) Palette.dim)
+      (Graphics.render "QUESTS" (x,y) Palette.tertiaryLighter)
   in
     title ::
       (questGroupView (x,y+1) active "[ ]" Palette.active) ++
