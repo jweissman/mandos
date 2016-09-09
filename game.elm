@@ -201,16 +201,16 @@ box viewModel =
 stateView model =
   let
     hero =
-      Graphics.hero "MANDOS" (25,10)
+      Graphics.hero "MANDOS" (22,14)
 
     jumbo =
-      Graphics.jumbo "@" (30,30)
+      Graphics.jumbo "@" (28,38)
 
     anyKey =
-      Graphics.render "press any key to play" (33, 20) Palette.accentLighter
+      Graphics.render "press any key to play" (34, 32) Palette.bright
 
     trademark =
-      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (27, 34) Palette.tertiaryLighter
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 46) Palette.tertiary
 
     steps =
       model.engine.world.player.steps
@@ -231,26 +231,26 @@ stateView model =
       Generating ->
         [ jumbo
         , hero
-        , Graphics.render "Generating world, please wait..." (32, 15) Palette.secondaryLighter
-        , Graphics.render "(This may take a little while!)" (32, 20) Palette.secondaryLight
+        , Graphics.render "Generating world, please wait..." (32, 35) Palette.secondaryLighter
+        , Graphics.render "(This may take a little while!)" (32, 38) Palette.secondaryLight
         ]
 
       Victory ->
         Engine.view model.engine
         ++ [
-            Graphics.hero "YOU WON!" (25, 15)
+            Graphics.hero "YOU WON!" (18, 15)
           , Graphics.render "Congratulations!" (34, 20) Palette.secondaryLighter
-          , Graphics.render "You escaped the Halls of Mandos!" (31, 22) Palette.secondaryLight
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 26) Palette.secondaryLight
-          , Graphics.render ((toString kills) ++ " kills") (34, 27) Palette.secondaryLight
+          , Graphics.render "You escaped the Halls of Mandos!" (31, 32) Palette.secondaryLight
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 36) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (34, 37) Palette.secondaryLight
           ]
 
       Death cause ->
           Engine.view model.engine ++
-          [ Graphics.hero "YOU DIED!" (22, 15)
-          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 20) Palette.secondaryLighter
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 26) Palette.secondaryLight
-          , Graphics.render ((toString kills) ++ " kills") (34, 27) Palette.secondaryLight
+          [ Graphics.hero "YOU DIED!" (16, 15)
+          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 30) Palette.bright
+          , Graphics.render ((toString steps) ++ " steps taken") (34, 36) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (34, 37) Palette.secondaryLight
           ]
 
       Playing ->

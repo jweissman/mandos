@@ -23,16 +23,16 @@ hero : String -> Point.Point -> Svg.Svg a
 hero string (px,py) =
   text' [ x (toString px)
         , y (toString py)
-        , fontSize "10"
+        , fontSize "14"
         , fontFamily font 
-        , fill "white" --Palette.primaryLighter
+        , fill Palette.bright
         ] [ Html.text string ]
 
 jumbo : String -> Point.Point -> Svg.Svg a
 jumbo string (px,py) =
   text' [ x (toString px)
         , y (toString py)
-        , fontSize "36"
+        , fontSize "48"
         , fontFamily font
         , fill (Palette.primary' 3 0.8)
         ] [ Html.text string ]

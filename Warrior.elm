@@ -14,6 +14,9 @@ import Palette
 import Graphics
 import Svg
 
+
+import Dict exposing (Dict)
+
 -- MODEL
 
 type alias Model =
@@ -23,13 +26,11 @@ type alias Model =
   , position : Point
   , gold : Int
   , strength : Int
-  --, resistance : Int
-  --, defense : Int
   , steps : Int
   , weapon : Maybe Weapon
   , armor : Maybe Armor
-  -- , ring : Maybe Ring
-  -- , helm : Maybe Helm
+  -- todo , ring : Maybe Ring
+  -- todo , helm : Maybe Helm
   , inventory : List Item
   , timesGearChanged : Int
   , visionRadius : Int
@@ -45,7 +46,7 @@ init point =
   , direction = North
   , position = point
   , gold = 0
-  , strength = 5
+  , strength = 100
   --,  = 0
   , steps = 0
   , weapon = Nothing
@@ -135,14 +136,28 @@ gainHp n model =
           , maxHp = hp'
         }
 
+sortInventory : Model -> Model
+sortInventory model =
+  let inventory' = model.inventory |> List.sortBy (\item -> Item.describe item) in
+  { model | inventory = inventory' }
+
+addToInventory item model = 
+  let 
+    model' = 
+      { model | inventory = model.inventory ++ [item] }
+  in
+    model' |> sortInventory
+
 wield : Weapon -> Model -> Model
 wield weapon model =
   case model.weapon of
     Just weapon' ->
+      let oldWeapon = Item.init (0,0) (Item.weapon weapon') (1000000 + model.timesGearChanged) in
       { model | weapon = Just weapon
-              , inventory = model.inventory ++ [Item.init (0,0) (Item.weapon weapon') (1000000 + model.timesGearChanged)]
+              --, inventory = model.inventory ++ []
               , timesGearChanged = model.timesGearChanged + 1
       }
+      |> addToInventory oldWeapon
 
     Nothing ->
       { model | weapon = Just weapon }
@@ -155,10 +170,11 @@ sheatheWeapon model =
       model
 
     Just weapon ->
+      let oldWeapon = Item.init (0,0) (Item.weapon weapon) (1000000 + model.timesGearChanged) in
       { model | weapon = Nothing
-              , inventory = model.inventory ++ [Item.init (0,0) (Item.weapon weapon) (1000000 + model.timesGearChanged)]
               , timesGearChanged = model.timesGearChanged + 1
             }
+      |> addToInventory oldWeapon
 
 
 takeOffArmor : Model -> Model
@@ -168,19 +184,22 @@ takeOffArmor model =
       model
 
     Just armor ->
+      let oldArmor = Item.init (0,0) (Item.armor armor) (1000000 + model.timesGearChanged) in
       { model | armor = Nothing
-              , inventory = model.inventory ++ [Item.init (0,0) (Item.armor armor) (1000000 + model.timesGearChanged)]
               , timesGearChanged = model.timesGearChanged + 1
             }
+            |> addToInventory oldArmor
 
 wear : Armor -> Model -> Model
 wear armor model =
   case model.armor of
     Just armor' ->
+      let oldArmor = Item.init (0,0) (Item.armor armor') (1000000 + model.timesGearChanged) in
       { model | armor = Just armor
-              , inventory = model.inventory ++ [Item.init (0,0) (Item.armor armor') (1000000 + model.timesGearChanged)]
+              --, inventory = model.inventory ++ []
               , timesGearChanged = model.timesGearChanged + 1
       }
+      |> addToInventory oldArmor
 
     Nothing ->
       { model | armor = Just armor }
@@ -188,34 +207,65 @@ wear armor model =
 collectsItem : Item -> Model -> Model
 collectsItem item model =
   let
-    {kind} =
-      item
-
     model' =
-      { model | inventory = model.inventory ++ [item] }
-  in case kind of
-    Arm weapon ->
-      case model.weapon of
-        Nothing ->
-          model |> wield weapon
-        Just weapon' ->
-          --if (Weapon.averageDamage weapon' < Weapon.averageDamage (weapon)) then
-          --   model |> wield weapon
-          --else
+      model |> addToInventory item
+      --{ model | inventory = model.inventory ++ [item] }
+      --        |> sortInventory
+  in 
+    case item.kind of
+      Arm weapon ->
+        case model.weapon of
+          Nothing ->
+            model |> wield weapon
+          Just weapon' ->
             model'
 
-    Shield armor ->
-      case model.armor of
-        Nothing ->
-          model |> wear armor
-        Just armor' ->
-          --if (Armor.absorption armor' < Armor.absorption (armor)) then
-          --  model |> wear armor
-          --else
+      Shield armor ->
+        case model.armor of
+          Nothing ->
+            model |> wear armor
+          Just armor' ->
             model'
 
-    _ ->
-      model'
+      _ ->
+        model'
+
+organizedInventory : Model -> Dict String (Int, Item) --List (Int, Item)
+organizedInventory model =
+  let 
+    countItems = \it dict -> 
+      dict 
+      |> Dict.update (Item.describe it) (\entry -> 
+        case entry of 
+          Nothing -> 
+            Just (1,it)
+          Just (ct',it') ->
+            Just (ct' + 1, it')
+      )
+  in
+    model.inventory
+    |> List.foldr countItems Dict.empty
+
+organizedInventoryItemAt : Int -> Model -> Maybe Item
+organizedInventoryItemAt idx model =
+  let
+    inv = 
+      model 
+      |> organizedInventory
+      |> Dict.values
+
+    maybeName = 
+      Util.getAt inv idx 
+  in
+    case maybeName of
+      Nothing ->
+        Nothing
+
+      Just (_,item) ->
+        Just item
+        --model.inventory
+        --|> List.filter (\it -> (Item.describe it) == name)
+        --|> List.head
 
 itemAtIndex : Int -> Model -> Maybe Item
 itemAtIndex idx model =
@@ -228,13 +278,15 @@ itemAtIndex idx model =
           else if idx == 1 then
             Just (Item.simple (Item.armor armor'))
           else
-            Util.getAt model.inventory (idx-2)
+            model |> organizedInventoryItemAt (idx-2)
+            --Util.getAt model.inventory (idx-2)
 
         Nothing ->
           if idx == 0 then
             Just (Item.simple (Item.weapon weapon'))
           else
-            Util.getAt model.inventory (idx-1)
+            model |> organizedInventoryItemAt (idx-1)
+            --Util.getAt model.inventory (idx-1)
 
     Nothing ->
       case model.armor of
@@ -242,10 +294,12 @@ itemAtIndex idx model =
           if idx == 0 then
             Just (Item.simple (Item.armor armor'))
           else
-            Util.getAt model.inventory (idx-1)
+            model |> organizedInventoryItemAt (idx-1)
+            --Util.getAt model.inventory (idx-1)
 
         Nothing ->
-          Util.getAt model.inventory idx
+          model |> organizedInventoryItemAt idx
+          --Util.getAt model.inventory idx
   
 
 -- VIEW
@@ -259,9 +313,9 @@ cardView (x,y) action model =
       toString (resistance model)
 
     stats =
-      [ Graphics.render "STATS" (x, y) "white"
-      , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) Palette.primaryLight
-      , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) Palette.primaryLight
+      [ Graphics.render "STATS" (x, y) Palette.dim
+      , Graphics.render ("  STRENGTH: " ++ strength) (x, y+2) Palette.inactive
+      , Graphics.render ("RESISTANCE: " ++ resist) (x, y+3) Palette.inactive
       ]
 
     inventory =
@@ -275,28 +329,30 @@ inventoryView (x,y) action model =
   let
     act = 
       not (action == Nothing)
+
     header =
-      [ Graphics.render "GEAR" (x, y) (if act then "white" else Palette.primaryLighter) ] --"white" ]
+      [ Graphics.render "GEAR" (x, y) (if act then Palette.bright else Palette.dim) ] --"white" ]
   in
   if model.armor == Nothing && model.weapon == Nothing then
     if List.length model.inventory > 0 then
       header
-      ++ (List.indexedMap (inventoryItemView (x,y+1) action) model.inventory)
+      ++ (List.indexedMap (\n (ct,it) -> inventoryItemView (x,y+2) action n ct it) (model |> organizedInventory |> Dict.values))
     else
       []
   else
     let
       equipment =
-        equipmentView (x,y+1) action model
+        equipmentView (x,y+2) action model
 
       hr =
-        horizontalRule (x,y+1+equipCount)
+        horizontalRule (x,y+2+equipCount)
 
       equipCount =
         List.length equipment
 
       items =
-        List.map2 (inventoryItemView (x,y+2) action) [equipCount..30] model.inventory
+        List.map2 (\n (ct,it) -> inventoryItemView (x,y+3) action n ct it) [equipCount..30] (model |> organizedInventory |> Dict.values)
+        --List.map2 (\n (ct,it) -> inventoryItemView (x,y+3) action n ct it) [equipCount..30] model.inventory
 
     in
        header
@@ -305,81 +361,35 @@ inventoryView (x,y) action model =
        ++ items
 
 horizontalRule (x,y) =
-  [ Graphics.render "---" (x,y) inactive ]
+  [ Graphics.render "---" (x,y) Palette.inactive ]
 
 weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
 weaponView (x,y) action n weapon =
   let
-    desc =
-      Weapon.describe weapon
-
     asItem =
       (Item.simple (Item.weapon weapon))
 
     message =
-      case action of
-        Nothing ->
-          "- "
-          ++ desc
-        Just action' ->
-          "("
-          ++ Util.toAlpha n
-          ++ ") "
-          ++ Action.describeWithDefault asItem True action'
-          ++ " "
-          ++ desc
+      itemMessage n action True asItem
 
     color =
-      case action of
-        Nothing ->
-          default
-        
-        Just act ->
-          if act |> Action.canPerform asItem then
-            if act == Action.drop then
-              warning
-            else
-              active
-          else
-            inactive
+      itemColor action asItem
+      
   in
     Graphics.render message (x,y) color
 
 armorView : Point -> Maybe Action -> Int -> Armor -> Svg.Svg a
 armorView (x,y) action n armor =
   let
-    desc =
-      Armor.describe armor
-
     asItem =
       (Item.simple (Item.armor armor))
 
     message =
-      case action of
-        Nothing ->
-          "- "
-          ++ desc
-        Just action' ->
-          "("
-          ++ Util.toAlpha n
-          ++ ") "
-          ++ Action.describeWithDefault asItem True action'
-          ++ " "
-          ++ desc
+      itemMessage n action True asItem
 
     color =
-      case action of
-        Nothing ->
-          default
-        
-        Just act ->
-          if act |> Action.canPerform asItem then
-            if act == Action.drop then
-              warning
-            else
-              active
-          else
-            inactive
+      itemColor action asItem
+      
   in
     Graphics.render message (x,y) color
 
@@ -399,40 +409,47 @@ equipmentView (x,y) action model =
         Nothing ->
           [ ]
 
-inventoryItemView: Point -> Maybe Action -> Int -> Item -> Svg.Svg a
-inventoryItemView (x,y) action n item =
+inventoryItemView: Point -> Maybe Action -> Int -> Int -> Item -> Svg.Svg a
+inventoryItemView (x,y) action idx count item =
   let
-    desc =
-      case action of
-        Nothing ->
-          "- " ++ (Item.describe item)
+    message = 
+      itemMessage idx action False item 
 
-        Just action' ->
-          "("
-          ++ (Util.toAlpha n)
-          ++ ") "
-          ++ Action.describeWithDefault item False action'
-          ++ " "
-          ++ Item.describe item
+    desc =
+      if count > 1 then
+        message ++ " (x" ++ (toString count) ++ ")"
+      else
+        message
 
     color =
-      case action of
-        Nothing ->
-          default
-
-        Just act ->
-          if act |> Action.canPerform item then
-            if act == Action.drop then
-              warning
-            else
-              active
-          else
-            inactive
+      itemColor action item
+      
   in
-    Graphics.render desc (x,y+n) color
+    Graphics.render desc (x,y+idx) color
 
+itemColor action item =
+  case action of
+    Nothing ->
+      Palette.default
 
-default = Palette.primaryLight
-active = Palette.primaryLighter
-inactive = Palette.primary
-warning = "red" -- Palette.tertiary
+    Just act ->
+      if act |> Action.canPerform item then
+        if act == Action.drop then
+          Palette.warning
+        else
+          Palette.active
+      else
+        Palette.inactive
+
+itemMessage n action equipped item =
+  case action of
+    Nothing ->
+      "- "
+      ++ Item.describe item
+    Just action' ->
+      "("
+      ++ Util.toAlpha n
+      ++ ") "
+      ++ Action.describeWithDefault item equipped action'
+      ++ " "
+      ++ Item.describe item

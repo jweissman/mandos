@@ -29,7 +29,7 @@ level rating =
 power : Species -> Int
 power species =
   case species of
-    Rat    -> 3
+    Rat    -> 2
     Monkey -> 4
     Snake  -> 5
     Bandit -> 7
@@ -39,9 +39,9 @@ power species =
 resistance : Species -> Int
 resistance species =
   case species of
-    Rat    -> 2
+    Rat    -> 1
     Snake  -> 4
-    Monkey -> 5
+    Monkey -> 6
     Bandit -> 7
     Tiger  -> 9
     Dragon -> 12

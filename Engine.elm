@@ -96,19 +96,16 @@ handleKeypress keyChar model =
     case model.action of
       Just action ->
         model |> case keyChar of
-          --'0' -> playerActs 0
-          --'1' -> playerActs 1
-          --'2' -> playerActs 2
-          --'3' -> playerActs 3
-          --'4' -> playerActs 4
-          --'5' -> playerActs 5
-          --'6' -> playerActs 6
-          --'7' -> playerActs 7
-          --'8' -> playerActs 8
-          --'9' -> playerActs 9
-          'd' -> waitForSelection (if action == Action.drop then Action.default else Action.drop)
-          'i' -> (if action == Action.drop then waitForSelection Action.default else resetAction)
-          _ -> playerActs (Util.fromAlpha keyChar) -- resetAction
+          'd' -> 
+            let act' = (if action == Action.drop then Action.default else Action.drop) in
+            waitForSelection act'
+          'i' -> 
+            if action == Action.drop then 
+              waitForSelection Action.default 
+            else 
+              resetAction
+          _ -> 
+            playerActs (Util.fromAlpha keyChar)
 
       Nothing ->
         model |> case keyChar of
@@ -122,11 +119,6 @@ handleKeypress keyChar model =
           'd' -> waitForSelection Action.drop
           'i' -> waitForSelection Action.default
           _ -> reset
-
-
---toggleInventory : Engine -> Engine
---toggleInventory model =
---  { model | inventoryOpen = not model.inventoryOpen }
 
 waitForSelection : Action -> Engine -> Engine
 waitForSelection action model =
@@ -170,7 +162,6 @@ playerActs idx model =
     maybeItem =
       model.world.player
       |> Warrior.itemAtIndex idx
-      --Util.getAt model.world.player.inventory idx
   in
     case maybeItem of
       Nothing ->
@@ -674,14 +665,14 @@ view model =
       Graphics.render debugMsg (25,1) Palette.accentLighter
 
     quests =
-      Journal.view (55,2) model.world model.quests
+      Journal.view (65,2) model.world model.quests
 
     character =
       model.world.player
-      |> Warrior.cardView (55, 5 + (List.length model.quests)+1) (model.action)
+      |> Warrior.cardView (65, 5 + (List.length model.quests)+1) (model.action)
 
     log =
-      Log.view (2, 37) model.world.events
+      Log.view (2, 44) model.world.events
 
     status =
       Status.view (0,1) model.world

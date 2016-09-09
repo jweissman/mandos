@@ -131,19 +131,17 @@ view entity =
 color : Entity -> String
 color entity =
   case entity of
+    Player _ ->
+      Palette.bright
+
     Monster _ ->
-      "white"
-      --Palette.accentLighter
+      Palette.dim
       
     Item _ ->
       Palette.secondaryLight
 
     Coin _ ->
-      "yellow"
-      --Palette.secondaryLighter
-
-    Player _ ->
-      "white"
+      Palette.alert
 
     Wall _ ->
       Palette.tertiaryLighter
