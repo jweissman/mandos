@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks, deathEvent)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent)
 
 import Palette
 import Point exposing (Point, slide)
@@ -39,6 +39,7 @@ type alias Model =
   , illuminated : List Point
   , hallsEscaped : Bool
   , showMap : Bool
+  , age : Int
   }
 
 -- INIT
@@ -53,6 +54,7 @@ init =
   , illuminated = []
   , hallsEscaped = False
   , showMap = False
+  , age = 0
   }
 
 
@@ -143,6 +145,20 @@ playerSteps direction model =
   |> playerDestroysWalls direction
   |> playerMoves direction
   |> playerAttacks direction
+  |> evolve
+
+age : Model -> Model
+age model =
+  { model | age = model.age + 1 }
+
+evolve : Model -> Model
+evolve model =
+  --let model' = model |> age in
+  --if model'.age % 10 == 0 then
+  --   { model' | dungeon = model.dungeon |> Dungeon.evolve }
+  --else
+  model
+  |> age
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
@@ -362,7 +378,7 @@ illuminate source model =
       |> Set.union (Set.union (walls model) (doors model))
 
     power =
-      model.player.visionRadius
+      Warrior.vision model.player
 
   in
     source
@@ -411,9 +427,31 @@ playerWears : Item -> Model -> Model
 playerWears item model =
   case item.kind of
     Item.Shield armor ->
-      { model | player = model.player |> Warrior.wear armor }
+      { model | player = model.player |> Warrior.wearArmor armor }
+
+    Item.Jewelry ring ->
+      { model | player = model.player |> Warrior.wearRing ring }
+              |> playerViewsField -- could be ring of light..
+
+    Item.Headgear helm ->
+      { model | player = model.player |> Warrior.wearHelm helm }
 
     _ -> model
+
+playerTakesOff item model =
+  case item.kind of
+    Item.Shield armor ->
+      { model | player = model.player |> Warrior.takeOffArmor }
+
+    Item.Jewelry ring ->
+      { model | player = model.player |> Warrior.takeOffRing }
+              |> playerViewsField
+
+    Item.Headgear helm ->
+      { model | player = model.player |> Warrior.takeOffHelm }
+
+    _ -> model
+
 
 playerDrinks : Item -> Model -> Model
 playerDrinks item model =
@@ -427,9 +465,9 @@ playerSheathesWeapon : Model -> Model
 playerSheathesWeapon model =
   { model | player = model.player |> Warrior.sheatheWeapon }
 
-playerTakesOffArmor : Model -> Model
-playerTakesOffArmor model =
-  { model | player = model.player |> Warrior.takeOffArmor }
+--playerTakesOffArmor : Model -> Model
+--playerTakesOffArmor model =
+--  { model | player = model.player |> Warrior.takeOffArmor }
 
 augmentVision : Model -> Model
 augmentVision model =
@@ -537,9 +575,9 @@ highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
   let
     pathColor =
-      Palette.tertiary' 0 0.7
-    targetColor =
       Palette.tertiary' 2 0.7
+    targetColor =
+      Palette.tertiary' 0 0.7
   in
 
     case cells of

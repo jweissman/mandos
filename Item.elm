@@ -1,8 +1,10 @@
-module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, bottle, scroll, crystal, enchant, simple, canApply)
+module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, ring, helm, bottle, scroll, crystal, enchant, simple, canApply)
 
 import Point exposing (Point)
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
+import Ring exposing (Ring)
+import Helm exposing (Helm)
 import Liquid exposing (Liquid)
 import Spell exposing (Spell)
 
@@ -12,6 +14,8 @@ type ItemKind = Arm Weapon
               | Shield Armor
               | Bottle Liquid
               | Scroll Spell
+              | Jewelry Ring
+              | Headgear Helm
               | QuestItem QuestItemKind
 
 weapon weapon' =
@@ -25,6 +29,12 @@ bottle liquid =
 
 scroll spell =
   Scroll spell
+
+ring ring' =
+  Jewelry ring'
+
+helm helm' =
+  Headgear helm'
 
 crystal =
   QuestItem Crystal
@@ -52,6 +62,12 @@ glyph {kind} =
     Shield _ ->
       "%"
 
+    Headgear _ ->
+      "^"
+
+    Jewelry _ ->
+      "~"
+
     Bottle _ ->
       "?"
 
@@ -69,6 +85,12 @@ describe {kind} =
 
     Shield armor' ->
       Armor.describe armor'
+
+    Jewelry ring ->
+      Ring.describe ring
+
+    Headgear helm ->
+      Helm.describe helm
 
     Bottle liquid ->
       "bottle of " ++ (Liquid.describe liquid)
@@ -90,24 +112,36 @@ enchant item =
     Shield armor ->
       { item | kind = Shield (Armor.enchant armor) }
 
-    Bottle _ -> item
-    Scroll _ -> item
-    QuestItem _ -> item
+    Jewelry ring ->
+      { item | kind = Jewelry (Ring.enchant ring) }
+
+    Headgear helm ->
+      { item | kind = Headgear (Helm.enchant helm) }
+
+    Bottle _ ->
+      item
+
+    Scroll _ ->
+      item
+
+    QuestItem _ ->
+      item
 
 canApply item' item =
   case item'.kind of
     Scroll spell ->
       if spell == Spell.infuse then
         case item.kind of
-          Arm _ -> 
+          Arm _ ->
             True
 
-          Shield _ -> 
+          Shield _ ->
             True
 
-          _ -> 
+          _ ->
             False
       else
         False
-    _ -> 
+
+    _ ->
       False

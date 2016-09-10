@@ -153,9 +153,25 @@ isEquipped item model =
           False
         Just weapon ->
           item == (Item.simple (Item.weapon weapon))
+
+    isHelm =
+      case player.helm of
+        Nothing ->
+          False
+        Just helm ->
+          item == (Item.simple (Item.helm helm))
+
+    isRing =
+      case player.ring of
+        Nothing ->
+          False
+        Just ring ->
+          item == (Item.simple (Item.ring ring))
   in
     isArmor
     || isWeapon
+    || isHelm
+    || isRing
 
 playerActs : Int -> Engine -> Engine
 playerActs idx model =
@@ -191,7 +207,7 @@ playerActsOnItem item act model =
               |> playerLosesItem item
 
     TakeOff ->
-      { model | world = model.world |> World.playerTakesOffArmor }
+      { model | world = model.world |> World.playerTakesOff item }
 
     Wield ->
       { model | world = model.world |> World.playerWields item }
@@ -241,13 +257,11 @@ playerApplies item' item model =
     Scroll spell ->
       case spell of
         Infuse ->
-          --Debug.log ("USE ITEM " ++ (Item.describe item'))
-          --Debug.log ("ON ITEM " ++ (Item.describe item))
           model
           |> playerLosesItem item'
           |> playerEnchants item
 
-        _ ->
+        Lux ->
           model
     _ ->
       model
@@ -287,7 +301,6 @@ castSpell item spell model =
       |> enhancePlayerVision
 
     Infuse ->
-      --Debug.log "CAST SPELL"
       model
       |> waitForSelection (Action.use item (Action.enchant))
 
@@ -670,18 +683,21 @@ view model =
     note =
       Graphics.render debugMsg (25,1) Palette.accentLighter
 
+    rightBarY =
+      Configuration.viewWidth - 15
+
     quests =
-      Journal.view (65,2) model.world model.quests --world.player
+      Journal.view (rightBarY,2) model.world model.quests --world.player
 
     character =
       model.world.player
-      |> Warrior.cardView (65, 5+(List.length model.quests)) (model.action)
+      |> Warrior.cardView (rightBarY, 5+(List.length model.quests)) (model.action)
 
     inventory =
-      Inventory.view (65, 10+(List.length model.quests)) model.action model.world.player --model.world
+      Inventory.view (rightBarY, 10+(List.length model.quests)) model.action model.world.player --model.world
 
     log =
-      Log.view (2, 44) model.world.events
+      Log.view (2, (Configuration.viewHeight - 6)) model.world.events
 
     status =
       Status.view (1,1) model.world

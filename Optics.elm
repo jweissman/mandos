@@ -19,11 +19,24 @@ illuminate power perimeter blockers source =
 castRay : Int -> Set Point -> Point -> Point -> List Point
 castRay power blockers src dst =
   let
-    line' =
+    pts =
       line src dst
       |> List.tail
       |> Maybe.withDefault []
 
+    notAbsorbed = \pt -> 
+      not (Set.member pt blockers) 
+      && not ((Point.distance src pt) > toFloat power)
+
   in
-    line'
-    |> Util.takeWhile' (\pt -> not (Set.member pt blockers) && not ((Point.distance src pt) > toFloat power))
+    pts
+    |> takeWhile' notAbsorbed
+
+takeWhile' : (a -> Bool) -> List a -> List a
+takeWhile' predicate list =
+  case list of
+    []      -> []
+    x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
+               else [x]
+
+

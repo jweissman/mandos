@@ -85,7 +85,7 @@ minimumWhere f pred graph =
         else
           minRest
 
-      Nothing -> 
+      Nothing ->
         if pred n then
           Just graph
         else
@@ -133,7 +133,7 @@ tree' f pred graph ls =
       graph
       |> minimumBy (f x)
       |> nodeValue
-      |> f x 
+      |> f x
       
     rest =
       ls |> List.sortBy weight

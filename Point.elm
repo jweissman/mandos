@@ -5,12 +5,8 @@ import Configuration
 
 import Set exposing (Set)
 import Random
---import Mouse
 
 type alias Point = ( Int, Int )
-
---x (x',_) = x'
---y (_,y') = y'
 
 adjacent : Point -> List Point
 adjacent pt =

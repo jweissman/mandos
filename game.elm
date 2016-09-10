@@ -35,10 +35,10 @@ main =
 
 -- MODEL
 
-type GameState = Splash 
-               | Generating 
-               | Playing 
-               | Death String 
+type GameState = Splash
+               | Generating
+               | Playing
+               | Death String
                | Victory
 
 type alias Model =
@@ -145,7 +145,7 @@ inferState model =
         case deathEvent of
           Just event ->
             case event of
-              Event.Death cause -> 
+              Event.Death cause ->
                 Death cause
               _ ->
                 Death "unknown causes"
@@ -171,7 +171,7 @@ view : Model -> Html Msg
 view model =
   let
     bgStyle = [
-      ( "background-color", Palette.primaryDarker
+      ( "background-color", "black" -- Palette.tertiaryDarker
       )
     ]
   in
@@ -198,19 +198,23 @@ box viewModel =
   in
     svg [ viewBox dims, width ((toString (width'*scale)) ++ "px"), height ((toString (height'*scale)) ++ "px") ] viewModel
 
+
 stateView model =
   let
+    heroPos =
+      (25, 20)
+ 
     hero =
-      Graphics.hero "MANDOS" (22,14)
+      Graphics.hero "MANDOS" heroPos
 
     jumbo =
-      Graphics.jumbo "@" (28,38)
+      Graphics.jumbo "@" (32,42)
 
     anyKey =
-      Graphics.render "press any key to play" (34, 32) Palette.bright
+      Graphics.render "press any key to play" (42, 36) Palette.bright
 
     trademark =
-      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (26, 46) Palette.tertiaryLighter
+      Graphics.render "Written by Joseph Weissman // A Deep Cerulean Experience" (34, 38) Palette.tertiaryLighter
 
     steps =
       model.engine.world.player.steps
@@ -231,26 +235,26 @@ stateView model =
       Generating ->
         [ jumbo
         , hero
-        , Graphics.render "Generating world, please wait..." (32, 45) Palette.secondaryLighter
-        , Graphics.render "(This may take a little while!)" (32, 48) Palette.secondaryLight
+        , Graphics.render "Generating world, please wait..." (38, 35) Palette.secondaryLighter
+        , Graphics.render "(This may take a little while!)" (38, 38) Palette.secondaryLight
         ]
 
       Victory ->
         Engine.view model.engine
         ++ [
-            Graphics.hero "YOU WON!" (18, 15)
-          , Graphics.render "Congratulations!" (34, 20) Palette.secondaryLighter
-          , Graphics.render "You escaped the Halls of Mandos!" (31, 42) Palette.secondaryLight
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 46) Palette.secondaryLight
-          , Graphics.render ((toString kills) ++ " kills") (34, 47) Palette.secondaryLight
+            Graphics.hero "YOU WON!" (20,20)
+          , Graphics.render "Congratulations!" (34, 30) Palette.secondaryLighter
+          , Graphics.render "You escaped the Halls of Mandos!" (31, 32) Palette.secondaryLight
+          , Graphics.render ((toString steps) ++ " steps taken") (38, 36) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (38, 37) Palette.secondaryLight
           ]
 
       Death cause ->
           Engine.view model.engine ++
-          [ Graphics.hero "YOU DIED!" (16, 15)
-          , Graphics.render ("You fought bravely, but were " ++ cause) (25, 40) Palette.bright
-          , Graphics.render ((toString steps) ++ " steps taken") (34, 46) Palette.secondaryLight
-          , Graphics.render ((toString kills) ++ " kills") (34, 47) Palette.secondaryLight
+          [ Graphics.hero "YOU DIED!" (20,20)
+          , Graphics.render ("You fought bravely, but were " ++ cause) (35, 30) Palette.bright
+          , Graphics.render ((toString steps) ++ " steps taken") (38, 36) Palette.secondaryLight
+          , Graphics.render ((toString kills) ++ " kills") (38, 37) Palette.secondaryLight
           ]
 
       Playing ->

@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation, extrude)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass)
 
 
 import Point exposing (Point)
@@ -10,6 +10,8 @@ import Path
 import Configuration
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
+import Helm exposing (Helm)
+import Ring exposing (Ring)
 import Warrior
 import Creature
 import Species
@@ -645,7 +647,7 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.bottle Liquid.water
+          [ Item.helm Helm.cap
           , Item.bottle Liquid.water
           , Item.weapon Weapon.dagger
           , Item.armor Armor.suit
@@ -653,7 +655,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Barracks ->
-          [ Item.scroll Spell.lux
+          [ Item.helm Helm.helmet
+          , Item.scroll Spell.lux
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
           , Item.weapon Weapon.axe
@@ -661,7 +664,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Library ->
-          [ Item.scroll Spell.lux
+          [ Item.ring Ring.light
+          , Item.scroll Spell.lux
           , Item.bottle Liquid.water
           , Item.scroll Spell.infuse
           , Item.armor Armor.tunic
@@ -669,7 +673,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         MiningCamp ->
-          [ Item.weapon Weapon.pick
+          [ Item.ring Ring.power
+          , Item.weapon Weapon.pick
           , Item.bottle Liquid.water
           , Item.scroll Spell.lux
           , Item.bottle Liquid.lifePotion
@@ -823,11 +828,11 @@ evolveGrassAt model pt (add,remove) =
       Set.member pt model.grass
   in
     if alive then
-      if neighbors < 5 || 6 < neighbors then
+      if neighbors < 3 || 5 < neighbors then
         (add, pt :: remove)
       else
         (add, remove)
-    else if neighbors == 5 || neighbors == 6 then
+    else if neighbors > 2 && 6 > neighbors then
       (pt :: add, remove)
     else
       (add, remove)

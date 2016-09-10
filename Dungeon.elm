@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall, evolve)
 
 import Warrior
 import Creature
@@ -10,6 +10,7 @@ import Level exposing (Level)
 import Event exposing (Event)
 import Util
 import Item exposing (Item)
+import Configuration
 
 import Random
 
@@ -19,7 +20,7 @@ type alias Dungeon = List Level
 -- GENERATOR
 generate : Int -> Random.Generator Dungeon
 generate depth =
-  Random.list (depth) (Random.map Level.fromRooms (Room.generate 200))
+  Random.list (depth) (Random.map Level.fromRooms (Room.generate Configuration.candidateRooms))
 
 prepare : Int -> Dungeon -> Dungeon
 prepare depth model =
@@ -99,3 +100,8 @@ playerSees pts depth model =
 playerDestroysWall : Point -> Int -> Dungeon -> Dungeon
 playerDestroysWall pt depth model =
   model |> apply (Level.extrude pt) depth
+
+evolve : Dungeon -> Dungeon
+evolve model =
+  model 
+  |> List.map (\level -> level |> Level.evolveGrass 1)
