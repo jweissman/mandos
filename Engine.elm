@@ -230,6 +230,7 @@ playerActsOnItem item act model =
 
     Use item' act' ->
       if Item.canApply item' item then --Action.canPerform item' act' then
+        --Debug.log ("USE " ++ (Item.describe item') ++ " ON " ++ (Item.describe item))
         model
         |> playerApplies item' item
         |> waitForSelection Action.default
@@ -302,7 +303,7 @@ castSpell item spell model =
 
     Infuse ->
       model
-      |> waitForSelection (Action.use item (Action.enchant))
+      |> waitForSelection (Action.use (item |> Debug.log "INFUSE") (Action.enchant))
 
 enhancePlayerVision : Engine -> Engine
 enhancePlayerVision model =
@@ -561,32 +562,15 @@ playerFollowsPath model =
               |> resetFollow
               |> resetHover
 
-playerExplores : Engine -> Engine
-playerExplores model =
+
+gatherTargets : Engine -> List Point
+gatherTargets model =
   let
-    playerPos =
-      model.world.player.position
-
-    walls' =
-      World.walls model.world
-
-    byDistanceFromPlayer =
-      (\pt -> Point.distance playerPos pt)
-
-    viewed =
+    viewed = 
       World.viewed model.world
 
-    (explored,unexploredFloorsAndDoors) =
-      (Set.union (World.floors model.world) (World.doors model.world))
-      |> Set.partition (\p -> List.member p viewed)
-
-    unexplored =
-      (unexploredFloorsAndDoors)
-      |> Set.union (World.walls model.world |> Set.filter (\pt -> not (List.member pt viewed)))
-
-    frontier =
-      explored
-      |> Set.filter (\pt -> List.any (Point.isAdjacent pt) (unexplored |> Set.toList))
+    explored = (World.floors model.world)
+      |> Set.filter (\p -> List.member p viewed)
 
     visibleCreatures =
       (World.creatures model.world)
@@ -605,45 +589,78 @@ playerExplores model =
         |> List.filter (\pt -> Set.member pt (explored))
       else
         []
+  in
+    visibleCreatures ++ visibleItems ++ visibleCoins
 
-    visibleThings =
-      visibleCreatures ++ visibleItems ++ visibleCoins
+autorogueDestination : Engine -> Maybe Point
+autorogueDestination model =
+  let
+    gather =
+      gatherTargets model
 
-    gatherAndExplore =
-      if model.world |> World.doesPlayerHaveCrystal then
-        visibleCoins
-      else if (List.length visibleThings > 0) then
-        visibleThings
-      else
-        frontier |> Set.toList
-
-    ascendOrDescend =
-      if model.world |> World.doesPlayerHaveCrystal then
-        World.upstairs model.world ++ World.entrances model.world
-      else
-        if Set.size frontier == 0 then
-          World.downstairs model.world ++ World.crystals model.world
-        else
-          []
-
-    destSources =
-      gatherAndExplore ++ ascendOrDescend
-
-    maybeDest =
-      destSources
+    byDistanceFromPlayer =
+      (\pt -> Point.distance model.world.player.position pt)
+  in
+    if List.length gather > 0 then
+      gather
+      |> List.sortBy byDistanceFromPlayer
+      |> List.head
+    else
+      exploreTargets model
       |> List.sortBy byDistanceFromPlayer
       |> List.head
 
+exploreTargets : Engine -> List Point
+exploreTargets model =
+  if model.world |> World.doesPlayerHaveCrystal then
+    World.upstairs model.world ++ World.entrances model.world
+  else 
+    let frontier = (exploreFrontier model) in
+    if List.length frontier > 0 then
+      frontier
+    else
+      World.downstairs model.world ++ World.crystals model.world
+
+exploreFrontier : Engine -> List Point
+exploreFrontier model =
+  let
+    playerPos =
+      model.world.player.position
+
+    viewed =
+      World.viewed model.world
+
+    (explored,unexploredFloorsAndDoors) =
+      (Set.union (World.floors model.world) (World.doors model.world))
+      |> Set.partition (\p -> List.member p viewed)
+
+    unexplored =
+      (unexploredFloorsAndDoors)
+      |> Set.union (World.walls model.world |> Set.filter (\pt -> not (List.member pt viewed)))
+      |> Set.toList
+  in
+    explored
+    |> Set.filter (\pt -> List.any (Point.isAdjacent pt) unexplored)
+    |> Set.toList
+
+playerExplores : Engine -> Engine
+playerExplores model =
+  let
     path =
-      case maybeDest of
+      case (autorogueDestination model) of
         Nothing ->
           Nothing
 
         Just dest ->
           let
+            walls =
+              World.walls model.world
+
+            blocked =
+              (\pt -> Set.member pt walls) --(World.walls model.world))
+
             path' =
-              Path.seek dest playerPos (\pt ->
-                Set.member pt (World.walls model.world))
+              Path.seek dest model.world.player.position blocked
           in
             if List.length path' == 0 then
               Nothing

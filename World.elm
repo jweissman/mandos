@@ -8,6 +8,8 @@ import Creature
 import Warrior
 import Weapon
 import Armor
+import Ring
+import Helm
 import Entity exposing (Entity)
 import Room exposing (Room)
 import Dungeon exposing (Dungeon)
@@ -505,10 +507,33 @@ enchantItem item model =
         Nothing ->
           Nothing
 
+    ring' =
+      case player.ring of
+        Just ring ->
+          if Item.simple (Item.ring ring) == item then
+            Just (Ring.enchant ring)
+          else
+            Just ring
+        Nothing ->
+          Nothing
+
+    helm' =
+      case player.helm of
+        Just helm ->
+          if Item.simple (Item.helm helm) == item then
+            Just (Helm.enchant helm)
+          else
+            Just helm
+
+        Nothing ->
+          Nothing
+
     player' =
       { player | inventory = inventory'
                , armor = armor'
                , weapon = weapon'
+               , ring = ring'
+               , helm = helm'
       }
   in
     { model | player = player' }
