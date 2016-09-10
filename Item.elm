@@ -138,6 +138,12 @@ canApply item' item =
           Shield _ ->
             True
 
+          Jewelry _ ->
+            True
+
+          Headgear _ ->
+            True
+
           _ ->
             False
       else

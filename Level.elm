@@ -648,6 +648,7 @@ furnishRoomFor purpose room depth model =
       case purpose of
         Armory ->
           [ Item.helm Helm.cap
+          , Item.scroll Spell.infuse
           , Item.bottle Liquid.water
           , Item.weapon Weapon.dagger
           , Item.armor Armor.suit
@@ -656,18 +657,19 @@ furnishRoomFor purpose room depth model =
 
         Barracks ->
           [ Item.helm Helm.helmet
-          , Item.scroll Spell.lux
+          , Item.scroll Spell.infuse
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
           , Item.weapon Weapon.axe
+          , Item.scroll Spell.lux
           , Item.armor Armor.plate
           ]
 
         Library ->
           [ Item.ring Ring.light
-          , Item.scroll Spell.lux
-          , Item.bottle Liquid.water
           , Item.scroll Spell.infuse
+          , Item.bottle Liquid.water
+          , Item.scroll Spell.lux
           , Item.armor Armor.tunic
           , Item.bottle Liquid.lifePotion
           ]
