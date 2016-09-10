@@ -171,7 +171,7 @@ view : Model -> Html Msg
 view model =
   let
     bgStyle = [
-      ( "background-color", Palette.tertiaryDarker
+      ( "background-color", "black" -- Palette.tertiaryDarker
       )
     ]
   in

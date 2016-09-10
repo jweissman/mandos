@@ -31,17 +31,17 @@ use item action =
 defaultForItem : Bool -> Item -> Action
 defaultForItem equipped {kind} =
   case kind of
-    Arm _ -> 
+    Arm _ ->
       if equipped then Sheathe else Wield
 
-    Shield _ -> 
+    Shield _ ->
       if equipped then TakeOff else Wear
 
     Jewelry _ ->
       if equipped then TakeOff else Wear
 
     Headgear _ ->
-      if equipped then TakeOff else Wear  
+      if equipped then TakeOff else Wear
 
     Bottle _ -> Drink
     Scroll _ -> Read
@@ -86,6 +86,8 @@ canPerform equipped item action =
       case kind of
         Arm _ -> True
         Shield _ -> True
+        Jewelry _ -> True
+        Headgear _ -> True
         _ -> False
 
     Use item' action' ->
@@ -132,7 +134,7 @@ describe action =
     Use item action' ->
       describe action'
 
-    Default -> 
+    Default ->
       "[Default]"
 
 describeWithDefault : Item -> Bool -> Action -> String

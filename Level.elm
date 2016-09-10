@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation, extrude)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass)
 
 
 import Point exposing (Point)
@@ -655,7 +655,7 @@ furnishRoomFor purpose room depth model =
           ]
 
         Barracks ->
-          [ Item.helm Helm.cap
+          [ Item.helm Helm.helmet
           , Item.scroll Spell.lux
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
@@ -664,7 +664,7 @@ furnishRoomFor purpose room depth model =
           ]
 
         Library ->
-          [ Item.ring Ring.sapphire
+          [ Item.ring Ring.light
           , Item.scroll Spell.lux
           , Item.bottle Liquid.water
           , Item.scroll Spell.infuse
@@ -673,7 +673,7 @@ furnishRoomFor purpose room depth model =
           ]
 
         MiningCamp ->
-          [ Item.ring Ring.ruby
+          [ Item.ring Ring.power
           , Item.weapon Weapon.pick
           , Item.bottle Liquid.water
           , Item.scroll Spell.lux
@@ -828,11 +828,11 @@ evolveGrassAt model pt (add,remove) =
       Set.member pt model.grass
   in
     if alive then
-      if neighbors < 5 || 6 < neighbors then
+      if neighbors < 3 || 5 < neighbors then
         (add, pt :: remove)
       else
         (add, remove)
-    else if neighbors == 5 || neighbors == 6 then
+    else if neighbors > 2 && 6 > neighbors then
       (pt :: add, remove)
     else
       (add, remove)

@@ -1,4 +1,4 @@
-module Warrior exposing (Model, init, step, takeDamage, enrich, collectsItem, drink, wield, wearArmor, wearHelm, wearRing, computeDamageAgainst, resistance, cardView, augmentVision, sheatheWeapon, takeOffArmor, takeOffHelm, takeOffRing)
+module Warrior exposing (Model, init, step, vision, strength, takeDamage, enrich, collectsItem, drink, wield, wearArmor, wearHelm, wearRing, computeDamageAgainst, resistance, cardView, augmentVision, sheatheWeapon, takeOffArmor, takeOffHelm, takeOffRing)
 
 import Configuration
 import Util
@@ -27,7 +27,7 @@ type alias Model =
   , direction : Direction
   , position : Point
   , gold : Int
-  , strength : Int
+  , str : Int
   , steps : Int
   , weapon : Maybe Weapon
   , armor : Maybe Armor
@@ -35,7 +35,7 @@ type alias Model =
   , helm : Maybe Helm
   , inventory : List Item
   , timesGearChanged : Int
-  , visionRadius : Int
+  , vision : Int
   }
 
 -- INIT
@@ -48,7 +48,7 @@ init point =
   , direction = North
   , position = point
   , gold = 0
-  , strength = Configuration.startingStrength
+  , str = Configuration.startingStrength
   , steps = 0
   , weapon = Nothing
   , armor = Nothing
@@ -56,24 +56,66 @@ init point =
   , helm = Nothing
   , inventory = []
   , timesGearChanged = 0
-  , visionRadius = Configuration.visionRadius
+  , vision = Configuration.visionRadius
   }
+
+vision : Model -> Int
+vision model =
+  let
+    ringBonus =
+      case model.ring of
+        Nothing ->
+          0
+        Just ring ->
+          Ring.visionBonus ring
+  in
+    model.vision + ringBonus
+
+strength : Model -> Int
+strength model =
+  let
+    ringBonus =
+      case model.ring of
+        Nothing ->
+          0
+        Just ring ->
+          Ring.strengthBonus ring
+  in
+    model.str + ringBonus
 
 power : Model -> Int
 power model =
-  case model.weapon of
-    Nothing ->
-      model.strength
-    Just weapon ->
-      model.strength + (Weapon.averageDamage weapon)
+  let
+    weaponBonus =
+      case model.weapon of
+        Nothing ->
+          0
+
+        Just weapon ->
+          (Weapon.averageDamage weapon)
+  in
+    (strength model) + weaponBonus
 
 resistance : Model -> Int
 resistance model =
-  case model.armor of
-    Nothing ->
-      model.strength
-    Just armor ->
-      model.strength + (Armor.absorption armor)
+  let
+    armorBonus =
+      case model.armor of
+        Nothing ->
+          0
+
+        Just armor ->
+          Armor.absorption armor
+
+    helmBonus =
+      case model.helm of
+        Nothing ->
+          0
+
+        Just helm ->
+          Helm.absorption helm
+
+  in (strength model) + armorBonus + helmBonus
 
 -- helpers
 step : Direction -> Model -> Model
@@ -92,9 +134,9 @@ computeDamageAgainst defense model =
   let
     damage = case model.weapon of
       Just weapon ->
-        model.strength + Weapon.damage model.steps model.timesGearChanged weapon
+        (strength model) + Weapon.damage model.steps model.timesGearChanged weapon
       Nothing ->
-        model.strength
+        (strength model)
   in
     max 1 (damage - defense)
 
@@ -112,7 +154,7 @@ heal amount model =
 
 augmentVision : Int -> Model -> Model
 augmentVision amount model =
-  { model | visionRadius = model.visionRadius + amount }
+  { model | vision = model.vision + amount }
 
 drink : Liquid -> Model -> Model
 drink liquid model =
@@ -137,12 +179,13 @@ gainHp n model =
   let hp' = model.maxHp + n in
   { model | hp = hp'
           , maxHp = hp'
-        }
+  }
 
 addToInventory item model =
   let
     model' =
-      { model | inventory = model.inventory ++ [item] }
+      { model | inventory = model.inventory ++ [item]
+      }
   in
     model'
 
@@ -152,14 +195,12 @@ wield weapon model =
     Just weapon' ->
       let oldWeapon = Item.init (0,0) (Item.weapon weapon') (1000000 + model.timesGearChanged) in
       { model | weapon = Just weapon
-              --, inventory = model.inventory ++ []
               , timesGearChanged = model.timesGearChanged + 1
       }
       |> addToInventory oldWeapon
 
     Nothing ->
       { model | weapon = Just weapon }
-
 
 sheatheWeapon : Model -> Model
 sheatheWeapon model =
@@ -186,8 +227,6 @@ wearArmor armor model =
 
     Nothing ->
       { model | armor = Just armor }
-
-
 
 takeOffArmor : Model -> Model
 takeOffArmor model =
@@ -233,18 +272,17 @@ wearRing : Ring -> Model -> Model
 wearRing ring model =
   case model.ring of
     Just ring' ->
-      let 
+      let
         oldRing =
-          Item.init (0,0) (Item.ring ring') (1000000 + model.timesGearChanged) 
+          Item.init (0,0) (Item.ring ring') (1000000 + model.timesGearChanged)
       in
         { model | ring = Just ring
                 , timesGearChanged = model.timesGearChanged + 1
         }
         |> addToInventory oldRing
-      
+
     Nothing ->
       { model | ring = Just ring }
-
 
 takeOffRing : Model -> Model
 takeOffRing model =
@@ -278,6 +316,13 @@ collectsItem item model =
           Nothing ->
             model |> wearArmor armor
           Just armor' ->
+            model'
+
+      Headgear helm ->
+        case model.helm of
+          Nothing ->
+            model |> wearHelm helm
+          Just helm' ->
             model'
 
       _ ->

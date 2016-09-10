@@ -39,6 +39,7 @@ type alias Model =
   , illuminated : List Point
   , hallsEscaped : Bool
   , showMap : Bool
+  , age : Int
   }
 
 -- INIT
@@ -53,6 +54,7 @@ init =
   , illuminated = []
   , hallsEscaped = False
   , showMap = False
+  , age = 0
   }
 
 
@@ -143,6 +145,20 @@ playerSteps direction model =
   |> playerDestroysWalls direction
   |> playerMoves direction
   |> playerAttacks direction
+  |> evolve
+
+age : Model -> Model
+age model =
+  { model | age = model.age + 1 }
+
+evolve : Model -> Model
+evolve model =
+  --let model' = model |> age in
+  --if model'.age % 10 == 0 then
+  --   { model' | dungeon = model.dungeon |> Dungeon.evolve }
+  --else
+  model
+  |> age
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
@@ -362,7 +378,7 @@ illuminate source model =
       |> Set.union (Set.union (walls model) (doors model))
 
     power =
-      model.player.visionRadius
+      Warrior.vision model.player
 
   in
     source
@@ -415,6 +431,7 @@ playerWears item model =
 
     Item.Jewelry ring ->
       { model | player = model.player |> Warrior.wearRing ring }
+              |> playerViewsField -- could be ring of light..
 
     Item.Headgear helm ->
       { model | player = model.player |> Warrior.wearHelm helm }
@@ -428,6 +445,7 @@ playerTakesOff item model =
 
     Item.Jewelry ring ->
       { model | player = model.player |> Warrior.takeOffRing }
+              |> playerViewsField
 
     Item.Headgear helm ->
       { model | player = model.player |> Warrior.takeOffHelm }

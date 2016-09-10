@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall, evolve)
 
 import Warrior
 import Creature
@@ -100,3 +100,8 @@ playerSees pts depth model =
 playerDestroysWall : Point -> Int -> Dungeon -> Dungeon
 playerDestroysWall pt depth model =
   model |> apply (Level.extrude pt) depth
+
+evolve : Dungeon -> Dungeon
+evolve model =
+  model 
+  |> List.map (\level -> level |> Level.evolveGrass 1)

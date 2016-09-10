@@ -1,41 +1,60 @@
-module Ring exposing (Ring, describe, enchant, ruby, sapphire)
+module Ring exposing (Ring, describe, enchant, light, power, strengthBonus, visionBonus)
 
-type Gemstone = Ruby
-              | Sapphire
-              | Turquoise
-              | Diamond
+import Spell exposing (Spell)
 
-type Ring = Gem Gemstone
+type Ring = Annulus Spell
           | Enchanted Int Ring
 
-ruby : Ring
-ruby =
-  Gem Ruby
+light : Ring
+light =
+  Annulus Spell.lux
 
-sapphire : Ring
-sapphire =
-  Gem Ruby
+power : Ring
+power =
+  Annulus Spell.infuse
 
 describe : Ring -> String
 describe ring =
   case ring of
-    Gem gem ->
-      let gemName = case gem of
-        Ruby -> "ruby"
-        Sapphire -> "sapphire"
-        Turquoise -> "turquoise"
-        Diamond -> "diamond"
-      in gemName ++ " ring"
+    Annulus spell ->
+      "ring of " ++ (Spell.describe spell)
 
     Enchanted n ring' ->
       "+" ++ (toString n) ++ " " ++ describe ring'
 
-
 enchant : Ring -> Ring
-enchant helm =
-  case helm of
-    Enchanted n helm' ->
-      Enchanted (n+1) helm'
+enchant ring =
+  case ring of
+    Enchanted n ring' ->
+      Enchanted (n+1) ring'
 
     _ ->
-      Enchanted 1 helm
+      Enchanted 1 ring
+
+strengthBonus : Ring -> Int
+strengthBonus ring =
+  case ring of
+    Enchanted n ring' ->
+      n * (strengthBonus ring')
+
+    Annulus spell ->
+      case spell of
+        Spell.Lux ->
+          0
+
+        Spell.Infuse ->
+          1
+
+visionBonus : Ring -> Int
+visionBonus ring =
+  case ring of
+    Enchanted n ring' ->
+      n * (strengthBonus ring')
+
+    Annulus spell ->
+      case spell of
+        Spell.Lux ->
+          1
+
+        Spell.Infuse ->
+          0
