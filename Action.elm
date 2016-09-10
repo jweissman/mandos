@@ -33,8 +33,16 @@ defaultForItem equipped {kind} =
   case kind of
     Arm _ -> 
       if equipped then Sheathe else Wield
+
     Shield _ -> 
       if equipped then TakeOff else Wear
+
+    Jewelry _ ->
+      if equipped then TakeOff else Wear
+
+    Headgear _ ->
+      if equipped then TakeOff else Wear  
+
     Bottle _ -> Drink
     Scroll _ -> Read
     QuestItem _ -> Look
@@ -55,6 +63,8 @@ canPerform equipped item action =
     Wear ->
       case kind of
         Shield _ -> True
+        Jewelry _ -> True
+        Headgear _ -> True
         _ -> False
 
     Read ->

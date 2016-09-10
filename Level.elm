@@ -10,6 +10,8 @@ import Path
 import Configuration
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
+import Helm exposing (Helm)
+import Ring exposing (Ring)
 import Warrior
 import Creature
 import Species
@@ -645,7 +647,7 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.bottle Liquid.water
+          [ Item.helm Helm.cap
           , Item.bottle Liquid.water
           , Item.weapon Weapon.dagger
           , Item.armor Armor.suit
@@ -653,7 +655,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Barracks ->
-          [ Item.scroll Spell.lux
+          [ Item.helm Helm.cap
+          , Item.scroll Spell.lux
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
           , Item.weapon Weapon.axe
@@ -661,7 +664,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Library ->
-          [ Item.scroll Spell.lux
+          [ Item.ring Ring.sapphire
+          , Item.scroll Spell.lux
           , Item.bottle Liquid.water
           , Item.scroll Spell.infuse
           , Item.armor Armor.tunic
@@ -669,7 +673,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         MiningCamp ->
-          [ Item.weapon Weapon.pick
+          [ Item.ring Ring.ruby
+          , Item.weapon Weapon.pick
           , Item.bottle Liquid.water
           , Item.scroll Spell.lux
           , Item.bottle Liquid.lifePotion

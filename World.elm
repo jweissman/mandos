@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOffArmor, playerWields, playerWears, playerDrinks, deathEvent)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent)
 
 import Palette
 import Point exposing (Point, slide)
@@ -411,9 +411,29 @@ playerWears : Item -> Model -> Model
 playerWears item model =
   case item.kind of
     Item.Shield armor ->
-      { model | player = model.player |> Warrior.wear armor }
+      { model | player = model.player |> Warrior.wearArmor armor }
+
+    Item.Jewelry ring ->
+      { model | player = model.player |> Warrior.wearRing ring }
+
+    Item.Headgear helm ->
+      { model | player = model.player |> Warrior.wearHelm helm }
 
     _ -> model
+
+playerTakesOff item model =
+  case item.kind of
+    Item.Shield armor ->
+      { model | player = model.player |> Warrior.takeOffArmor }
+
+    Item.Jewelry ring ->
+      { model | player = model.player |> Warrior.takeOffRing }
+
+    Item.Headgear helm ->
+      { model | player = model.player |> Warrior.takeOffHelm }
+
+    _ -> model
+
 
 playerDrinks : Item -> Model -> Model
 playerDrinks item model =
@@ -427,9 +447,9 @@ playerSheathesWeapon : Model -> Model
 playerSheathesWeapon model =
   { model | player = model.player |> Warrior.sheatheWeapon }
 
-playerTakesOffArmor : Model -> Model
-playerTakesOffArmor model =
-  { model | player = model.player |> Warrior.takeOffArmor }
+--playerTakesOffArmor : Model -> Model
+--playerTakesOffArmor model =
+--  { model | player = model.player |> Warrior.takeOffArmor }
 
 augmentVision : Model -> Model
 augmentVision model =
@@ -537,9 +557,9 @@ highlightCells : List Point -> List (Svg.Svg a)
 highlightCells cells =
   let
     pathColor =
-      Palette.tertiary' 0 0.7
-    targetColor =
       Palette.tertiary' 2 0.7
+    targetColor =
+      Palette.tertiary' 0 0.7
   in
 
     case cells of

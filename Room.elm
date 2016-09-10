@@ -14,6 +14,7 @@ type Purpose = Armory
              | Barracks
              | Library
              | MiningCamp
+             --| TreasureRoom
 
 armory =
   Armory
@@ -48,19 +49,19 @@ generate' =
       Configuration.maxRoomHeight
 
     vWidth =
-      Configuration.viewWidth // 2
+      Configuration.viewWidth - 30
 
     vHeight =
-      Configuration.viewHeight // 2
+      Configuration.viewHeight - 20
 
     width =
-      Random.int 4 width'
+      Random.int 5 width'
 
     height =
-      Random.int 4 height'
+      Random.int 5 height'
 
     origin =
-      Point.randomWithOffset (3,4) (vWidth-width') (vHeight-height')
+      Point.randomWithOffset (6,6) (vWidth-width') (vHeight-height')
 
   in
     Random.map3 create origin width height

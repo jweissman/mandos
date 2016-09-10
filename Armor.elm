@@ -1,7 +1,5 @@
 module Armor exposing (Armor, absorption, describe, tunic, suit, plate, enchant)
 
---import Material exposing (Material)
-
 import String
 
 type Armor = Suit

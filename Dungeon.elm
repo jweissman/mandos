@@ -10,6 +10,7 @@ import Level exposing (Level)
 import Event exposing (Event)
 import Util
 import Item exposing (Item)
+import Configuration
 
 import Random
 
@@ -19,7 +20,7 @@ type alias Dungeon = List Level
 -- GENERATOR
 generate : Int -> Random.Generator Dungeon
 generate depth =
-  Random.list (depth) (Random.map Level.fromRooms (Room.generate 200))
+  Random.list (depth) (Random.map Level.fromRooms (Room.generate Configuration.candidateRooms))
 
 prepare : Int -> Dungeon -> Dungeon
 prepare depth model =

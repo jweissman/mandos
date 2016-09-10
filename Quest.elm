@@ -43,10 +43,10 @@ describe (Quest goal _) =
       "Put on some armor"
 
     FindCrystal ->
-      "Seek the Crystal of Time"
+      "Seek the Crystal"
 
     Escape ->
-      "Escape the Halls of Mandos"
+      "Escape the Halls"
 
 completed : World.Model -> Quest -> Bool
 completed world (Quest goal _) =

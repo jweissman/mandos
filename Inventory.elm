@@ -5,6 +5,8 @@ import Point exposing (Point)
 import Warrior exposing (Model)
 import Weapon exposing (Weapon)
 import Armor exposing (Armor)
+import Ring exposing (Ring)
+import Helm exposing (Helm)
 import Action exposing (Action)
 import Item exposing (Item)
 import Graphics
@@ -12,6 +14,11 @@ import Palette
 
 import Dict exposing (Dict)
 import Svg
+
+type Equipment = EquippedWeapon Weapon
+               | EquippedArmor Armor
+               | EquippedRing Ring
+               | EquippedHelm Helm
 
 -- HELPERS
 size : Model -> Int
@@ -51,35 +58,61 @@ organizedItemAt idx model =
       Just (_,item) ->
         Just item
 
+asItem : Equipment -> Item
+asItem equipment =
+  let toItem = case equipment of
+    EquippedArmor armor -> Item.armor armor
+    EquippedWeapon weapon -> Item.weapon weapon
+    EquippedRing ring -> Item.ring ring
+    EquippedHelm helm -> Item.helm helm
+  in Item.simple toItem
+
+equippedItems model =
+  let
+    weapon = case model.weapon of
+      Nothing -> Nothing
+      Just weapon' ->
+        Just (EquippedWeapon weapon')
+
+    armor = case model.armor of
+      Nothing -> Nothing
+      Just armor' ->
+        Just (EquippedArmor armor')
+
+    ring = case model.ring of
+      Nothing -> Nothing
+      Just ring' ->
+        Just (EquippedRing ring')
+
+    helm = case model.helm of
+      Nothing -> Nothing
+      Just helm' ->
+        Just (EquippedHelm helm')
+
+    equipment =
+      [ weapon
+      , armor
+      , helm
+      , ring
+      ]
+  in
+    equipment
+    |> List.filterMap identity
+    |> List.map asItem
+
 itemAtIndex : Int -> Model -> Maybe Item
 itemAtIndex idx model =
-  case model.weapon of
-    Just weapon' ->
-      case model.armor of
-        Just armor' ->
-          if idx == 0 then
-            Just (Item.simple (Item.weapon weapon'))
-          else if idx == 1 then
-            Just (Item.simple (Item.armor armor'))
-          else
-            model |> organizedItemAt (idx-2)
+  let
+    equipment =
+      equippedItems model
 
-        Nothing ->
-          if idx == 0 then
-            Just (Item.simple (Item.weapon weapon'))
-          else
-            model |> organizedItemAt (idx-1)
-
-    Nothing ->
-      case model.armor of
-        Just armor' ->
-          if idx == 0 then
-            Just (Item.simple (Item.armor armor'))
-          else
-            model |> organizedItemAt (idx-1)
-
-        Nothing ->
-          model |> organizedItemAt idx
+    gearCount =
+      List.length equipment
+  in
+    if idx < List.length equipment then
+      Util.getAt equipment idx
+    else
+      model |> organizedItemAt (idx - gearCount)
 
 -- VIEW
 
@@ -91,87 +124,38 @@ view (x,y) action model =
 
     header =
       [ Graphics.render "GEAR" (x, y) Palette.secondaryLighter ]
+
+    equipment =
+      equipmentView (x,y+2) action model
+
+    hr =
+      horizontalRule (x,y+2+equipCount)
+
+    equipCount =
+      List.length equipment
+
+    items =
+      List.map2 (\n (ct,it) -> itemView (x,y+3) action n ct False it) [equipCount..30] (model |> organize |> Dict.values)
+
   in
-  if model.armor == Nothing && model.weapon == Nothing then
-    if List.length model.inventory > 0 then
-      header
-      ++ (List.indexedMap (\n (ct,it) -> itemView (x,y+2) action n ct it) (model |> organize |> Dict.values))
-    else
-      []
-  else
-    let
-      equipment =
-        equipmentView (x,y+2) action model
-
-      hr =
-        horizontalRule (x,y+2+equipCount)
-
-      equipCount =
-        List.length equipment
-
-      items =
-        List.map2 (\n (ct,it) -> itemView (x,y+3) action n ct it) [equipCount..30] (model |> organize |> Dict.values)
-
-    in
-       header
-       ++ equipment
-       ++ hr
-       ++ items
+     header
+     ++ equipment
+     ++ hr
+     ++ items
 
 horizontalRule (x,y) =
   [ Graphics.render "---" (x,y) Palette.dim ]
 
-weaponView : Point -> Maybe Action -> Int -> Weapon -> Svg.Svg a
-weaponView (x,y) action n weapon =
-  let
-    asItem =
-      (Item.simple (Item.weapon weapon))
-
-    message =
-      itemMessage n action True asItem
-
-    color =
-      itemColor action True asItem
-
-  in
-    Graphics.render message (x,y) color
-
-armorView : Point -> Maybe Action -> Int -> Armor -> Svg.Svg a
-armorView (x,y) action n armor =
-  let
-    asItem =
-      (Item.simple (Item.armor armor))
-
-    message =
-      itemMessage n action True asItem
-
-    color =
-      itemColor action True asItem
-
-  in
-    Graphics.render message (x,y) color
-
 equipmentView (x,y) action model =
-  case model.weapon of
-    Just weapon' ->
-      case model.armor of
-        Just armor' ->
-          [ weaponView (x,y) action 0 weapon', armorView (x,y+1) action 1 armor' ]
-        Nothing ->
-          [ weaponView (x,y) action 0 weapon' ]
+  model
+  |> equippedItems
+  |> List.indexedMap (\n item -> itemView (x,y) action n 1 True item)
 
-    Nothing ->
-      case model.armor of
-        Just armor' ->
-          [ armorView (x,y) action 0 armor' ]
-        Nothing ->
-          [ ]
-
-itemView: Point -> Maybe Action -> Int -> Int -> Item -> Svg.Svg a
-itemView (x,y) action idx count item =
+itemView: Point -> Maybe Action -> Int -> Int -> Bool -> Item -> Svg.Svg a
+itemView (x,y) action idx count equipped item =
   let
-    message = 
-      itemMessage idx action False item 
+    message =
+      itemMessage idx action equipped item
 
     desc =
       if count > 1 then
@@ -180,7 +164,7 @@ itemView (x,y) action idx count item =
         message
 
     color =
-      itemColor action False item
+      itemColor action equipped item
 
   in
     Graphics.render desc (x,y+idx) color
