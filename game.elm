@@ -48,8 +48,6 @@ type alias Model =
   , generationUnderway : Bool
   , ticks : Int
   , autoplay : Bool
-  --, generatedMap : Bool
-  --, generatedLanguage : Bool
   }
 
 -- INIT
@@ -59,8 +57,6 @@ init = ( { engine = Engine.init
          , generationUnderway = False
          , ticks = 0
          , autoplay = False
-         --, generatedMap = False
-         --, generatedLanguage = False
          },
          Cmd.none
        )

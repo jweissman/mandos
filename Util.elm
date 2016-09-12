@@ -124,22 +124,6 @@ dropWhile predicate list =
     x::xs   -> if (predicate x) then dropWhile predicate xs
                else list
 
---takeWhile : (a -> Bool) -> List a -> List a
---takeWhile predicate list =
---  case list of
---    []      -> []
---    x::xs   -> if (predicate x) then x :: takeWhile predicate xs
---               else []
-
---takeWhile' : (a -> Bool) -> List a -> List a
---takeWhile' predicate list =
---  case list of
---    []      -> []
---    x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
---               else [x]
-
-
-
 elemIndex : a -> List a -> Maybe Int
 elemIndex x = findIndex ((==)x)
 

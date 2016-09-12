@@ -55,8 +55,6 @@ init pt kind id =
 simple kind =
   { position = (0,0), kind = kind, id = -101 }
 
---kind item =
-
 glyph : Item -> String
 glyph {kind} =
   case kind of
@@ -125,11 +123,11 @@ describe vocab language {kind} =
       Helm.describe helm
 
     Bottle liquid ->
-      "bottle of " --++ (Liquid.describe liquid)
+      "bottle of "
       ++ (Language.decode (Liquid.idea liquid) vocab language)
 
     Scroll spell ->
-      "scroll of " --++ (Spell.describe spell)
+      "scroll of "
       ++ (Language.decode (Spell.idea spell) vocab language)
 
     QuestItem kind ->

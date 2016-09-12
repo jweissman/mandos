@@ -20,20 +20,6 @@ lifePotion =
 holyWater =
   Blessed Water
 
---describe : Liquid -> String
---describe liquid =
---  case liquid of
---    Water ->
---      "water"
---
---    Blessed liquid' ->
---      "holy " ++ (describe liquid')
---
---    Potion effect ->
---      case effect of
---        GainLife ->
---          "vitae"
-
 idea : Liquid -> Idea
 idea liquid =
   case liquid of

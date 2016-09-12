@@ -11,15 +11,6 @@ lux =
 infuse =
   Infuse
 
---describe : Spell -> String
---describe spell =
---  case spell of
---    Lux ->
---      "lux"
---
---    Infuse ->
---      "infuse"
-
 idea : Spell -> Idea
 idea spell =
   case spell of

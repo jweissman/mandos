@@ -26,8 +26,6 @@ generate depth =
 prepare : Int -> Dungeon -> Dungeon
 prepare depth model =
   model
-  --|> List.filter Level.navigable
-  --|> List.take depth
   |> List.indexedMap Level.finalize
 
 -- HELPERS

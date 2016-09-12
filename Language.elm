@@ -67,7 +67,7 @@ foreignWordFor : Idea -> Language -> String
 foreignWordFor idea model =
   model
   |> List.filter (\(Root idea' _) -> idea == idea')
-  |> List.map (\(Root _ word) -> word) --idea == idea')
+  |> List.map (\(Root _ word) -> word)
   |> List.head
   |> Maybe.withDefault "???"
   

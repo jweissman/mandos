@@ -91,7 +91,6 @@ speak language model =
       { world | language = language }
 
   in
-    --Debug.log ("SPEAK LANG" ++ (toString language))
     { model | world = world' }
 
 illuminate : Engine -> Engine
@@ -432,11 +431,6 @@ seeEntityAt point model =
     entity =
       World.entityAt point model.world
 
-    --maybeEntity =
-    --  entities
-    --  |> List.reverse
-    --  |> List.head
-
     path' =
       case entity of
         Nothing ->
@@ -454,9 +448,6 @@ rememberEntityAt point model =
   let
     entity =
       World.entityAt point model.world
-      --|> List.filter (not << Entity.isCreature)
-      --|> List.reverse
-      --|> List.head
 
     maybeEntity =
       case entity of
@@ -485,8 +476,6 @@ imagineEntityAt point model =
   let
     entity =
       World.entityAt point model.world
-      --|> List.reverse
-      --|> List.head
 
     maybeEntity =
       case entity of
@@ -577,11 +566,10 @@ gatherTargets model =
   let
     viewed =
       World.viewed model.world
-      --|> Set.fromList
 
     explored =
       World.floors model.world
-      |> Set.intersect viewed --filter (\p -> Set.member p viewed)
+      |> Set.intersect viewed
 
     visibleCreatures =
       (World.creatures model.world)
@@ -699,7 +687,7 @@ view model =
       Configuration.viewWidth - 15
 
     quests =
-      Journal.view (rightBarY,2) model.world model.quests --world.player
+      Journal.view (rightBarY,2) model.world model.quests
 
     character =
       model.world.player

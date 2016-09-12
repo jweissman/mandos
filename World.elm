@@ -614,12 +614,3 @@ highlightCells cells =
 
 highlightCell (x,y) color =
   Graphics.render "@" (x,y) color
-
---lastSingleton : List a -> List a
---lastSingleton ls =
---  case (ls |> List.reverse |> List.head) of
---    Nothing ->
---      []
---
---    Just e ->
---      [e]
