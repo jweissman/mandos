@@ -1,4 +1,6 @@
-module Liquid exposing (Liquid(..), Effect(..), describe, water, lifePotion, holyWater)
+module Liquid exposing (Liquid(..), Effect(..), idea, water, lifePotion, holyWater)
+
+import Idea exposing (Idea)
 
 type Effect = GainLife
 
@@ -18,17 +20,30 @@ lifePotion =
 holyWater =
   Blessed Water
 
+--describe : Liquid -> String
+--describe liquid =
+--  case liquid of
+--    Water ->
+--      "water"
+--
+--    Blessed liquid' ->
+--      "holy " ++ (describe liquid')
+--
+--    Potion effect ->
+--      case effect of
+--        GainLife ->
+--          "vitae"
 
-describe : Liquid -> String
-describe liquid =
+idea : Liquid -> Idea
+idea liquid =
   case liquid of
-    Water -> 
-      "water"
+    Water ->
+      Idea.water
 
     Blessed liquid' ->
-      "holy " ++ (describe liquid')
+      Idea.compound [Idea.holy, (idea liquid')]
 
     Potion effect ->
       case effect of
         GainLife ->
-          "vitae"
+          Idea.life

@@ -1,4 +1,4 @@
-module Engine exposing (Engine, init, view, enter, speak, clickAt, hoverAt, tick, handleKeypress, resetHover)
+module Engine exposing (Engine, init, view, enter, speak, clickAt, hoverAt, tick, handleKeypress, resetHover, autorogue)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction(..))
@@ -83,9 +83,9 @@ enter dungeon model =
 
 speak : Language -> Engine -> Engine
 speak language model =
-  let 
-    world = 
-      model.world 
+  let
+    world =
+      model.world
 
     world' =
       { world | language = language }
@@ -414,7 +414,7 @@ hoverAt position model =
       List.member point (model.world.illuminated)
 
     wasLit =
-      List.member point (World.viewed model.world)
+      Set.member point (World.viewed model.world)
   in
     if isLit then
       model |> seeEntityAt point
@@ -429,39 +429,42 @@ hoverAt position model =
 
 seeEntityAt point model =
   let
-    entities =
-      World.entitiesAt point model.world
+    entity =
+      World.entityAt point model.world
 
-    maybeEntity =
-      entities
-      |> List.reverse
-      |> List.head
+    --maybeEntity =
+    --  entities
+    --  |> List.reverse
+    --  |> List.head
 
     path' =
-      case maybeEntity of
+      case entity of
         Nothing ->
           []
 
-        Just entity ->
-          model |> pathToEntity entity
+        Just entity' ->
+          model |> pathToEntity entity'
 
   in
-      { model | hover = maybeEntity
+      { model | hover = entity
               , hoverPath = path'
       }
 
 rememberEntityAt point model =
   let
     entity =
-      World.entitiesAt point model.world
-      |> List.filter (not << Entity.isCreature)
-      |> List.reverse
-      |> List.head
+      World.entityAt point model.world
+      --|> List.filter (not << Entity.isCreature)
+      --|> List.reverse
+      --|> List.head
 
     maybeEntity =
       case entity of
          Just entity' ->
-           Just (Entity.memory entity')
+           if (Entity.isCreature entity') then
+             Nothing
+           else
+             Just (Entity.memory entity')
          Nothing ->
            Nothing
 
@@ -481,9 +484,9 @@ rememberEntityAt point model =
 imagineEntityAt point model =
   let
     entity =
-      World.entitiesAt point model.world
-      |> List.reverse
-      |> List.head
+      World.entityAt point model.world
+      --|> List.reverse
+      --|> List.head
 
     maybeEntity =
       case entity of
@@ -572,13 +575,13 @@ playerFollowsPath model =
 gatherTargets : Engine -> List Point
 gatherTargets model =
   let
-    viewed = 
+    viewed =
       World.viewed model.world
-      |> Set.fromList
+      --|> Set.fromList
 
-    explored = 
+    explored =
       World.floors model.world
-      |> Set.filter (\p -> Set.member p viewed)
+      |> Set.intersect viewed --filter (\p -> Set.member p viewed)
 
     visibleCreatures =
       (World.creatures model.world)
@@ -599,14 +602,26 @@ gatherTargets model =
   in
     visibleCreatures ++ visibleItems ++ visibleCoins
 
+
+exploreTargets : Engine -> List Point
+exploreTargets model =
+  if model.world |> World.doesPlayerHaveCrystal then
+    World.upstairs model.world ++ World.entrances model.world
+  else
+    let frontier = World.viewFrontier model.world in
+    if Set.size frontier == 0 then
+      World.downstairs model.world ++ World.crystals model.world
+    else
+      frontier |> Set.toList
+
 autorogueDestination : Engine -> Maybe Point
 autorogueDestination model =
   let
     gather =
       gatherTargets model
 
-    byDistanceFromPlayer =
-      (\pt -> Point.distance model.world.player.position pt)
+    byDistanceFromPlayer = \pt ->
+      Point.distance model.world.player.position pt
   in
     if List.length gather > 0 then
       gather
@@ -616,73 +631,6 @@ autorogueDestination model =
       exploreTargets model
       |> List.sortBy byDistanceFromPlayer
       |> List.head
-
-exploreTargets : Engine -> List Point
-exploreTargets model =
-  if model.world |> World.doesPlayerHaveCrystal then
-    World.upstairs model.world ++ World.entrances model.world
-  else 
-    let frontier = (exploreFrontier model) in
-    case frontier of
-      Just pt ->
-        [pt]
-
-      Nothing ->
-        World.downstairs model.world ++ World.crystals model.world
-
-exploreFrontier : Engine -> Maybe Point
-exploreFrontier model =
-  let
-    playerPos =
-      model.world.player.position
-
-    viewed =
-      World.viewed model.world
-      |> Set.fromList
-
-    walls =
-      World.walls model.world
-
-    floors =
-      World.floors model.world
-
-    wasSeen = \pt -> 
-      Set.member pt viewed
-
-    (exploredFloors, unexploredFloors) =
-      floors 
-      |> Set.partition wasSeen 
- 
-    (_, unexploredWalls) = 
-      walls
-      |> Set.partition wasSeen
-  in
-    model
-    |> closestUnexplored (exploredFloors) (Set.union unexploredFloors unexploredWalls)
-
-    --explored
-    ----|> Set.filter notWall
-    --|> Set.toList
-    --|> List.sortBy byDistanceFromPlayer
-    --|> Util.dropWhile (\pt -> not (List.any (Point.isAdjacent pt) unexploredList))
-    --|> List.head
-
-closestUnexplored explored unexplored model =
-  let
-    distanceFromPlayer = \pt -> 
-      Point.distance model.world.player.position pt
-
-    toExplore = \pt ->
-      (unexplored
-      |> Set.filter (Point.isAdjacent pt)
-      |> Set.size) > 0
-      --List.any (Point.isAdjacent pt) unexplored
-  in
-    explored
-    |> Set.toList
-    |> List.sortBy distanceFromPlayer
-    |> Util.dropWhile (not << toExplore)
-    |> List.head
 
 playerExplores : Engine -> Engine
 playerExplores model =
@@ -717,6 +665,12 @@ view model =
     world =
       model.world
 
+    lang =
+      world.language
+
+    vocab =
+      world.player.vocabulary
+
     path =
       case model.followPath of
         Nothing ->
@@ -733,10 +687,10 @@ view model =
     debugMsg =
       case model.action of
         Just action' ->
-          Action.question action'
+          Action.question vocab lang action'
 
         Nothing ->
-          model |> hoverMessage
+          model |> hoverMessage vocab lang
 
     note =
       Graphics.render debugMsg (25,1) Palette.accentLighter
@@ -752,10 +706,10 @@ view model =
       |> Warrior.cardView (rightBarY, 5+(List.length model.quests)) (model.action)
 
     inventory =
-      Inventory.view (rightBarY, 10+(List.length model.quests)) model.world.language model.action model.world.player --model.world
+      Inventory.view (rightBarY, 10+(List.length model.quests)) vocab lang model.action model.world.player
 
     log =
-      Log.view (2, (Configuration.viewHeight - 6)) model.world.events
+      Log.view (2, (Configuration.viewHeight - 6)) vocab lang model.world.events
 
     status =
       Status.view (1,1) model.world
@@ -772,9 +726,8 @@ view model =
     ++ rightBar
     ++ log
 
-
-hoverMessage : Engine -> String
-hoverMessage model =
+hoverMessage : Language -> Language -> Engine -> String
+hoverMessage vocab lang model =
   case model.hover of
     Nothing ->
       "You aren't looking at anything in particular."
@@ -782,8 +735,8 @@ hoverMessage model =
     Just entity ->
       case entity of
         Entity.Memory e ->
-          "You remember seeing " ++ (Entity.describe e) ++ " here."
+          "You remember seeing " ++ (Entity.describe vocab lang e) ++ " here."
         Entity.Imaginary e ->
-          "You imagine there is " ++ (Entity.describe e) ++ " here."
+          "You imagine there is " ++ (Entity.describe vocab lang e) ++ " here."
         _ ->
-          "You see " ++ (Entity.describe entity) ++ "."
+          "You see " ++ (Entity.describe vocab lang entity) ++ "."

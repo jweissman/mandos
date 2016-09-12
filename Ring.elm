@@ -1,6 +1,7 @@
-module Ring exposing (Ring, describe, enchant, light, power, strengthBonus, visionBonus)
+module Ring exposing (Ring, describe, spell, enchant, light, power, strengthBonus, visionBonus)
 
 import Spell exposing (Spell)
+import Language exposing (Language)
 
 type Ring = Annulus Spell
           | Enchanted Int Ring
@@ -13,14 +14,23 @@ power : Ring
 power =
   Annulus Spell.infuse
 
-describe : Ring -> String
-describe ring =
+spell : Ring -> Spell
+spell ring =
   case ring of
-    Annulus spell ->
-      "ring of " ++ (Spell.describe spell)
+    Annulus spell' ->
+      spell'
+
+    Enchanted _ ring' ->
+      spell ring
+
+describe : Language -> Language -> Ring -> String
+describe vocab language ring =
+  case ring of
+    Annulus spell' ->
+      "ring of " ++ (Language.decode (Spell.idea spell') vocab language)
 
     Enchanted n ring' ->
-      "+" ++ (toString n) ++ " " ++ describe ring'
+      "+" ++ (toString n) ++ " " ++ (describe vocab language ring')
 
 enchant : Ring -> Ring
 enchant ring =
@@ -37,8 +47,8 @@ strengthBonus ring =
     Enchanted n ring' ->
       n * (strengthBonus ring')
 
-    Annulus spell ->
-      case spell of
+    Annulus spell' ->
+      case spell' of
         Spell.Lux ->
           0
 
@@ -51,8 +61,8 @@ visionBonus ring =
     Enchanted n ring' ->
       n * (visionBonus ring')
 
-    Annulus spell ->
-      case spell of
+    Annulus spell' ->
+      case spell' of
         Spell.Lux ->
           1
 

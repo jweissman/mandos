@@ -12,6 +12,7 @@ adjacent : Point -> List Point
 adjacent pt =
   Direction.directions
   |> List.map (\dir -> pt |> slide dir)
+  --|> Set.fromList
 
 isAdjacent a b =
   adjacent a

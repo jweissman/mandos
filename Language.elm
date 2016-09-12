@@ -1,83 +1,77 @@
-module Language exposing (Language, Word, Idea, generate)
+module Language exposing (Language, Word, generate, decode)
 
 import Util
+import Idea exposing (Idea)
 
 import Random exposing (Generator)
 import String
-
-type Idea = Power
-          | Light
-          | Life
-          | Water
-          | Holy
-          --| Imagination
-          | Compound (List Idea)
 
 type Word = Root Idea String
 
 type alias Language = List Word
 
-describeIdea : Idea -> String
-describeIdea idea =
-  case idea of
-    Power ->
-      "power"
-
-    Light ->
-      "light"
-
-    Life ->
-      "life"
-
-    Water ->
-      "water"
-
-    Holy ->
-      "holy"
-
-    Compound ideas ->
-      ideas
-      |> List.map describeIdea
-      |> String.join " "
-
-ideas =
-  [ Power
-  , Light
-  , Life
-  , Water
-  , Holy
-  --, Compound [Holy, Water]
-  ]
-
 syllables =
   [ "ae"
+  , "al"
   , "au"
   , "ch"
   , "de"
   , "ea"
+  , "el"
+  , "en"
+  , "ep"
   , "es"
   , "eu"
-  , "en"
+  , "jo"
   , "li"
   , "ll"
+  , "lm"
+  , "lo"
   , "ma"
+  , "mne"
   , "mu"
-  , "mn"
   , "no"
   , "nu"
-  , "oi"
+  , "oe"
   , "oh"
+  , "oi"
+  , "or"
   , "ru"
+  , "ry"
   , "sa"
-  , "sh"
-  , "th"
+  , "sho"
+  , "thi"
   , "us"
   ]
 
+-- init
 
 init : Idea -> String -> Word
 init idea description =
   Root idea description
+
+-- translation
+decode : Idea -> Language -> Language -> String
+decode idea known model =
+  let 
+    knownIdea = 
+      known 
+      |> List.any (\(Root idea' _) -> idea == idea')
+  in if knownIdea then
+    Idea.describe idea
+  else
+    model
+    |> foreignWordFor idea
+
+foreignWordFor : Idea -> Language -> String
+foreignWordFor idea model =
+  model
+  |> List.filter (\(Root idea' _) -> idea == idea')
+  |> List.map (\(Root _ word) -> word) --idea == idea')
+  |> List.head
+  |> Maybe.withDefault "???"
+  
+-- generation
 
 generateSyllable : Generator String
 generateSyllable =
@@ -100,21 +94,21 @@ generateWord =
     syllableList =
       Random.list 10 generateSyllable
 
-    constructWord = \ls ct -> 
-      ls 
-      |> List.take ct 
+    constructWord = \ls ct ->
+      ls
+      |> List.take ct
       |> String.join ""
   in
     Random.map2 constructWord syllableList randomCount
 
 generateWords : Generator (List String)
 generateWords =
-  Random.list (List.length ideas) generateWord
+  Random.list (List.length Idea.ideas) generateWord
 
 generate : Generator Language
 generate =
   let
-    expression = \words -> 
-      List.map2 init ideas words
+    expression = \words ->
+      List.map2 init Idea.ideas words
   in
     Random.map expression generateWords

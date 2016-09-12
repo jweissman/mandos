@@ -7,6 +7,7 @@ import Warrior
 import String
 import Graphics
 import Palette
+import Language exposing (Language)
 
 import Svg
 
@@ -78,8 +79,8 @@ isCreature entity =
 
 -- helpers
 
-describe : Entity -> String
-describe entity =
+describe : Language -> Language -> Entity -> String
+describe vocab language entity =
   case entity of
     Monster creature ->
       Creature.describe creature
@@ -109,10 +110,10 @@ describe entity =
       "a downward-curving staircase"
 
     Memory entity ->
-      "You saw " ++ (describe entity) ++ " here"
+      "You saw " ++ (describe vocab language entity) ++ " here"
 
     Imaginary entity ->
-      "You imagine there is " ++ (describe entity) ++ " here"
+      "You imagine there is " ++ (describe vocab language entity) ++ " here"
 
     Entrance open _ ->
       if open then
@@ -121,7 +122,7 @@ describe entity =
         "a closed heavy metal gateway"
 
     Item item ->
-      Item.describe item
+      Item.describe vocab language item
 
 -- view
 view : Entity -> Svg.Svg a

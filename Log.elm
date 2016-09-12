@@ -5,8 +5,9 @@ import Event exposing (Event)
 import Point exposing (Point)
 import Graphics
 import Palette
+import Language exposing (Language)
 
-import Svg 
+import Svg
 
 -- MODEL
 type alias Model = List Event
@@ -18,11 +19,11 @@ init = [ Event.awaken ]
 maxEntries = 7
 
 -- VIEW
-view : Point -> Model -> List (Svg.Svg a)
-view origin model =
+view : Point -> Language -> Language -> List Event -> List (Svg.Svg a)
+view origin vocab lang model =
   let
     notes =
-      List.take maxEntries (List.reverse (List.map Event.describe model))
+      List.take maxEntries (List.reverse (List.map (Event.describe vocab lang) model))
 
     logLines =
       List.indexedMap (logLineView origin) notes
