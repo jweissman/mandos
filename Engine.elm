@@ -1,4 +1,4 @@
-module Engine exposing (Engine, init, view, enter, clickAt, hoverAt, tick, handleKeypress, resetHover)
+module Engine exposing (Engine, init, view, enter, speak, clickAt, hoverAt, tick, handleKeypress, resetHover)
 
 import Point exposing (Point, slide)
 import Direction exposing (Direction(..))
@@ -19,6 +19,8 @@ import Spell exposing (Spell(..))
 import Action exposing (Action(..))
 import Palette
 import Inventory
+
+import Language exposing (Language)
 
 import Set exposing (Set)
 import Time
@@ -79,6 +81,19 @@ enter dungeon model =
   ({ model | world = world' |> World.playerViewsField
    })
 
+speak : Language -> Engine -> Engine
+speak language model =
+  let 
+    world = 
+      model.world 
+
+    world' =
+      { world | language = language }
+
+  in
+    --Debug.log ("SPEAK LANG" ++ (toString language))
+    { model | world = world' }
+
 illuminate : Engine -> Engine
 illuminate model =
   { model | world = World.playerViewsField model.world }
@@ -123,15 +138,6 @@ handleKeypress keyChar model =
 
 waitForSelection : Action -> Engine -> Engine
 waitForSelection action model =
-  --let
-  --  nothingToSelect =
-  --    List.length model.world.player.inventory == 0
-  --    && model.world.player.weapon == Nothing
-  --    && model.world.player.armor == Nothing
-  --in
-  --  if nothingToSelect then
-  --    model
-  --  else
   { model | action = Just action }
 
 isEquipped : Item -> Engine -> Bool
@@ -229,8 +235,8 @@ playerActsOnItem item act model =
           model
 
     Use item' act' ->
-      if Item.canApply item' item then --Action.canPerform item' act' then
-        --Debug.log ("USE " ++ (Item.describe item') ++ " ON " ++ (Item.describe item))
+      -- todo this could be refined?
+      if Item.canApply item' item then
         model
         |> playerApplies item' item
         |> waitForSelection Action.default
@@ -303,7 +309,7 @@ castSpell item spell model =
 
     Infuse ->
       model
-      |> waitForSelection (Action.use (item |> Debug.log "INFUSE") (Action.enchant))
+      |> waitForSelection (Action.use item (Action.enchant))
 
 enhancePlayerVision : Engine -> Engine
 enhancePlayerVision model =
@@ -568,25 +574,26 @@ gatherTargets model =
   let
     viewed = 
       World.viewed model.world
+      |> Set.fromList
 
-    explored = (World.floors model.world)
-      |> Set.filter (\p -> List.member p viewed)
+    explored = 
+      World.floors model.world
+      |> Set.filter (\p -> Set.member p viewed)
 
     visibleCreatures =
       (World.creatures model.world)
       |> List.map .position
-      |> List.filter (\pt -> Set.member pt (explored))
+      |> List.filter (\pt -> Set.member pt explored)
 
     visibleCoins =
       (World.coins model.world)
-      |> List.filter (\pt -> Set.member pt (explored))
+      |> List.filter (\pt -> Set.member pt explored)
 
     visibleItems =
-      --if List.length model.world.player.inventory < Configuration.inventoryLimit then
       if Inventory.size model.world.player < Configuration.inventoryLimit then
         (World.items model.world)
         |> List.map .position
-        |> List.filter (\pt -> Set.member pt (explored))
+        |> List.filter (\pt -> Set.member pt explored)
       else
         []
   in
@@ -616,12 +623,14 @@ exploreTargets model =
     World.upstairs model.world ++ World.entrances model.world
   else 
     let frontier = (exploreFrontier model) in
-    if List.length frontier > 0 then
-      frontier
-    else
-      World.downstairs model.world ++ World.crystals model.world
+    case frontier of
+      Just pt ->
+        [pt]
 
-exploreFrontier : Engine -> List Point
+      Nothing ->
+        World.downstairs model.world ++ World.crystals model.world
+
+exploreFrontier : Engine -> Maybe Point
 exploreFrontier model =
   let
     playerPos =
@@ -629,25 +638,57 @@ exploreFrontier model =
 
     viewed =
       World.viewed model.world
+      |> Set.fromList
 
-    (explored,unexploredFloorsAndDoors) =
-      (Set.union (World.floors model.world) (World.doors model.world))
-      |> Set.partition (\p -> List.member p viewed)
+    walls =
+      World.walls model.world
 
-    unexplored =
-      (unexploredFloorsAndDoors)
-      |> Set.union (World.walls model.world |> Set.filter (\pt -> not (List.member pt viewed)))
-      |> Set.toList
+    floors =
+      World.floors model.world
+
+    wasSeen = \pt -> 
+      Set.member pt viewed
+
+    (exploredFloors, unexploredFloors) =
+      floors 
+      |> Set.partition wasSeen 
+ 
+    (_, unexploredWalls) = 
+      walls
+      |> Set.partition wasSeen
+  in
+    model
+    |> closestUnexplored (exploredFloors) (Set.union unexploredFloors unexploredWalls)
+
+    --explored
+    ----|> Set.filter notWall
+    --|> Set.toList
+    --|> List.sortBy byDistanceFromPlayer
+    --|> Util.dropWhile (\pt -> not (List.any (Point.isAdjacent pt) unexploredList))
+    --|> List.head
+
+closestUnexplored explored unexplored model =
+  let
+    distanceFromPlayer = \pt -> 
+      Point.distance model.world.player.position pt
+
+    toExplore = \pt ->
+      (unexplored
+      |> Set.filter (Point.isAdjacent pt)
+      |> Set.size) > 0
+      --List.any (Point.isAdjacent pt) unexplored
   in
     explored
-    |> Set.filter (\pt -> List.any (Point.isAdjacent pt) unexplored)
     |> Set.toList
+    |> List.sortBy distanceFromPlayer
+    |> Util.dropWhile (not << toExplore)
+    |> List.head
 
 playerExplores : Engine -> Engine
 playerExplores model =
   let
     path =
-      case (autorogueDestination model) of
+      case autorogueDestination model of
         Nothing ->
           Nothing
 
@@ -656,8 +697,8 @@ playerExplores model =
             walls =
               World.walls model.world
 
-            blocked =
-              (\pt -> Set.member pt walls) --(World.walls model.world))
+            blocked = \pt ->
+              Set.member pt walls
 
             path' =
               Path.seek dest model.world.player.position blocked
@@ -711,7 +752,7 @@ view model =
       |> Warrior.cardView (rightBarY, 5+(List.length model.quests)) (model.action)
 
     inventory =
-      Inventory.view (rightBarY, 10+(List.length model.quests)) model.action model.world.player --model.world
+      Inventory.view (rightBarY, 10+(List.length model.quests)) model.world.language model.action model.world.player --model.world
 
     log =
       Log.view (2, (Configuration.viewHeight - 6)) model.world.events

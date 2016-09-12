@@ -11,6 +11,7 @@ import Action exposing (Action)
 import Item exposing (Item)
 import Graphics
 import Palette
+import Language exposing (Language)
 
 import Dict exposing (Dict)
 import Svg
@@ -116,8 +117,8 @@ itemAtIndex idx model =
 
 -- VIEW
 
-view : Point -> Maybe Action -> Model -> List (Svg.Svg a)
-view (x,y) action model =
+view : Point -> Language -> Maybe Action -> Model -> List (Svg.Svg a)
+view (x,y) lang action model =
   let
     act =
       not (action == Nothing)
@@ -126,7 +127,7 @@ view (x,y) action model =
       [ Graphics.render "GEAR" (x, y) Palette.secondaryLighter ]
 
     equipment =
-      equipmentView (x,y+2) action model
+      equipmentView (x,y+2) lang action model
 
     hr =
       horizontalRule (x,y+2+equipCount)
@@ -135,7 +136,9 @@ view (x,y) action model =
       List.length equipment
 
     items =
-      List.map2 (\n (ct,it) -> itemView (x,y+3) action n ct False it) [equipCount..30] (model |> organize |> Dict.values)
+      List.map2 (\n (ct,it) ->
+        itemView (x,y+3) action n ct False it
+      ) [equipCount..30] (model |> organize |> Dict.values)
 
   in
      header
@@ -146,7 +149,8 @@ view (x,y) action model =
 horizontalRule (x,y) =
   [ Graphics.render "---" (x,y) Palette.dim ]
 
-equipmentView (x,y) action model =
+equipmentView : Point -> Language -> Maybe Action -> Warrior.Model -> List (Svg.Svg a)
+equipmentView (x,y) language action model =
   model
   |> equippedItems
   |> List.indexedMap (\n item -> itemView (x,y) action n 1 True item)

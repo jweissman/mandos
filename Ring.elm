@@ -49,7 +49,7 @@ visionBonus : Ring -> Int
 visionBonus ring =
   case ring of
     Enchanted n ring' ->
-      n * (strengthBonus ring')
+      n * (visionBonus ring')
 
     Annulus spell ->
       case spell of

@@ -7,6 +7,7 @@ import Graphics
 import Configuration
 import Event exposing (Event(..))
 import Palette
+import Language exposing (Language)
 
 import Char
 import Task
@@ -45,6 +46,8 @@ type alias Model =
   { engine : Engine
   , state : GameState
   , generationUnderway : Bool
+  --, generatedMap : Bool
+  --, generatedLanguage : Bool
   }
 
 -- INIT
@@ -52,13 +55,19 @@ init : (Model, Cmd Msg)
 init = ( { engine = Engine.init
          , state = Splash
          , generationUnderway = False
+         --, generatedMap = False
+         --, generatedLanguage = False
          },
          Cmd.none
        )
 
-generate : Cmd Msg
-generate =
+generateMap : Cmd Msg
+generateMap =
   Random.generate MapMsg (Dungeon.generate Configuration.levelCount)
+
+generateLanguage : Cmd Msg
+generateLanguage =
+  Random.generate LangMsg (Language.generate)
 
 -- TYPES
 type Msg
@@ -67,6 +76,7 @@ type Msg
   | ClickMsg Mouse.Position
   | TickMsg Time
   | MapMsg Dungeon
+  | LangMsg Language
 
 -- UPDATE
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -74,6 +84,10 @@ update message model =
   case message of
     MapMsg dungeon ->
       ({ model | engine = (model.engine |> Engine.enter dungeon)
+      }, generateLanguage)
+
+    LangMsg language ->
+      ({ model | engine = model.engine |> Engine.speak language
                , state = Playing
       }, Cmd.none)
 
@@ -94,7 +108,7 @@ update message model =
           if model.generationUnderway then
              (model, Cmd.none)
           else
-             ({ model | generationUnderway = True }, generate)
+             ({ model | generationUnderway = True }, generateMap)
 
         _ -> (model, Cmd.none)
 
@@ -171,7 +185,7 @@ view : Model -> Html Msg
 view model =
   let
     bgStyle = [
-      ( "background-color", "black" -- Palette.tertiaryDarker
+      ( "background-color", "black"
       )
     ]
   in
@@ -201,14 +215,11 @@ box viewModel =
 
 stateView model =
   let
-    heroPos =
-      (25, 20)
- 
     hero =
-      Graphics.hero "MANDOS" heroPos
+      Graphics.hero "MANDOS" 20
 
     jumbo =
-      Graphics.jumbo "@" (32,42)
+      Graphics.jumbo "@"
 
     anyKey =
       Graphics.render "press any key to play" (42, 36) Palette.bright
@@ -242,7 +253,7 @@ stateView model =
       Victory ->
         Engine.view model.engine
         ++ [
-            Graphics.hero "YOU WON!" (20,20)
+            Graphics.hero "YOU WON!" 20
           , Graphics.render "Congratulations!" (34, 30) Palette.secondaryLighter
           , Graphics.render "You escaped the Halls of Mandos!" (31, 32) Palette.secondaryLight
           , Graphics.render ((toString steps) ++ " steps taken") (38, 36) Palette.secondaryLight
@@ -251,7 +262,7 @@ stateView model =
 
       Death cause ->
           Engine.view model.engine ++
-          [ Graphics.hero "YOU DIED!" (20,20)
+          [ Graphics.hero "YOU DIED!" 20
           , Graphics.render ("You fought bravely, but were " ++ cause) (35, 30) Palette.bright
           , Graphics.render ((toString steps) ++ " steps taken") (38, 36) Palette.secondaryLight
           , Graphics.render ((toString kills) ++ " kills") (38, 37) Palette.secondaryLight

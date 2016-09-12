@@ -220,14 +220,14 @@ entitiesAt point model =
 
     entities =
       [ floor
+      , grass
       , door
       , wall
-      , coin
       , downstairs
       , upstairs
       , entrance
-      , grass
       , item
+      , coin
       , monster
       ]
   in
@@ -486,24 +486,17 @@ extrudeCorridor pts model =
   pts
   |> List.foldr extrude model
 
---extrudeCorridor' pt model =
---  { model | floors = Set.insert pt model.floors  }
---          |> addWallsAround pt
---          |> removeWall pt
-
 extrude pt model =
   model
   |> addFloor pt
   |> addWallsAround pt
   |> removeWall pt
 
--- doors
 emplaceDoor : Point -> Level -> Level
 emplaceDoor pt model =
   { model | doors = Set.insert pt model.doors }
+          |> addFloor pt
           |> removeWall pt
-
--- stairs
 
 extrudeStairwells : Level -> Level
 extrudeStairwells model =
