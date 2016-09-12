@@ -17,6 +17,9 @@ this is a learning elm project but i'd also like the code to be clear and well-f
   - [x] weapons
   - [x] armor
   - [x] items
+  - [ ] language
+  - [ ] history (statues)
+  - [ ] env hazards (water/lava features)
   - [ ] allies
 
 # caveats

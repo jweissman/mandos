@@ -1,4 +1,4 @@
-module Util exposing (minBy, uniqueBy, getAt, takeWhile, takeWhile', everyNth, mapEveryNth, sample, zip, filterChamp, toAlpha, fromAlpha)
+module Util exposing (minBy, uniqueBy, getAt, dropWhile, everyNth, mapEveryNth, sample, zip, filterChamp, toAlpha, fromAlpha)
 
 import Point exposing (Point)
 import Direction exposing (Direction(..))
@@ -11,7 +11,6 @@ import String
 alphabet =
   ['a','b','c','e','f','g','h','j','k','l','m','n','o','p','q','r','s','t','u','v','x','y','z','-']
 
--- 0-26 should be 'a' thru 'z'
 toAlpha : Int -> String
 toAlpha idx =
   let alpha = (getAt alphabet idx |> Maybe.withDefault '-') in
@@ -43,8 +42,6 @@ champernowne : Int -> Bool
 champernowne n =
   getAt (champ n) n
   |> Maybe.withDefault False
-
---champernowne' = champ 10000
 
 champ : Int -> List Bool
 champ n =
@@ -120,19 +117,26 @@ uniqueHelp f existing remaining =
 getAt : List a -> Int -> Maybe a
 getAt xs idx = List.head <| List.drop idx xs
 
-takeWhile : (a -> Bool) -> List a -> List a
-takeWhile predicate list =
+dropWhile : (a -> Bool) -> List a -> List a
+dropWhile predicate list =
   case list of
     []      -> []
-    x::xs   -> if (predicate x) then x :: takeWhile predicate xs
-               else []
+    x::xs   -> if (predicate x) then dropWhile predicate xs
+               else list
 
-takeWhile' : (a -> Bool) -> List a -> List a
-takeWhile' predicate list =
-  case list of
-    []      -> []
-    x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
-               else [x]
+--takeWhile : (a -> Bool) -> List a -> List a
+--takeWhile predicate list =
+--  case list of
+--    []      -> []
+--    x::xs   -> if (predicate x) then x :: takeWhile predicate xs
+--               else []
+
+--takeWhile' : (a -> Bool) -> List a -> List a
+--takeWhile' predicate list =
+--  case list of
+--    []      -> []
+--    x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
+--               else [x]
 
 
 

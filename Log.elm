@@ -37,4 +37,3 @@ logLineView : Point -> Int -> String -> Svg.Svg a
 logLineView origin idx note =
   let (ox,oy) = origin in
   Graphics.render note (ox,oy+1+idx) (Palette.rgb (Palette.blue idx))
-  --("#" ++ (toString (9-idx)) ++ "808" ++ (toString (9-idx)) ++ "8")

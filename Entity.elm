@@ -136,7 +136,7 @@ color entity =
 
     Monster _ ->
       Palette.dim
-      
+
     Item _ ->
       Palette.secondaryLight
 
@@ -144,31 +144,31 @@ color entity =
       Palette.alert
 
     Wall _ ->
-      Palette.tertiaryLighter
+      Palette.dim
 
     Floor _ ->
       Palette.primaryDark
 
     Entrance open _ ->
-      Palette.tertiaryLight
+      Palette.bright
 
     Door _ ->
       Palette.tertiaryLight
 
     StairsUp _ ->
-      Palette.tertiaryLight
+      Palette.bright
 
     StairsDown _ ->
-      Palette.tertiaryLight
+      Palette.bright
 
     Grass _ ->
       Palette.accent
 
     Memory _ ->
-      Palette.tertiary' 2 0.5 --Dark
+      Palette.primary' 2 0.5
 
     Imaginary _ ->
-      Palette.accent' 1 0.4
+      Palette.secondary' 2 0.5
 
 position : Entity -> Point.Point
 position entity =

@@ -4,13 +4,13 @@ warning  = "red"
 alert    = "yellow"
 info     = bright
 
-active   = bright --tertiaryLighter
-inactive = "darkgrey" --"darkgrey"
-default  = "lightgrey" --secondaryLight
+active   = bright
+inactive = "darkgrey"
+default  = "lightgrey"
 
-bright   = "white" --secondaryLighter --"white"
-dim      = "lightgray" --"lightgrey"
-dark     = "darkgrey" --secondaryLight --"darkgrey" --tertiaryDark
+bright   = "white"
+dim      = "lightgray"
+dark     = "darkgrey"
 
 primary' shade alpha = rgba (purple' shade alpha)
 primaryLighter = rgb (purple 0)

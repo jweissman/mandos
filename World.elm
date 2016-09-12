@@ -22,7 +22,7 @@ import Configuration
 import Item exposing (Item)
 import Inventory
 import Spell exposing (Spell(..))
-
+import Language exposing (Language)
 
 import Set exposing (Set)
 import String
@@ -42,6 +42,7 @@ type alias Model =
   , hallsEscaped : Bool
   , showMap : Bool
   , age : Int
+  , language : Language
   }
 
 -- INIT
@@ -57,6 +58,7 @@ init =
   , hallsEscaped = False
   , showMap = False
   , age = 0
+  , language = []
   }
 
 
@@ -155,12 +157,12 @@ age model =
 
 evolve : Model -> Model
 evolve model =
-  --let model' = model |> age in
-  --if model'.age % 10 == 0 then
-  --   { model' | dungeon = model.dungeon |> Dungeon.evolve }
-  --else
-  model
-  |> age
+  if model.age % 250 == 0 then
+     { model | dungeon = model.dungeon |> Dungeon.evolve }
+             |> age
+  else
+    model
+    |> age
 
 playerMoves : Direction -> Model -> Model
 playerMoves direction model =
@@ -466,10 +468,6 @@ playerDrinks item model =
 playerSheathesWeapon : Model -> Model
 playerSheathesWeapon model =
   { model | player = model.player |> Warrior.sheatheWeapon }
-
---playerTakesOffArmor : Model -> Model
---playerTakesOffArmor model =
---  { model | player = model.player |> Warrior.takeOffArmor }
 
 augmentVision : Model -> Model
 augmentVision model =

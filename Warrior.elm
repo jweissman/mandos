@@ -12,6 +12,7 @@ import Item exposing (Item, ItemKind(..))
 import Action exposing (Action)
 import Liquid exposing (Liquid(..))
 import Palette
+import Language exposing (Language)
 
 import Graphics
 import Svg
@@ -36,6 +37,7 @@ type alias Model =
   , inventory : List Item
   , timesGearChanged : Int
   , vision : Int
+  , vocabulary : Language
   }
 
 -- INIT
@@ -57,6 +59,7 @@ init point =
   , inventory = []
   , timesGearChanged = 0
   , vision = Configuration.visionRadius
+  , vocabulary = []
   }
 
 vision : Model -> Int
