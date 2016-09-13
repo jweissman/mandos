@@ -1,4 +1,4 @@
-module Warrior exposing (Model, init, step, vision, strength, takeDamage, enrich, collectsItem, drink, wield, wearArmor, wearHelm, wearRing, computeDamageAgainst, resistance, cardView, augmentVision, sheatheWeapon, takeOffArmor, takeOffHelm, takeOffRing)
+module Warrior exposing (Model, init, step, vision, strength, takeDamage, enrich, collectsItem, drink, wield, wearArmor, wearHelm, wearRing, computeDamageAgainst, resistance, cardView, augmentVision, sheatheWeapon, takeOffArmor, takeOffHelm, takeOffRing, learnsWord)
 
 import Configuration
 import Util
@@ -12,7 +12,7 @@ import Item exposing (Item, ItemKind(..))
 import Action exposing (Action)
 import Liquid exposing (Liquid(..))
 import Palette
-import Language exposing (Language)
+import Language exposing (Language, Word)
 
 import Graphics
 import Svg
@@ -330,6 +330,13 @@ collectsItem item model =
 
       _ ->
         model'
+
+learnsWord : Word -> Model -> Model
+learnsWord word model =
+  if List.member word model.vocabulary then
+    model
+  else
+    { model | vocabulary = word :: model.vocabulary }
 
 -- VIEW
 cardView : Point -> Maybe Action -> Model -> List (Svg.Svg a)

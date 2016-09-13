@@ -119,7 +119,7 @@ update message model =
              ({ model | generationUnderway = True }, generateMap)
 
         Splash ->
-          if model.ticks > 90 then
+          if model.ticks > 200 then
             ({model | autoplay = True} |> startGeneration, Cmd.none)
           else
             ({ model | ticks = model.ticks + 1}, Cmd.none)

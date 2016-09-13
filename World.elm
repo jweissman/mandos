@@ -23,6 +23,7 @@ import Item exposing (Item)
 import Inventory
 import Spell exposing (Spell(..))
 import Language exposing (Language)
+import Liquid
 
 import Set exposing (Set)
 import String
@@ -424,8 +425,13 @@ playerWears item model =
       { model | player = model.player |> Warrior.wearArmor armor }
 
     Item.Jewelry ring ->
-      { model | player = model.player |> Warrior.wearRing ring }
-              |> playerViewsField -- could be ring of light..
+      let player' =
+        model.player
+        |> Warrior.wearRing ring
+        |> Warrior.learnsWord (Language.wordFor (Spell.idea (Ring.spell ring)) model.language)
+      in
+        { model | player = player' }
+                |> playerViewsField -- could be ring of light..
 
     Item.Headgear helm ->
       { model | player = model.player |> Warrior.wearHelm helm }
@@ -451,7 +457,13 @@ playerDrinks : Item -> Model -> Model
 playerDrinks item model =
   case item.kind of
     Item.Bottle liquid ->
-      { model | player = model.player |> Warrior.drink liquid }
+      let 
+        player' =
+          model.player
+          |> Warrior.drink liquid
+          |> Warrior.learnsWord (Language.wordFor (Liquid.idea liquid) model.language)
+      in
+      { model | player = player' }
 
     _ -> model
 
@@ -537,7 +549,7 @@ deathEvent model =
 viewFrontier : Model -> Set Point
 viewFrontier model =
   model.dungeon
-  |> Dungeon.viewFrontier model.depth 
+  |> Dungeon.viewFrontier model.depth
 
 -- VIEW
 listInvisibleEntities : Model -> List Entity
@@ -545,16 +557,18 @@ listInvisibleEntities model =
   if not model.showMap then
     []
   else
-    let viewed' = viewed model in
-    Set.union (model |> floors) (model |> walls)
-    |> Set.diff viewed'
+    let explorable = (Set.union (model |> floors) (model |> walls)) in
+    viewed model
+    |> Set.diff explorable
     |> Set.toList
     |> List.filterMap (\pt -> model |> entityAt pt)
     |> List.map (Entity.imaginary)
 
 listRememberedEntities : Model -> List Entity
 listRememberedEntities model =
-  viewed model
+  model.illuminated
+  |> Set.fromList
+  |> Set.diff (viewed model)
   |> Set.toList
   |> List.filterMap (\pt -> model |> entityAt pt)
   |> List.map (Entity.memory)

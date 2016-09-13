@@ -272,25 +272,18 @@ viewFrontier model =
 
     unexplored =
       viewed
-      |> Set.diff floors
+      |> Set.diff (Set.union floors walls)
 
   in
     model
     |> detectFrontier explored unexplored
 
 detectFrontier explored unexplored model =
-  let
-    adjacentToUnexplored =
-      unexplored
-      |> Set.toList
-      |> List.concatMap Point.adjacent
-      |> List.filter (\pt -> not (Set.member pt unexplored))
-    
-    toExplore = \pt ->
-      List.member pt adjacentToUnexplored 
-  in
-    explored
-    |> Set.filter toExplore
+  unexplored
+  |> Set.toList
+  |> List.concatMap Point.adjacent
+  |> Set.fromList
+  |> Set.intersect explored
 
 -- HELPERS (for update)
 

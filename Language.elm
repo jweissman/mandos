@@ -1,4 +1,4 @@
-module Language exposing (Language, Word, generate, decode)
+module Language exposing (Language, Word, generate, decode, wordFor)
 
 import Util
 import Idea exposing (Idea)
@@ -50,12 +50,15 @@ init : Idea -> String -> Word
 init idea description =
   Root idea description
 
+secret =
+  Root Idea.holy "???"
+
 -- translation
 decode : Idea -> Language -> Language -> String
 decode idea known model =
-  let 
-    knownIdea = 
-      known 
+  let
+    knownIdea =
+      known
       |> List.any (\(Root idea' _) -> idea == idea')
   in if knownIdea then
     Idea.describe idea
@@ -70,7 +73,14 @@ foreignWordFor idea model =
   |> List.map (\(Root _ word) -> word)
   |> List.head
   |> Maybe.withDefault "???"
-  
+
+wordFor : Idea -> Language -> Word
+wordFor idea model =
+  model
+  |> List.filter (\(Root idea' _) -> idea == idea')
+  |> List.head
+  |> Maybe.withDefault secret
+
 -- generation
 
 generateSyllable : Generator String

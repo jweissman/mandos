@@ -241,7 +241,6 @@ playerActsOnItem item act model =
         |> waitForSelection Action.default
       else
         model
-      --|> resetAction
 
     Default ->
       let
