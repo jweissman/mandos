@@ -298,15 +298,22 @@ playerLosesItem item model =
 
 castSpell : Item -> Spell -> Engine -> Engine
 castSpell item spell model =
-  let world = model.world in
+  let
+    world' =
+      model.world
+      |> World.playerLearnsWord (Language.wordFor (Spell.idea spell) model.world.language)
+
+    model' =
+      { model | world = world' }
+  in
   case spell of
     Lux ->
-      model
+      model'
       |> playerLosesItem item
       |> enhancePlayerVision
 
     Infuse ->
-      model
+      model'
       |> waitForSelection (Action.use item (Action.enchant))
 
 enhancePlayerVision : Engine -> Engine

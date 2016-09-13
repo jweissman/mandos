@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entityAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent, viewFrontier)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entityAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent, viewFrontier, playerLearnsWord)
 
 import Palette
 import Point exposing (Point, slide)
@@ -22,7 +22,7 @@ import Configuration
 import Item exposing (Item)
 import Inventory
 import Spell exposing (Spell(..))
-import Language exposing (Language)
+import Language exposing (Language, Word)
 import Liquid
 
 import Set exposing (Set)
@@ -425,13 +425,18 @@ playerWears item model =
       { model | player = model.player |> Warrior.wearArmor armor }
 
     Item.Jewelry ring ->
-      let player' =
-        model.player
-        |> Warrior.wearRing ring
-        |> Warrior.learnsWord (Language.wordFor (Spell.idea (Ring.spell ring)) model.language)
+      let
+        player' =
+          model.player
+          |> Warrior.wearRing ring
+
+        word =
+          model.language
+          |> Language.wordFor (Spell.idea (Ring.spell ring))
       in
         { model | player = player' }
                 |> playerViewsField -- could be ring of light..
+                |> playerLearnsWord word
 
     Item.Headgear helm ->
       { model | player = model.player |> Warrior.wearHelm helm }
@@ -457,15 +462,22 @@ playerDrinks : Item -> Model -> Model
 playerDrinks item model =
   case item.kind of
     Item.Bottle liquid ->
-      let 
+      let
         player' =
           model.player
           |> Warrior.drink liquid
-          |> Warrior.learnsWord (Language.wordFor (Liquid.idea liquid) model.language)
+
+        word =
+          Language.wordFor (Liquid.idea liquid) model.language
       in
-      { model | player = player' }
+        { model | player = player' }
+                |> playerLearnsWord word
 
     _ -> model
+
+playerLearnsWord : Word -> Model -> Model
+playerLearnsWord word model =
+  { model | player = model.player |> Warrior.learnsWord word }
 
 playerSheathesWeapon : Model -> Model
 playerSheathesWeapon model =
