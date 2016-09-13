@@ -39,7 +39,7 @@ type alias Model =
   , player : Warrior.Model
   , events : Log.Model
   , debugPath : List Point
-  , illuminated : List Point
+  , illuminated : Set Point
   , hallsEscaped : Bool
   , showMap : Bool
   , age : Int
@@ -55,7 +55,7 @@ init =
   , player = Warrior.init (0,0)
   , events = Log.init
   , debugPath = []
-  , illuminated = []
+  , illuminated = Set.empty --[]
   , hallsEscaped = False
   , showMap = False
   , age = 0
@@ -359,7 +359,7 @@ playerViewsField model =
             , illuminated = locations
     }
 
-illuminate : Point -> Model -> List Point
+illuminate : Point -> Model -> Set Point
 illuminate source model =
   let
     perimeter =
@@ -579,7 +579,7 @@ listInvisibleEntities model =
 listRememberedEntities : Model -> List Entity
 listRememberedEntities model =
   model.illuminated
-  |> Set.fromList
+  --|> Set.fromList
   |> Set.diff (viewed model)
   |> Set.toList
   |> List.filterMap (\pt -> model |> entityAt pt)
@@ -590,6 +590,7 @@ listEntities model =
   let
     litEntities =
       model.illuminated
+      |> Set.toList
       |> List.filterMap (\pt -> model |> entityAt pt)
 
     memoryEntities =

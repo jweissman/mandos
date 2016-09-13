@@ -87,7 +87,7 @@ purge depth model =
   in
     (model', events)
 
-playerSees : List Point -> Int -> Dungeon -> Dungeon
+playerSees : Set Point -> Int -> Dungeon -> Dungeon
 playerSees pts depth model =
   model |> apply (Level.playerSees pts) depth
 

@@ -287,12 +287,12 @@ detectFrontier explored unexplored model =
 
 -- HELPERS (for update)
 
-playerSees : List Point -> Level -> Level
+playerSees : Set Point -> Level -> Level
 playerSees pts model =
   let
     viewed' =
       (model.viewed)
-      |> Set.union (pts |> Set.fromList)
+      |> Set.union (pts) -- |> Set.fromList)
       --|> Set.toList
   in
     { model | viewed = viewed' }

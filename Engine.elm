@@ -416,7 +416,7 @@ hoverAt position model =
       pointFromMouse position
 
     isLit =
-      List.member point (model.world.illuminated)
+      Set.member point (model.world.illuminated)
 
     wasLit =
       Set.member point (World.viewed model.world)
