@@ -9717,7 +9717,7 @@ var _jweissman$rogue$Configuration$viewHeight = 56;
 var _jweissman$rogue$Configuration$viewWidth = 90;
 var _jweissman$rogue$Configuration$viewScale = 16;
 var _jweissman$rogue$Configuration$levelCount = 10;
-var _jweissman$rogue$Configuration$tickInterval = 10 * _elm_lang$core$Time$millisecond;
+var _jweissman$rogue$Configuration$tickInterval = 25 * _elm_lang$core$Time$millisecond;
 var _jweissman$rogue$Point$towards$ = F2(
 	function (_p1, _p0) {
 		var _p2 = _p1;
@@ -10191,6 +10191,144 @@ var _jweissman$rogue$Util$fromAlpha = function (ch) {
 		-1,
 		A2(_jweissman$rogue$Util$elemIndex, ch, _jweissman$rogue$Util$alphabet));
 };
+var _jweissman$rogue$Idea$describe = function (idea) {
+	var _p0 = idea;
+	switch (_p0.ctor) {
+		case 'Power':
+			return 'power';
+		case 'Light':
+			return 'light';
+		case 'Life':
+			return 'life';
+		case 'Water':
+			return 'water';
+		case 'Holy':
+			return 'holy';
+		default:
+			return A2(
+				_elm_lang$core$String$join,
+				' ',
+				A2(_elm_lang$core$List$map, _jweissman$rogue$Idea$describe, _p0._0));
+	}
+};
+var _jweissman$rogue$Idea$Compound = function (a) {
+	return {ctor: 'Compound', _0: a};
+};
+var _jweissman$rogue$Idea$compound = function (is) {
+	return _jweissman$rogue$Idea$Compound(is);
+};
+var _jweissman$rogue$Idea$Holy = {ctor: 'Holy'};
+var _jweissman$rogue$Idea$holy = _jweissman$rogue$Idea$Holy;
+var _jweissman$rogue$Idea$Water = {ctor: 'Water'};
+var _jweissman$rogue$Idea$water = _jweissman$rogue$Idea$Water;
+var _jweissman$rogue$Idea$Life = {ctor: 'Life'};
+var _jweissman$rogue$Idea$life = _jweissman$rogue$Idea$Life;
+var _jweissman$rogue$Idea$Light = {ctor: 'Light'};
+var _jweissman$rogue$Idea$light = _jweissman$rogue$Idea$Light;
+var _jweissman$rogue$Idea$Power = {ctor: 'Power'};
+var _jweissman$rogue$Idea$power = _jweissman$rogue$Idea$Power;
+var _jweissman$rogue$Idea$ideas = _elm_lang$core$Native_List.fromArray(
+	[
+		_jweissman$rogue$Idea$Power,
+		_jweissman$rogue$Idea$Light,
+		_jweissman$rogue$Idea$Life,
+		_jweissman$rogue$Idea$Water,
+		_jweissman$rogue$Idea$Holy,
+		_jweissman$rogue$Idea$Compound(
+		_elm_lang$core$Native_List.fromArray(
+			[_jweissman$rogue$Idea$Holy, _jweissman$rogue$Idea$Water]))
+	]);
+var _jweissman$rogue$Language$foreignWordFor = F2(
+	function (idea, model) {
+		return A2(
+			_elm_lang$core$Maybe$withDefault,
+			'???',
+			_elm_lang$core$List$head(
+				A2(
+					_elm_lang$core$List$map,
+					function (_p0) {
+						var _p1 = _p0;
+						return _p1._1;
+					},
+					A2(
+						_elm_lang$core$List$filter,
+						function (_p2) {
+							var _p3 = _p2;
+							return _elm_lang$core$Native_Utils.eq(idea, _p3._0);
+						},
+						model))));
+	});
+var _jweissman$rogue$Language$decode = F3(
+	function (idea, known, model) {
+		var knownIdea = A2(
+			_elm_lang$core$List$any,
+			function (_p4) {
+				var _p5 = _p4;
+				return _elm_lang$core$Native_Utils.eq(idea, _p5._0);
+			},
+			known);
+		return knownIdea ? _jweissman$rogue$Idea$describe(idea) : A2(_jweissman$rogue$Language$foreignWordFor, idea, model);
+	});
+var _jweissman$rogue$Language$syllables = _elm_lang$core$Native_List.fromArray(
+	['ae', 'al', 'au', 'ch', 'de', 'ea', 'el', 'en', 'ep', 'es', 'eu', 'jo', 'li', 'll', 'lm', 'lo', 'ma', 'mne', 'mu', 'no', 'nu', 'oe', 'oh', 'oi', 'or', 'ru', 'ry', 'sa', 'sho', 'thi', 'us']);
+var _jweissman$rogue$Language$generateSyllable = function () {
+	var randomIdx = A2(
+		_elm_lang$core$Random$int,
+		0,
+		_elm_lang$core$List$length(_jweissman$rogue$Language$syllables) - 1);
+	var pickSyllable = function (idx) {
+		return A2(
+			_elm_lang$core$Maybe$withDefault,
+			'zz',
+			A2(_jweissman$rogue$Util$getAt, _jweissman$rogue$Language$syllables, idx));
+	};
+	return A2(_elm_lang$core$Random$map, pickSyllable, randomIdx);
+}();
+var _jweissman$rogue$Language$generateWord = function () {
+	var constructWord = F2(
+		function (ls, ct) {
+			return A2(
+				_elm_lang$core$String$join,
+				'',
+				A2(_elm_lang$core$List$take, ct, ls));
+		});
+	var syllableList = A2(_elm_lang$core$Random$list, 10, _jweissman$rogue$Language$generateSyllable);
+	var randomCount = A2(_elm_lang$core$Random$int, 2, 3);
+	return A3(_elm_lang$core$Random$map2, constructWord, syllableList, randomCount);
+}();
+var _jweissman$rogue$Language$generateWords = A2(
+	_elm_lang$core$Random$list,
+	_elm_lang$core$List$length(_jweissman$rogue$Idea$ideas),
+	_jweissman$rogue$Language$generateWord);
+var _jweissman$rogue$Language$Root = F2(
+	function (a, b) {
+		return {ctor: 'Root', _0: a, _1: b};
+	});
+var _jweissman$rogue$Language$init = F2(
+	function (idea, description) {
+		return A2(_jweissman$rogue$Language$Root, idea, description);
+	});
+var _jweissman$rogue$Language$generate = function () {
+	var expression = function (words) {
+		return A3(_elm_lang$core$List$map2, _jweissman$rogue$Language$init, _jweissman$rogue$Idea$ideas, words);
+	};
+	return A2(_elm_lang$core$Random$map, expression, _jweissman$rogue$Language$generateWords);
+}();
+var _jweissman$rogue$Language$secret = A2(_jweissman$rogue$Language$Root, _jweissman$rogue$Idea$holy, '???');
+var _jweissman$rogue$Language$wordFor = F2(
+	function (idea, model) {
+		return A2(
+			_elm_lang$core$Maybe$withDefault,
+			_jweissman$rogue$Language$secret,
+			_elm_lang$core$List$head(
+				A2(
+					_elm_lang$core$List$filter,
+					function (_p6) {
+						var _p7 = _p6;
+						return _elm_lang$core$Native_Utils.eq(idea, _p7._0);
+					},
+					model)));
+	});
 var _jweissman$rogue$Weapon$damageRange = function (weapon) {
 	var _p0 = weapon;
 	switch (_p0.ctor) {
@@ -10381,12 +10519,12 @@ var _jweissman$rogue$Armor$Tunic = {ctor: 'Tunic'};
 var _jweissman$rogue$Armor$tunic = _jweissman$rogue$Armor$Tunic;
 var _jweissman$rogue$Armor$Suit = {ctor: 'Suit'};
 var _jweissman$rogue$Armor$suit = _jweissman$rogue$Armor$Suit;
-var _jweissman$rogue$Spell$describe = function (spell) {
+var _jweissman$rogue$Spell$idea = function (spell) {
 	var _p0 = spell;
 	if (_p0.ctor === 'Lux') {
-		return 'lux';
+		return _jweissman$rogue$Idea$light;
 	} else {
-		return 'infuse';
+		return _jweissman$rogue$Idea$power;
 	}
 };
 var _jweissman$rogue$Spell$Infuse = {ctor: 'Infuse'};
@@ -10419,24 +10557,42 @@ var _jweissman$rogue$Ring$strengthBonus = function (ring) {
 		}
 	}
 };
-var _jweissman$rogue$Ring$describe = function (ring) {
-	var _p4 = ring;
-	if (_p4.ctor === 'Annulus') {
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			'ring of ',
-			_jweissman$rogue$Spell$describe(_p4._0));
-	} else {
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			'+',
-			A2(
+var _jweissman$rogue$Ring$describe = F3(
+	function (vocab, language, ring) {
+		var _p4 = ring;
+		if (_p4.ctor === 'Annulus') {
+			return A2(
 				_elm_lang$core$Basics_ops['++'],
-				_elm_lang$core$Basics$toString(_p4._0),
+				'ring of ',
+				A3(
+					_jweissman$rogue$Language$decode,
+					_jweissman$rogue$Spell$idea(_p4._0),
+					vocab,
+					language));
+		} else {
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				'+',
 				A2(
 					_elm_lang$core$Basics_ops['++'],
-					' ',
-					_jweissman$rogue$Ring$describe(_p4._1))));
+					_elm_lang$core$Basics$toString(_p4._0),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						' ',
+						A3(_jweissman$rogue$Ring$describe, vocab, language, _p4._1))));
+		}
+	});
+var _jweissman$rogue$Ring$spell = function (ring) {
+	spell:
+	while (true) {
+		var _p5 = ring;
+		if (_p5.ctor === 'Annulus') {
+			return _p5._0;
+		} else {
+			var _v6 = ring;
+			ring = _v6;
+			continue spell;
+		}
 	}
 };
 var _jweissman$rogue$Ring$Enchanted = F2(
@@ -10444,9 +10600,9 @@ var _jweissman$rogue$Ring$Enchanted = F2(
 		return {ctor: 'Enchanted', _0: a, _1: b};
 	});
 var _jweissman$rogue$Ring$enchant = function (ring) {
-	var _p5 = ring;
-	if (_p5.ctor === 'Enchanted') {
-		return A2(_jweissman$rogue$Ring$Enchanted, _p5._0 + 1, _p5._1);
+	var _p6 = ring;
+	if (_p6.ctor === 'Enchanted') {
+		return A2(_jweissman$rogue$Ring$Enchanted, _p6._0 + 1, _p6._1);
 	} else {
 		return A2(_jweissman$rogue$Ring$Enchanted, 1, ring);
 	}
@@ -10503,19 +10659,21 @@ var _jweissman$rogue$Helm$Helmet = {ctor: 'Helmet'};
 var _jweissman$rogue$Helm$helmet = _jweissman$rogue$Helm$Helmet;
 var _jweissman$rogue$Helm$Cap = {ctor: 'Cap'};
 var _jweissman$rogue$Helm$cap = _jweissman$rogue$Helm$Cap;
-var _jweissman$rogue$Liquid$describe = function (liquid) {
+var _jweissman$rogue$Liquid$idea = function (liquid) {
 	var _p0 = liquid;
 	switch (_p0.ctor) {
 		case 'Water':
-			return 'water';
+			return _jweissman$rogue$Idea$water;
 		case 'Blessed':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'holy ',
-				_jweissman$rogue$Liquid$describe(_p0._0));
+			return _jweissman$rogue$Idea$compound(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_jweissman$rogue$Idea$holy,
+						_jweissman$rogue$Liquid$idea(_p0._0)
+					]));
 		default:
 			var _p1 = _p0._0;
-			return 'vitae';
+			return _jweissman$rogue$Idea$life;
 	}
 };
 var _jweissman$rogue$Liquid$GainLife = {ctor: 'GainLife'};
@@ -10557,37 +10715,76 @@ var _jweissman$rogue$Item$canApply = F2(
 			return false;
 		}
 	});
-var _jweissman$rogue$Item$describe = function (_p2) {
-	var _p3 = _p2;
-	var _p4 = _p3.kind;
-	switch (_p4.ctor) {
+var _jweissman$rogue$Item$describe = F3(
+	function (vocab, language, _p2) {
+		var _p3 = _p2;
+		var _p4 = _p3.kind;
+		switch (_p4.ctor) {
+			case 'Arm':
+				return _jweissman$rogue$Weapon$describe(_p4._0);
+			case 'Shield':
+				return _jweissman$rogue$Armor$describe(_p4._0);
+			case 'Jewelry':
+				return A3(_jweissman$rogue$Ring$describe, vocab, language, _p4._0);
+			case 'Headgear':
+				return _jweissman$rogue$Helm$describe(_p4._0);
+			case 'Bottle':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'bottle of ',
+					A3(
+						_jweissman$rogue$Language$decode,
+						_jweissman$rogue$Liquid$idea(_p4._0),
+						vocab,
+						language));
+			case 'Scroll':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'scroll of ',
+					A3(
+						_jweissman$rogue$Language$decode,
+						_jweissman$rogue$Spell$idea(_p4._0),
+						vocab,
+						language));
+			default:
+				var _p5 = _p4._0;
+				return 'Crystal of Time';
+		}
+	});
+var _jweissman$rogue$Item$name = function (item) {
+	var _p6 = item.kind;
+	switch (_p6.ctor) {
 		case 'Arm':
-			return _jweissman$rogue$Weapon$describe(_p4._0);
+			return _jweissman$rogue$Weapon$describe(_p6._0);
 		case 'Shield':
-			return _jweissman$rogue$Armor$describe(_p4._0);
+			return _jweissman$rogue$Armor$describe(_p6._0);
 		case 'Jewelry':
-			return _jweissman$rogue$Ring$describe(_p4._0);
+			return _jweissman$rogue$Idea$describe(
+				_jweissman$rogue$Spell$idea(
+					_jweissman$rogue$Ring$spell(_p6._0)));
 		case 'Headgear':
-			return _jweissman$rogue$Helm$describe(_p4._0);
+			return _jweissman$rogue$Helm$describe(_p6._0);
 		case 'Bottle':
 			return A2(
 				_elm_lang$core$Basics_ops['++'],
 				'bottle of ',
-				_jweissman$rogue$Liquid$describe(_p4._0));
+				_jweissman$rogue$Idea$describe(
+					_jweissman$rogue$Liquid$idea(_p6._0)));
 		case 'Scroll':
 			return A2(
 				_elm_lang$core$Basics_ops['++'],
 				'scroll of ',
-				_jweissman$rogue$Spell$describe(_p4._0));
+				_jweissman$rogue$Idea$describe(
+					_jweissman$rogue$Spell$idea(_p6._0)));
 		default:
-			var _p5 = _p4._0;
+			var _p7 = _p6._0;
 			return 'Crystal of Time';
 	}
 };
-var _jweissman$rogue$Item$glyph = function (_p6) {
-	var _p7 = _p6;
-	var _p8 = _p7.kind;
-	switch (_p8.ctor) {
+var _jweissman$rogue$Item$glyph = function (_p8) {
+	var _p9 = _p8;
+	var _p10 = _p9.kind;
+	switch (_p10.ctor) {
 		case 'Arm':
 			return '!';
 		case 'Shield':
@@ -10661,35 +10858,35 @@ var _jweissman$rogue$Item$weapon = function (weapon$) {
 	return _jweissman$rogue$Item$Arm(weapon$);
 };
 var _jweissman$rogue$Item$enchant = function (item) {
-	var _p9 = item.kind;
-	switch (_p9.ctor) {
+	var _p11 = item.kind;
+	switch (_p11.ctor) {
 		case 'Arm':
 			return _elm_lang$core$Native_Utils.update(
 				item,
 				{
 					kind: _jweissman$rogue$Item$Arm(
-						_jweissman$rogue$Weapon$enchant(_p9._0))
+						_jweissman$rogue$Weapon$enchant(_p11._0))
 				});
 		case 'Shield':
 			return _elm_lang$core$Native_Utils.update(
 				item,
 				{
 					kind: _jweissman$rogue$Item$Shield(
-						_jweissman$rogue$Armor$enchant(_p9._0))
+						_jweissman$rogue$Armor$enchant(_p11._0))
 				});
 		case 'Jewelry':
 			return _elm_lang$core$Native_Utils.update(
 				item,
 				{
 					kind: _jweissman$rogue$Item$Jewelry(
-						_jweissman$rogue$Ring$enchant(_p9._0))
+						_jweissman$rogue$Ring$enchant(_p11._0))
 				});
 		case 'Headgear':
 			return _elm_lang$core$Native_Utils.update(
 				item,
 				{
 					kind: _jweissman$rogue$Item$Headgear(
-						_jweissman$rogue$Helm$enchant(_p9._0))
+						_jweissman$rogue$Helm$enchant(_p11._0))
 				});
 		case 'Bottle':
 			return item;
@@ -10735,49 +10932,50 @@ var _jweissman$rogue$Action$describe = function (action) {
 		}
 	}
 };
-var _jweissman$rogue$Action$question = function (action) {
-	var _p1 = action;
-	switch (_p1.ctor) {
-		case 'Drop':
-			return 'What would you like to get rid of?';
-		case 'Throw':
-			return 'What would you like to throw?';
-		case 'Identify':
-			return 'What mysterious object would you like to identify?';
-		case 'Wield':
-			return 'Which weapon would you like to wield?';
-		case 'Wear':
-			return 'What would you like to wear?';
-		case 'Drink':
-			return 'What would you like to drink?';
-		case 'Look':
-			return 'Where would you like to look?';
-		case 'Read':
-			return 'What would you like to read?';
-		case 'Enchant':
-			return 'What would you like to enchant?';
-		case 'Sheathe':
-			return 'What would you like to sheathe?';
-		case 'TakeOff':
-			return 'What would you like to take off?';
-		case 'Use':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'What would you like to ',
-				A2(
+var _jweissman$rogue$Action$question = F3(
+	function (vocab, language, action) {
+		var _p1 = action;
+		switch (_p1.ctor) {
+			case 'Drop':
+				return 'What would you like to get rid of?';
+			case 'Throw':
+				return 'What would you like to throw?';
+			case 'Identify':
+				return 'What mysterious object would you like to identify?';
+			case 'Wield':
+				return 'Which weapon would you like to wield?';
+			case 'Wear':
+				return 'What would you like to wear?';
+			case 'Drink':
+				return 'What would you like to drink?';
+			case 'Look':
+				return 'Where would you like to look?';
+			case 'Read':
+				return 'What would you like to read?';
+			case 'Enchant':
+				return 'What would you like to enchant?';
+			case 'Sheathe':
+				return 'What would you like to sheathe?';
+			case 'TakeOff':
+				return 'What would you like to take off?';
+			case 'Use':
+				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Action$describe(_p1._1),
+					'What would you like to ',
 					A2(
 						_elm_lang$core$Basics_ops['++'],
-						' with ',
+						_jweissman$rogue$Action$describe(_p1._1),
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_jweissman$rogue$Item$describe(_p1._0),
-							'?'))));
-		default:
-			return 'What would you like to do?';
-	}
-};
+							' with ',
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								A3(_jweissman$rogue$Item$describe, vocab, language, _p1._0),
+								'?'))));
+			default:
+				return 'What would you like to do?';
+		}
+	});
 var _jweissman$rogue$Action$TakeOff = {ctor: 'TakeOff'};
 var _jweissman$rogue$Action$Sheathe = {ctor: 'Sheathe'};
 var _jweissman$rogue$Action$Default = {ctor: 'Default'};
@@ -11520,81 +11718,14 @@ var _jweissman$rogue$Creature$Model = function (a) {
 		};
 	};
 };
-var _jweissman$rogue$Language$syllables = _elm_lang$core$Native_List.fromArray(
-	['ae', 'au', 'ch', 'de', 'ea', 'es', 'eu', 'en', 'li', 'll', 'ma', 'mu', 'mn', 'no', 'nu', 'oi', 'oh', 'ru', 'sa', 'sh', 'th', 'us']);
-var _jweissman$rogue$Language$generateSyllable = function () {
-	var randomIdx = A2(
-		_elm_lang$core$Random$int,
-		0,
-		_elm_lang$core$List$length(_jweissman$rogue$Language$syllables) - 1);
-	var pickSyllable = function (idx) {
-		return A2(
-			_elm_lang$core$Maybe$withDefault,
-			'zz',
-			A2(_jweissman$rogue$Util$getAt, _jweissman$rogue$Language$syllables, idx));
-	};
-	return A2(_elm_lang$core$Random$map, pickSyllable, randomIdx);
-}();
-var _jweissman$rogue$Language$generateWord = function () {
-	var constructWord = F2(
-		function (ls, ct) {
-			return A2(
-				_elm_lang$core$String$join,
-				'',
-				A2(_elm_lang$core$List$take, ct, ls));
-		});
-	var syllableList = A2(_elm_lang$core$Random$list, 10, _jweissman$rogue$Language$generateSyllable);
-	var randomCount = A2(_elm_lang$core$Random$int, 2, 3);
-	return A3(_elm_lang$core$Random$map2, constructWord, syllableList, randomCount);
-}();
-var _jweissman$rogue$Language$describeIdea = function (idea) {
-	var _p0 = idea;
-	switch (_p0.ctor) {
-		case 'Power':
-			return 'power';
-		case 'Light':
-			return 'light';
-		case 'Life':
-			return 'life';
-		case 'Water':
-			return 'water';
-		case 'Holy':
-			return 'holy';
-		default:
-			return A2(
-				_elm_lang$core$String$join,
-				' ',
-				A2(_elm_lang$core$List$map, _jweissman$rogue$Language$describeIdea, _p0._0));
-	}
-};
-var _jweissman$rogue$Language$Compound = function (a) {
-	return {ctor: 'Compound', _0: a};
-};
-var _jweissman$rogue$Language$Holy = {ctor: 'Holy'};
-var _jweissman$rogue$Language$Water = {ctor: 'Water'};
-var _jweissman$rogue$Language$Life = {ctor: 'Life'};
-var _jweissman$rogue$Language$Light = {ctor: 'Light'};
-var _jweissman$rogue$Language$Power = {ctor: 'Power'};
-var _jweissman$rogue$Language$ideas = _elm_lang$core$Native_List.fromArray(
-	[_jweissman$rogue$Language$Power, _jweissman$rogue$Language$Light, _jweissman$rogue$Language$Life, _jweissman$rogue$Language$Water, _jweissman$rogue$Language$Holy]);
-var _jweissman$rogue$Language$generateWords = A2(
-	_elm_lang$core$Random$list,
-	_elm_lang$core$List$length(_jweissman$rogue$Language$ideas),
-	_jweissman$rogue$Language$generateWord);
-var _jweissman$rogue$Language$Root = F2(
-	function (a, b) {
-		return {ctor: 'Root', _0: a, _1: b};
+var _jweissman$rogue$Warrior$learnsWord = F2(
+	function (word, model) {
+		return A2(_elm_lang$core$List$member, word, model.vocabulary) ? model : _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				vocabulary: A2(_elm_lang$core$List_ops['::'], word, model.vocabulary)
+			});
 	});
-var _jweissman$rogue$Language$init = F2(
-	function (idea, description) {
-		return A2(_jweissman$rogue$Language$Root, idea, description);
-	});
-var _jweissman$rogue$Language$generate = function () {
-	var expression = function (words) {
-		return A3(_elm_lang$core$List$map2, _jweissman$rogue$Language$init, _jweissman$rogue$Language$ideas, words);
-	};
-	return A2(_elm_lang$core$Random$map, expression, _jweissman$rogue$Language$generateWords);
-}();
 var _jweissman$rogue$Warrior$addToInventory = F2(
 	function (item, model) {
 		var model$ = _elm_lang$core$Native_Utils.update(
@@ -12713,80 +12844,81 @@ var _jweissman$rogue$Path$seek = F3(
 				src,
 				_jweissman$rogue$Path$movesFrom(blocked)));
 	});
-var _jweissman$rogue$Event$describe = function (event) {
-	var _p0 = event;
-	switch (_p0.ctor) {
-		case 'Awaken':
-			return 'You awaken in the Timeless Halls of Mandos...';
-		case 'PickupCoin':
-			return 'You find a glittering golden coin.';
-		case 'EnemyEngaged':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You see that the ',
-				A2(
+var _jweissman$rogue$Event$describe = F3(
+	function (vocab, lang, event) {
+		var _p0 = event;
+		switch (_p0.ctor) {
+			case 'Awaken':
+				return 'You awaken in the Timeless Halls of Mandos...';
+			case 'PickupCoin':
+				return 'You find a glittering golden coin.';
+			case 'EnemyEngaged':
+				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Creature$describe(_p0._0),
-					' engages you!'));
-		case 'AttackEnemy':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You attack ',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Creature$describe(_p0._0),
+					'You see that the ',
 					A2(
 						_elm_lang$core$Basics_ops['++'],
-						' for ',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_elm_lang$core$Basics$toString(_p0._1),
-							' damage.'))));
-		case 'KillEnemy':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You slay ',
-				A2(
+						_jweissman$rogue$Creature$describe(_p0._0),
+						' engages you!'));
+			case 'AttackEnemy':
+				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Creature$describe(_p0._0),
-					'!'));
-		case 'DefendEnemy':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You are attacked by ',
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Creature$describe(_p0._0),
+					'You attack ',
 					A2(
 						_elm_lang$core$Basics_ops['++'],
-						' for ',
+						_jweissman$rogue$Creature$describe(_p0._0),
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_elm_lang$core$Basics$toString(_p0._1),
-							' damage.'))));
-		case 'Death':
-			return A2(_elm_lang$core$Basics_ops['++'], 'You were slain by ', _p0._0);
-		case 'Ascend':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You ascend to level ',
-				_elm_lang$core$Basics$toString(_p0._0));
-		case 'Descend':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You descend to level ',
-				_elm_lang$core$Basics$toString(_p0._0));
-		case 'CrystalTaken':
-			return 'You take the long-sought Crystal of Time!';
-		case 'HallsEscaped':
-			return 'The doors swing open and you emerge into daylight...!';
-		default:
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You pick up the ',
-				_jweissman$rogue$Item$describe(_p0._0));
-	}
-};
+							' for ',
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								_elm_lang$core$Basics$toString(_p0._1),
+								' damage.'))));
+			case 'KillEnemy':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'You slay ',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_jweissman$rogue$Creature$describe(_p0._0),
+						'!'));
+			case 'DefendEnemy':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'You are attacked by ',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_jweissman$rogue$Creature$describe(_p0._0),
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							' for ',
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								_elm_lang$core$Basics$toString(_p0._1),
+								' damage.'))));
+			case 'Death':
+				return A2(_elm_lang$core$Basics_ops['++'], 'You were slain by ', _p0._0);
+			case 'Ascend':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'You ascend to level ',
+					_elm_lang$core$Basics$toString(_p0._0));
+			case 'Descend':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'You descend to level ',
+					_elm_lang$core$Basics$toString(_p0._0));
+			case 'CrystalTaken':
+				return 'You take the long-sought Crystal of Time!';
+			case 'HallsEscaped':
+				return 'The doors swing open and you emerge into daylight...!';
+			default:
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'You pick up the ',
+					A3(_jweissman$rogue$Item$describe, vocab, lang, _p0._0));
+		}
+	});
 var _jweissman$rogue$Event$isPlayerDeath = function (event) {
 	var _p1 = event;
 	if (_p1.ctor === 'Death') {
@@ -12977,49 +13109,50 @@ var _jweissman$rogue$Entity$view = function (entity) {
 		_jweissman$rogue$Entity$position(entity),
 		_jweissman$rogue$Entity$color(entity));
 };
-var _jweissman$rogue$Entity$describe = function (entity) {
-	var _p3 = entity;
-	switch (_p3.ctor) {
-		case 'Monster':
-			return _jweissman$rogue$Creature$describe(_p3._0);
-		case 'Player':
-			return 'a nameless warrior';
-		case 'Wall':
-			return 'a sturdy wall';
-		case 'Coin':
-			return 'a golden coin';
-		case 'Floor':
-			return 'a cobblestone floor';
-		case 'Door':
-			return 'a creaky door';
-		case 'Grass':
-			return 'a patch of grass';
-		case 'StairsUp':
-			return 'an upward-curving staircase';
-		case 'StairsDown':
-			return 'a downward-curving staircase';
-		case 'Memory':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You saw ',
-				A2(
+var _jweissman$rogue$Entity$describe = F3(
+	function (vocab, language, entity) {
+		var _p3 = entity;
+		switch (_p3.ctor) {
+			case 'Monster':
+				return _jweissman$rogue$Creature$describe(_p3._0);
+			case 'Player':
+				return 'a nameless warrior';
+			case 'Wall':
+				return 'a sturdy wall';
+			case 'Coin':
+				return 'a golden coin';
+			case 'Floor':
+				return 'a cobblestone floor';
+			case 'Door':
+				return 'a creaky door';
+			case 'Grass':
+				return 'a patch of grass';
+			case 'StairsUp':
+				return 'an upward-curving staircase';
+			case 'StairsDown':
+				return 'a downward-curving staircase';
+			case 'Memory':
+				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Entity$describe(_p3._0),
-					' here'));
-		case 'Imaginary':
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				'You imagine there is ',
-				A2(
+					'You saw ',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						A3(_jweissman$rogue$Entity$describe, vocab, language, _p3._0),
+						' here'));
+			case 'Imaginary':
+				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					_jweissman$rogue$Entity$describe(_p3._0),
-					' here'));
-		case 'Entrance':
-			return _p3._0 ? 'an open heavy metal gateway and daylight beyond' : 'a closed heavy metal gateway';
-		default:
-			return _jweissman$rogue$Item$describe(_p3._0);
-	}
-};
+					'You imagine there is ',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						A3(_jweissman$rogue$Entity$describe, vocab, language, _p3._0),
+						' here'));
+			case 'Entrance':
+				return _p3._0 ? 'an open heavy metal gateway and daylight beyond' : 'a closed heavy metal gateway';
+			default:
+				return A3(_jweissman$rogue$Item$describe, vocab, language, _p3._0);
+		}
+	});
 var _jweissman$rogue$Entity$isCreature = function (entity) {
 	var _p4 = entity;
 	if (_p4.ctor === 'Monster') {
@@ -13412,20 +13545,37 @@ var _jweissman$rogue$Level$creatureEngages = F3(
 	});
 var _jweissman$rogue$Level$playerSees = F2(
 	function (pts, model) {
-		var viewed$ = model.viewed;
-		var pts$ = A2(
-			_elm_lang$core$List$filter,
-			function (pt) {
-				return _elm_lang$core$Basics$not(
-					A2(_elm_lang$core$List$member, pt, model.viewed));
-			},
-			pts);
+		var viewed$ = A2(
+			_elm_lang$core$Set$union,
+			_elm_lang$core$Set$fromList(pts),
+			model.viewed);
 		return _elm_lang$core$Native_Utils.update(
 			model,
-			{
-				viewed: A2(_elm_lang$core$Basics_ops['++'], viewed$, pts$)
-			});
+			{viewed: viewed$});
 	});
+var _jweissman$rogue$Level$detectFrontier = F3(
+	function (explored, unexplored, model) {
+		return A2(
+			_elm_lang$core$Set$intersect,
+			explored,
+			_elm_lang$core$Set$fromList(
+				A2(
+					_elm_lang$core$List$concatMap,
+					_jweissman$rogue$Point$adjacent,
+					_elm_lang$core$Set$toList(unexplored))));
+	});
+var _jweissman$rogue$Level$viewFrontier = function (model) {
+	var _p7 = model;
+	var viewed = _p7.viewed;
+	var walls = _p7.walls;
+	var floors = _p7.floors;
+	var explored = A2(_elm_lang$core$Set$intersect, floors, viewed);
+	var unexplored = A2(
+		_elm_lang$core$Set$diff,
+		A2(_elm_lang$core$Set$union, floors, walls),
+		viewed);
+	return A3(_jweissman$rogue$Level$detectFrontier, explored, unexplored, model);
+};
 var _jweissman$rogue$Level$crystalLocation = function (model) {
 	return _elm_lang$core$List$head(
 		A2(
@@ -13435,9 +13585,9 @@ var _jweissman$rogue$Level$crystalLocation = function (model) {
 			},
 			A2(
 				_elm_lang$core$List$filter,
-				function (_p7) {
-					var _p8 = _p7;
-					return _elm_lang$core$Native_Utils.eq(_p8.kind, _jweissman$rogue$Item$crystal);
+				function (_p8) {
+					var _p9 = _p8;
+					return _elm_lang$core$Native_Utils.eq(_p9.kind, _jweissman$rogue$Item$crystal);
 				},
 				model.items)));
 };
@@ -13455,9 +13605,10 @@ var _jweissman$rogue$Level$creatureAt = F2(
 	function (pt, model) {
 		return _elm_lang$core$List$head(
 			A2(
-				_elm_lang$core$List$filter,
+				_jweissman$rogue$Util$dropWhile,
 				function (c) {
-					return _elm_lang$core$Native_Utils.eq(c.position, pt);
+					return _elm_lang$core$Basics$not(
+						_elm_lang$core$Native_Utils.eq(c.position, pt));
 				},
 				model.creatures));
 	});
@@ -13465,37 +13616,37 @@ var _jweissman$rogue$Level$isAlive = function (livingThing) {
 	return _elm_lang$core$Native_Utils.cmp(livingThing.hp, 0) > 0;
 };
 var _jweissman$rogue$Level$playerDies = F2(
-	function (cause, _p9) {
-		var _p10 = _p9;
-		var _p13 = _p10._2;
-		var _p12 = _p10._0;
-		var _p11 = _p10._1;
+	function (cause, _p10) {
+		var _p11 = _p10;
+		var _p14 = _p11._2;
+		var _p13 = _p11._0;
+		var _p12 = _p11._1;
 		if (_elm_lang$core$Basics$not(
-			_jweissman$rogue$Level$isAlive(_p13)) && _elm_lang$core$Basics$not(
-			A2(_elm_lang$core$List$any, _jweissman$rogue$Event$isPlayerDeath, _p11))) {
+			_jweissman$rogue$Level$isAlive(_p14)) && _elm_lang$core$Basics$not(
+			A2(_elm_lang$core$List$any, _jweissman$rogue$Event$isPlayerDeath, _p12))) {
 			var event = _jweissman$rogue$Event$death(cause);
 			return {
 				ctor: '_Tuple3',
-				_0: _p12,
-				_1: A2(_elm_lang$core$List_ops['::'], event, _p11),
-				_2: _p13
+				_0: _p13,
+				_1: A2(_elm_lang$core$List_ops['::'], event, _p12),
+				_2: _p14
 			};
 		} else {
-			return {ctor: '_Tuple3', _0: _p12, _1: _p11, _2: _p13};
+			return {ctor: '_Tuple3', _0: _p13, _1: _p12, _2: _p14};
 		}
 	});
 var _jweissman$rogue$Level$creatureAttacks = F2(
-	function (creature, _p14) {
-		var _p15 = _p14;
-		var _p18 = _p15._2;
-		var _p17 = _p15._0;
-		var _p16 = _p15._1;
+	function (creature, _p15) {
+		var _p16 = _p15;
+		var _p19 = _p16._2;
+		var _p18 = _p16._0;
+		var _p17 = _p16._1;
 		var dmg = A2(
 			_elm_lang$core$Basics$max,
 			1,
-			creature.attack - _jweissman$rogue$Warrior$resistance(_p18));
+			creature.attack - _jweissman$rogue$Warrior$resistance(_p19));
 		var pos = A2(_jweissman$rogue$Point$slide, creature.direction, creature.position);
-		return _elm_lang$core$Native_Utils.eq(pos, _p18.position) ? A2(
+		return _elm_lang$core$Native_Utils.eq(pos, _p19.position) ? A2(
 			_jweissman$rogue$Level$playerDies,
 			A2(
 				_elm_lang$core$Basics_ops['++'],
@@ -13505,14 +13656,14 @@ var _jweissman$rogue$Level$creatureAttacks = F2(
 				_jweissman$rogue$Level$playerTakesDamage,
 				creature,
 				dmg,
-				{ctor: '_Tuple3', _0: _p17, _1: _p16, _2: _p18})) : {ctor: '_Tuple3', _0: _p17, _1: _p16, _2: _p18};
+				{ctor: '_Tuple3', _0: _p18, _1: _p17, _2: _p19})) : {ctor: '_Tuple3', _0: _p18, _1: _p17, _2: _p19};
 	});
 var _jweissman$rogue$Level$purge = function (model) {
 	var killed = A2(
 		_elm_lang$core$List$filter,
-		function (_p19) {
+		function (_p20) {
 			return _elm_lang$core$Basics$not(
-				_jweissman$rogue$Level$isAlive(_p19));
+				_jweissman$rogue$Level$isAlive(_p20));
 		},
 		model.creatures);
 	var deathEvents = A2(_elm_lang$core$List$map, _jweissman$rogue$Event$killEnemy, killed);
@@ -13527,31 +13678,31 @@ var _jweissman$rogue$Level$purge = function (model) {
 };
 var _jweissman$rogue$Level$hasBeenViewed = F2(
 	function (point, model) {
-		return A2(_elm_lang$core$List$member, point, model.viewed);
+		return A2(_elm_lang$core$Set$member, point, model.viewed);
 	});
 var _jweissman$rogue$Level$isEntrance = F2(
 	function (position, model) {
-		var _p20 = model.entrance;
-		if (_p20.ctor === 'Just') {
-			return _elm_lang$core$Native_Utils.eq(position, _p20._0._0);
+		var _p21 = model.entrance;
+		if (_p21.ctor === 'Just') {
+			return _elm_lang$core$Native_Utils.eq(position, _p21._0._0);
 		} else {
 			return false;
 		}
 	});
 var _jweissman$rogue$Level$isStairsDown = F2(
 	function (position, model) {
-		var _p21 = model.downstairs;
-		if (_p21.ctor === 'Just') {
-			return _elm_lang$core$Native_Utils.eq(position, _p21._0);
+		var _p22 = model.downstairs;
+		if (_p22.ctor === 'Just') {
+			return _elm_lang$core$Native_Utils.eq(position, _p22._0);
 		} else {
 			return false;
 		}
 	});
 var _jweissman$rogue$Level$isStairsUp = F2(
 	function (position, model) {
-		var _p22 = model.upstairs;
-		if (_p22.ctor === 'Just') {
-			return _elm_lang$core$Native_Utils.eq(position, _p22._0);
+		var _p23 = model.upstairs;
+		if (_p23.ctor === 'Just') {
+			return _elm_lang$core$Native_Utils.eq(position, _p23._0);
 		} else {
 			return false;
 		}
@@ -13561,10 +13712,10 @@ var _jweissman$rogue$Level$isGrass = F2(
 		return A2(_elm_lang$core$Set$member, pt, model.grass);
 	});
 var _jweissman$rogue$Level$evolveGrassAt = F3(
-	function (model, pt, _p23) {
-		var _p24 = _p23;
-		var _p26 = _p24._1;
-		var _p25 = _p24._0;
+	function (model, pt, _p24) {
+		var _p25 = _p24;
+		var _p27 = _p25._1;
+		var _p26 = _p25._0;
 		var alive = A2(_elm_lang$core$Set$member, pt, model.grass);
 		var neighbors = _elm_lang$core$List$length(
 			A2(
@@ -13580,20 +13731,20 @@ var _jweissman$rogue$Level$evolveGrassAt = F3(
 					_jweissman$rogue$Direction$directions)));
 		return alive ? (((_elm_lang$core$Native_Utils.cmp(neighbors, 3) < 0) || (_elm_lang$core$Native_Utils.cmp(5, neighbors) < 0)) ? {
 			ctor: '_Tuple2',
-			_0: _p25,
-			_1: A2(_elm_lang$core$List_ops['::'], pt, _p26)
-		} : {ctor: '_Tuple2', _0: _p25, _1: _p26}) : (((_elm_lang$core$Native_Utils.cmp(neighbors, 2) > 0) && (_elm_lang$core$Native_Utils.cmp(6, neighbors) > 0)) ? {
+			_0: _p26,
+			_1: A2(_elm_lang$core$List_ops['::'], pt, _p27)
+		} : {ctor: '_Tuple2', _0: _p26, _1: _p27}) : (((_elm_lang$core$Native_Utils.cmp(neighbors, 2) > 0) && (_elm_lang$core$Native_Utils.cmp(6, neighbors) > 0)) ? {
 			ctor: '_Tuple2',
-			_0: A2(_elm_lang$core$List_ops['::'], pt, _p25),
-			_1: _p26
-		} : {ctor: '_Tuple2', _0: _p25, _1: _p26});
+			_0: A2(_elm_lang$core$List_ops['::'], pt, _p26),
+			_1: _p27
+		} : {ctor: '_Tuple2', _0: _p26, _1: _p27});
 	});
 var _jweissman$rogue$Level$evolveGrass = F2(
 	function (n, model) {
 		if (_elm_lang$core$Native_Utils.cmp(n, 0) < 0) {
 			return model;
 		} else {
-			var _p27 = A3(
+			var _p28 = A3(
 				_elm_lang$core$List$foldr,
 				_jweissman$rogue$Level$evolveGrassAt(model),
 				{
@@ -13604,16 +13755,16 @@ var _jweissman$rogue$Level$evolveGrass = F2(
 						[])
 				},
 				_elm_lang$core$Set$toList(model.floors));
-			var add = _p27._0;
-			var remove = _p27._1;
+			var add = _p28._0;
+			var remove = _p28._1;
 			var model$ = A3(_elm_lang$core$List$foldr, _jweissman$rogue$Level$seedGrassAt, model, add);
 			return A3(_elm_lang$core$List$foldr, _jweissman$rogue$Level$removeGrassAt, model$, remove);
 		}
 	});
 var _jweissman$rogue$Level$growGrass = function (model) {
-	var _p28 = model;
-	var floors = _p28.floors;
-	var walls = _p28.walls;
+	var _p29 = model;
+	var floors = _p29.floors;
+	var walls = _p29.walls;
 	var seeds = _jweissman$rogue$Util$filterChamp(
 		_elm_lang$core$Set$toList(floors));
 	return A2(
@@ -13751,25 +13902,25 @@ var _jweissman$rogue$Level$isWall = F2(
 	function (pt, model) {
 		return A2(_elm_lang$core$Set$member, pt, model.walls);
 	});
-var _jweissman$rogue$Level$entitiesAt = F2(
+var _jweissman$rogue$Level$nonCreatureEntityAt = F2(
 	function (point, model) {
 		var item = function () {
-			var _p29 = A2(_jweissman$rogue$Level$itemAt, point, model);
-			if (_p29.ctor === 'Just') {
+			var _p30 = A2(_jweissman$rogue$Level$itemAt, point, model);
+			if (_p30.ctor === 'Just') {
 				return _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Entity$item(_p29._0));
+					_jweissman$rogue$Entity$item(_p30._0));
 			} else {
 				return _elm_lang$core$Maybe$Nothing;
 			}
 		}();
 		var entrance = function () {
 			if (A2(_jweissman$rogue$Level$isEntrance, point, model)) {
-				var _p30 = model.entrance;
-				if (_p30.ctor === 'Nothing') {
+				var _p31 = model.entrance;
+				if (_p31.ctor === 'Nothing') {
 					return _elm_lang$core$Maybe$Nothing;
 				} else {
 					return _elm_lang$core$Maybe$Just(
-						A2(_jweissman$rogue$Entity$entrance, _p30._0._1, point));
+						A2(_jweissman$rogue$Entity$entrance, _p31._0._1, point));
 				}
 			} else {
 				return _elm_lang$core$Maybe$Nothing;
@@ -13789,19 +13940,21 @@ var _jweissman$rogue$Level$entitiesAt = F2(
 			_jweissman$rogue$Entity$wall(point)) : _elm_lang$core$Maybe$Nothing;
 		var door = A2(_jweissman$rogue$Level$isDoor, point, model) ? _elm_lang$core$Maybe$Just(
 			_jweissman$rogue$Entity$door(point)) : _elm_lang$core$Maybe$Nothing;
-		var monster = function () {
-			var creature = A2(_jweissman$rogue$Level$creatureAt, point, model);
-			var _p31 = creature;
-			if (_p31.ctor === 'Just') {
-				return _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Entity$monster(_p31._0));
-			} else {
-				return _elm_lang$core$Maybe$Nothing;
-			}
-		}();
 		var entities = _elm_lang$core$Native_List.fromArray(
-			[floor, grass, door, wall, downstairs, upstairs, entrance, item, coin, monster]);
-		return A2(_elm_lang$core$List$filterMap, _elm_lang$core$Basics$identity, entities);
+			[floor, grass, door, wall, downstairs, upstairs, entrance, item, coin]);
+		return _elm_lang$core$List$head(
+			_elm_lang$core$List$reverse(
+				A2(_elm_lang$core$List$filterMap, _elm_lang$core$Basics$identity, entities)));
+	});
+var _jweissman$rogue$Level$entityAt = F2(
+	function (pt, model) {
+		var _p32 = A2(_jweissman$rogue$Level$creatureAt, pt, model);
+		if (_p32.ctor === 'Just') {
+			return _elm_lang$core$Maybe$Just(
+				_jweissman$rogue$Entity$monster(_p32._0));
+		} else {
+			return A2(_jweissman$rogue$Level$nonCreatureEntityAt, pt, model);
+		}
 	});
 var _jweissman$rogue$Level$canCreatureStep = F3(
 	function (creature, player, model) {
@@ -13823,35 +13976,35 @@ var _jweissman$rogue$Level$creatureMoves = F3(
 			{creatures: creatures$});
 	});
 var _jweissman$rogue$Level$stepCreature = F2(
-	function (creature, _p32) {
-		var _p33 = _p32;
-		var _p34 = _p33._2;
+	function (creature, _p33) {
+		var _p34 = _p33;
+		var _p35 = _p34._2;
 		return A2(
 			_jweissman$rogue$Level$creatureAttacks,
 			creature,
 			{
 				ctor: '_Tuple3',
-				_0: A3(_jweissman$rogue$Level$creatureMoves, creature, _p34, _p33._0),
-				_1: _p33._1,
-				_2: _p34
+				_0: A3(_jweissman$rogue$Level$creatureMoves, creature, _p35, _p34._0),
+				_1: _p34._1,
+				_2: _p35
 			});
 	});
 var _jweissman$rogue$Level$creatureSteps = F2(
-	function (creature, _p35) {
-		var _p36 = _p35;
-		var _p39 = _p36._2;
-		var _p38 = _p36._0;
-		var _p37 = _p36._1;
-		var distance = A2(_jweissman$rogue$Point$distance, _p39.position, creature.position);
+	function (creature, _p36) {
+		var _p37 = _p36;
+		var _p40 = _p37._2;
+		var _p39 = _p37._0;
+		var _p38 = _p37._1;
+		var distance = A2(_jweissman$rogue$Point$distance, _p40.position, creature.position);
 		return ((_elm_lang$core$Native_Utils.cmp(distance, 5) < 0) || creature.engaged) ? A2(
 			_jweissman$rogue$Level$stepCreature,
 			creature,
 			{
 				ctor: '_Tuple3',
-				_0: A3(_jweissman$rogue$Level$creatureEngages, _p39, creature, _p38),
-				_1: _p37,
-				_2: _p39
-			}) : {ctor: '_Tuple3', _0: _p38, _1: _p37, _2: _p39};
+				_0: A3(_jweissman$rogue$Level$creatureEngages, _p40, creature, _p39),
+				_1: _p38,
+				_2: _p40
+			}) : {ctor: '_Tuple3', _0: _p39, _1: _p38, _2: _p40};
 	});
 var _jweissman$rogue$Level$moveCreatures = F2(
 	function (player, model) {
@@ -13869,15 +14022,15 @@ var _jweissman$rogue$Level$moveCreatures = F2(
 	});
 var _jweissman$rogue$Level$origin = {ctor: '_Tuple2', _0: 0, _1: 0};
 var _jweissman$rogue$Level$connectRooms$ = F2(
-	function (_p40, model) {
-		var _p41 = _p40;
-		var corridor = A2(_jweissman$rogue$Room$corridor, _p41._0, _p41._1);
-		var _p42 = corridor;
-		if (_p42.ctor === '[]') {
+	function (_p41, model) {
+		var _p42 = _p41;
+		var corridor = A2(_jweissman$rogue$Room$corridor, _p42._0, _p42._1);
+		var _p43 = corridor;
+		if (_p43.ctor === '[]') {
 			return model;
 		} else {
-			if (_p42._1.ctor === '[]') {
-				return A2(_jweissman$rogue$Level$emplaceDoor, _p42._0, model);
+			if (_p43._1.ctor === '[]') {
+				return A2(_jweissman$rogue$Level$emplaceDoor, _p43._0, model);
 			} else {
 				return (_elm_lang$core$Native_Utils.cmp(
 					_elm_lang$core$List$length(corridor),
@@ -13901,16 +14054,16 @@ var _jweissman$rogue$Level$connectRooms$ = F2(
 var _jweissman$rogue$Level$connectRooms = F2(
 	function (rooms, model) {
 		var maybeNetwork = _jweissman$rogue$Room$network(rooms);
-		var _p43 = maybeNetwork;
-		if (_p43.ctor === 'Just') {
-			var _p44 = _p43._0;
+		var _p44 = maybeNetwork;
+		if (_p44.ctor === 'Just') {
+			var _p45 = _p44._0;
 			var model$ = _jweissman$rogue$Level$extrudeRooms(
 				_elm_lang$core$Native_Utils.update(
 					model,
 					{
-						rooms: _jweissman$rogue$Graph$listNodes(_p44)
+						rooms: _jweissman$rogue$Graph$listNodes(_p45)
 					}));
-			return A3(_jweissman$rogue$Graph$fold, _jweissman$rogue$Level$connectRooms$, model$, _p44);
+			return A3(_jweissman$rogue$Graph$fold, _jweissman$rogue$Level$connectRooms$, model$, _p45);
 		} else {
 			return model;
 		}
@@ -13971,23 +14124,23 @@ var _jweissman$rogue$Level$extrudeStairwells = function (model) {
 			_elm_lang$core$Set$filter,
 			adjacentToTwoWalls,
 			A2(_elm_lang$core$Set$filter, adjacentToFloor, model.walls)));
-	var _p45 = A2(
+	var _p46 = A2(
 		_elm_lang$core$Maybe$withDefault,
 		{ctor: '_Tuple2', _0: _jweissman$rogue$Level$origin, _1: _jweissman$rogue$Level$origin},
 		_elm_lang$core$List$head(
 			_elm_lang$core$List$reverse(
 				A2(
 					_elm_lang$core$List$sortBy,
-					function (_p46) {
-						var _p47 = _p46;
-						return A2(_jweissman$rogue$Point$distance, _p47._0, _p47._1);
+					function (_p47) {
+						var _p48 = _p47;
+						return A2(_jweissman$rogue$Point$distance, _p48._0, _p48._1);
 					},
 					A2(
 						_elm_lang$core$List$filter,
-						function (_p48) {
-							var _p49 = _p48;
+						function (_p49) {
+							var _p50 = _p49;
 							return _elm_lang$core$Basics$not(
-								_elm_lang$core$Native_Utils.eq(_p49._0, _p49._1));
+								_elm_lang$core$Native_Utils.eq(_p50._0, _p50._1));
 						},
 						A3(
 							_elm_lang$core$List$map2,
@@ -13997,8 +14150,8 @@ var _jweissman$rogue$Level$extrudeStairwells = function (model) {
 								}),
 							_elm_lang$core$List$reverse(candidates),
 							candidates))))));
-	var up = _p45._0;
-	var down = _p45._1;
+	var up = _p46._0;
+	var down = _p46._1;
 	return A2(
 		_jweissman$rogue$Level$emplaceDownstairs,
 		down,
@@ -14006,26 +14159,26 @@ var _jweissman$rogue$Level$extrudeStairwells = function (model) {
 };
 var _jweissman$rogue$Level$bestPath = function (model) {
 	var up = function () {
-		var _p50 = model.upstairs;
-		if (_p50.ctor === 'Just') {
-			return _p50._0;
+		var _p51 = model.upstairs;
+		if (_p51.ctor === 'Just') {
+			return _p51._0;
 		} else {
-			var _p51 = model.entrance;
-			if (_p51.ctor === 'Just') {
-				return _p51._0._0;
+			var _p52 = model.entrance;
+			if (_p52.ctor === 'Just') {
+				return _p52._0._0;
 			} else {
 				return _jweissman$rogue$Level$origin;
 			}
 		}
 	}();
 	var down = function () {
-		var _p52 = model.downstairs;
-		if (_p52.ctor === 'Just') {
-			return _p52._0;
+		var _p53 = model.downstairs;
+		if (_p53.ctor === 'Just') {
+			return _p53._0;
 		} else {
-			var _p53 = _jweissman$rogue$Level$crystalLocation(model);
-			if (_p53.ctor === 'Just') {
-				return _p53._0;
+			var _p54 = _jweissman$rogue$Level$crystalLocation(model);
+			if (_p54.ctor === 'Just') {
+				return _p54._0;
 			} else {
 				return _jweissman$rogue$Level$origin;
 			}
@@ -14067,11 +14220,11 @@ var _jweissman$rogue$Level$dropCoins = function (model) {
 var _jweissman$rogue$Level$finalizeCrystal = F2(
 	function (depth, model) {
 		if (_elm_lang$core$Native_Utils.eq(depth, _jweissman$rogue$Configuration$levelCount - 1)) {
-			var _p54 = model.downstairs;
-			if (_p54.ctor === 'Nothing') {
+			var _p55 = model.downstairs;
+			if (_p55.ctor === 'Nothing') {
 				return model;
 			} else {
-				return A2(_jweissman$rogue$Level$emplaceCrystal, _p54._0, model);
+				return A2(_jweissman$rogue$Level$emplaceCrystal, _p55._0, model);
 			}
 		} else {
 			return model;
@@ -14080,11 +14233,11 @@ var _jweissman$rogue$Level$finalizeCrystal = F2(
 var _jweissman$rogue$Level$finalizeEntrance = F2(
 	function (depth, model) {
 		if (_elm_lang$core$Native_Utils.eq(depth, 0)) {
-			var _p55 = model.upstairs;
-			if (_p55.ctor === 'Nothing') {
+			var _p56 = model.upstairs;
+			if (_p56.ctor === 'Nothing') {
 				return model;
 			} else {
-				return A2(_jweissman$rogue$Level$emplaceEntrance, _p55._0, model);
+				return A2(_jweissman$rogue$Level$emplaceEntrance, _p56._0, model);
 			}
 		} else {
 			return model;
@@ -14116,10 +14269,9 @@ var _jweissman$rogue$Level$init = {
 	entrance: _elm_lang$core$Maybe$Nothing,
 	rooms: _elm_lang$core$Native_List.fromArray(
 		[]),
-	viewed: _elm_lang$core$Native_List.fromArray(
-		[]),
 	items: _elm_lang$core$Native_List.fromArray(
-		[])
+		[]),
+	viewed: _elm_lang$core$Set$empty
 };
 var _jweissman$rogue$Level$fromRooms = function (roomCandidates) {
 	var rooms = _jweissman$rogue$Room$filterOverlaps(roomCandidates);
@@ -14258,6 +14410,10 @@ var _jweissman$rogue$Dungeon$purge = F2(
 			model);
 		return {ctor: '_Tuple2', _0: model$, _1: events};
 	});
+var _jweissman$rogue$Dungeon$viewFrontier = F2(
+	function (depth, model) {
+		return A3(_jweissman$rogue$Dungeon$apply$, _jweissman$rogue$Level$viewFrontier, depth, model);
+	});
 var _jweissman$rogue$Dungeon$prepare = F2(
 	function (depth, model) {
 		return A2(_elm_lang$core$List$indexedMap, _jweissman$rogue$Level$finalize, model);
@@ -14324,14 +14480,17 @@ var _jweissman$rogue$Log$logLineView = F3(
 				_jweissman$rogue$Palette$blue(idx)));
 	});
 var _jweissman$rogue$Log$maxEntries = 7;
-var _jweissman$rogue$Log$view = F2(
-	function (origin, model) {
+var _jweissman$rogue$Log$view = F4(
+	function (origin, vocab, lang, model) {
 		var header = A3(_jweissman$rogue$Graphics$render, 'EVENTS', origin, 'white');
 		var notes = A2(
 			_elm_lang$core$List$take,
 			_jweissman$rogue$Log$maxEntries,
 			_elm_lang$core$List$reverse(
-				A2(_elm_lang$core$List$map, _jweissman$rogue$Event$describe, model)));
+				A2(
+					_elm_lang$core$List$map,
+					A2(_jweissman$rogue$Event$describe, vocab, lang),
+					model)));
 		var logLines = A2(
 			_elm_lang$core$List$indexedMap,
 			_jweissman$rogue$Log$logLineView(origin),
@@ -14344,14 +14503,14 @@ var _jweissman$rogue$Log$view = F2(
 	});
 var _jweissman$rogue$Log$init = _elm_lang$core$Native_List.fromArray(
 	[_jweissman$rogue$Event$awaken]);
-var _jweissman$rogue$Inventory$itemMessage = F4(
-	function (n, action, equipped, item) {
+var _jweissman$rogue$Inventory$itemMessage = F6(
+	function (vocab, lang, n, action, equipped, item) {
 		var _p0 = action;
 		if (_p0.ctor === 'Nothing') {
 			return A2(
 				_elm_lang$core$Basics_ops['++'],
 				'- ',
-				_jweissman$rogue$Item$describe(item));
+				A3(_jweissman$rogue$Item$describe, vocab, lang, item));
 		} else {
 			return A2(
 				_elm_lang$core$Basics_ops['++'],
@@ -14368,7 +14527,7 @@ var _jweissman$rogue$Inventory$itemMessage = F4(
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								' ',
-								_jweissman$rogue$Item$describe(item))))));
+								A3(_jweissman$rogue$Item$describe, vocab, lang, item))))));
 		}
 	});
 var _jweissman$rogue$Inventory$itemColor = F3(
@@ -14381,11 +14540,11 @@ var _jweissman$rogue$Inventory$itemColor = F3(
 			return A3(_jweissman$rogue$Action$canPerform, equipped, item, _p2) ? (_elm_lang$core$Native_Utils.eq(_p2, _jweissman$rogue$Action$drop) ? _jweissman$rogue$Palette$warning : _jweissman$rogue$Palette$active) : _jweissman$rogue$Palette$inactive;
 		}
 	});
-var _jweissman$rogue$Inventory$itemView = F6(
-	function (_p3, action, idx, count, equipped, item) {
+var _jweissman$rogue$Inventory$itemView = F8(
+	function (_p3, vocab, lang, action, idx, count, equipped, item) {
 		var _p4 = _p3;
 		var color = A3(_jweissman$rogue$Inventory$itemColor, action, equipped, item);
-		var message = A4(_jweissman$rogue$Inventory$itemMessage, idx, action, equipped, item);
+		var message = A6(_jweissman$rogue$Inventory$itemMessage, vocab, lang, idx, action, equipped, item);
 		var desc = (_elm_lang$core$Native_Utils.cmp(count, 1) > 0) ? A2(
 			_elm_lang$core$Basics_ops['++'],
 			message,
@@ -14434,7 +14593,7 @@ var _jweissman$rogue$Inventory$organize = function (model) {
 		function (it, dict) {
 			return A3(
 				_elm_lang$core$Dict$update,
-				_jweissman$rogue$Item$describe(it),
+				_jweissman$rogue$Item$name(it),
 				function (entry) {
 					var _p8 = entry;
 					if (_p8.ctor === 'Nothing') {
@@ -14453,8 +14612,8 @@ var _jweissman$rogue$Inventory$organizedItemAt = F2(
 	function (idx, model) {
 		var inv = _elm_lang$core$Dict$values(
 			_jweissman$rogue$Inventory$organize(model));
-		var maybeName = A2(_jweissman$rogue$Util$getAt, inv, idx);
-		var _p9 = maybeName;
+		var maybeTuple = A2(_jweissman$rogue$Util$getAt, inv, idx);
+		var _p9 = maybeTuple;
 		if (_p9.ctor === 'Nothing') {
 			return _elm_lang$core$Maybe$Nothing;
 		} else {
@@ -14529,16 +14688,18 @@ var _jweissman$rogue$Inventory$itemAtIndex = F2(
 			idx,
 			_elm_lang$core$List$length(equipment)) < 0) ? A2(_jweissman$rogue$Util$getAt, equipment, idx) : A2(_jweissman$rogue$Inventory$organizedItemAt, idx - gearCount, model);
 	});
-var _jweissman$rogue$Inventory$equipmentView = F4(
-	function (_p14, language, action, model) {
+var _jweissman$rogue$Inventory$equipmentView = F5(
+	function (_p14, vocab, language, action, model) {
 		var _p15 = _p14;
 		return A2(
 			_elm_lang$core$List$indexedMap,
 			F2(
 				function (n, item) {
-					return A6(
+					return A8(
 						_jweissman$rogue$Inventory$itemView,
 						{ctor: '_Tuple2', _0: _p15._0, _1: _p15._1},
+						vocab,
+						language,
 						action,
 						n,
 						1,
@@ -14547,14 +14708,15 @@ var _jweissman$rogue$Inventory$equipmentView = F4(
 				}),
 			_jweissman$rogue$Inventory$equippedItems(model));
 	});
-var _jweissman$rogue$Inventory$view = F4(
-	function (_p16, lang, action, model) {
+var _jweissman$rogue$Inventory$view = F5(
+	function (_p16, vocab, lang, action, model) {
 		var _p17 = _p16;
 		var _p21 = _p17._1;
 		var _p20 = _p17._0;
-		var equipment = A4(
+		var equipment = A5(
 			_jweissman$rogue$Inventory$equipmentView,
 			{ctor: '_Tuple2', _0: _p20, _1: _p21 + 2},
+			vocab,
 			lang,
 			action,
 			model);
@@ -14566,9 +14728,11 @@ var _jweissman$rogue$Inventory$view = F4(
 			F2(
 				function (n, _p18) {
 					var _p19 = _p18;
-					return A6(
+					return A8(
 						_jweissman$rogue$Inventory$itemView,
 						{ctor: '_Tuple2', _0: _p20, _1: _p21 + 3},
+						vocab,
+						lang,
 						action,
 						n,
 						_p19._0,
@@ -14596,55 +14760,47 @@ var _jweissman$rogue$Inventory$view = F4(
 				equipment,
 				A2(_elm_lang$core$Basics_ops['++'], hr, items)));
 	});
-var _jweissman$rogue$World$lastSingleton = function (ls) {
-	var _p0 = _elm_lang$core$List$head(
-		_elm_lang$core$List$reverse(ls));
-	if (_p0.ctor === 'Nothing') {
-		return _elm_lang$core$Native_List.fromArray(
-			[]);
-	} else {
-		return _elm_lang$core$Native_List.fromArray(
-			[_p0._0]);
-	}
-};
 var _jweissman$rogue$World$highlightCell = F2(
-	function (_p1, color) {
-		var _p2 = _p1;
+	function (_p0, color) {
+		var _p1 = _p0;
 		return A3(
 			_jweissman$rogue$Graphics$render,
 			'@',
-			{ctor: '_Tuple2', _0: _p2._0, _1: _p2._1},
+			{ctor: '_Tuple2', _0: _p1._0, _1: _p1._1},
 			color);
 	});
 var _jweissman$rogue$World$highlightCells = function (cells) {
 	var targetColor = A2(_jweissman$rogue$Palette$tertiary$, 0, 0.7);
 	var pathColor = A2(_jweissman$rogue$Palette$tertiary$, 2, 0.7);
-	var _p3 = cells;
-	if (_p3.ctor === '[]') {
+	var _p2 = cells;
+	if (_p2.ctor === '[]') {
 		return _elm_lang$core$Native_List.fromArray(
 			[]);
 	} else {
-		if (_p3._1.ctor === '[]') {
+		if (_p2._1.ctor === '[]') {
 			return _elm_lang$core$Native_List.fromArray(
 				[
-					A2(_jweissman$rogue$World$highlightCell, _p3._0, targetColor)
+					A2(_jweissman$rogue$World$highlightCell, _p2._0, targetColor)
 				]);
 		} else {
 			var tail = function () {
-				var _p4 = _elm_lang$core$List$tail(cells);
-				if (_p4.ctor === 'Nothing') {
+				var _p3 = _elm_lang$core$List$tail(cells);
+				if (_p3.ctor === 'Nothing') {
 					return _elm_lang$core$Native_List.fromArray(
 						[]);
 				} else {
-					return _jweissman$rogue$World$highlightCells(_p4._0);
+					return _jweissman$rogue$World$highlightCells(_p3._0);
 				}
 			}();
 			return A2(
 				_elm_lang$core$List_ops['::'],
-				A2(_jweissman$rogue$World$highlightCell, _p3._0, pathColor),
+				A2(_jweissman$rogue$World$highlightCell, _p2._0, pathColor),
 				tail);
 		}
 	}
+};
+var _jweissman$rogue$World$viewFrontier = function (model) {
+	return A2(_jweissman$rogue$Dungeon$viewFrontier, model.depth, model.dungeon);
 };
 var _jweissman$rogue$World$deathEvent = function (model) {
 	return _elm_lang$core$List$head(
@@ -14660,53 +14816,53 @@ var _jweissman$rogue$World$enchantItem = F2(
 			},
 			player.inventory);
 		var weapon$ = function () {
-			var _p5 = player.weapon;
-			if (_p5.ctor === 'Just') {
-				var _p6 = _p5._0;
+			var _p4 = player.weapon;
+			if (_p4.ctor === 'Just') {
+				var _p5 = _p4._0;
 				return _elm_lang$core$Native_Utils.eq(
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$weapon(_p6)),
+						_jweissman$rogue$Item$weapon(_p5)),
 					item) ? _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Weapon$enchant(_p6)) : _elm_lang$core$Maybe$Just(_p6);
+					_jweissman$rogue$Weapon$enchant(_p5)) : _elm_lang$core$Maybe$Just(_p5);
 			} else {
 				return _elm_lang$core$Maybe$Nothing;
 			}
 		}();
 		var armor$ = function () {
-			var _p7 = player.armor;
-			if (_p7.ctor === 'Just') {
-				var _p8 = _p7._0;
+			var _p6 = player.armor;
+			if (_p6.ctor === 'Just') {
+				var _p7 = _p6._0;
 				return _elm_lang$core$Native_Utils.eq(
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$armor(_p8)),
+						_jweissman$rogue$Item$armor(_p7)),
 					item) ? _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Armor$enchant(_p8)) : _elm_lang$core$Maybe$Just(_p8);
+					_jweissman$rogue$Armor$enchant(_p7)) : _elm_lang$core$Maybe$Just(_p7);
 			} else {
 				return _elm_lang$core$Maybe$Nothing;
 			}
 		}();
 		var ring$ = function () {
-			var _p9 = player.ring;
-			if (_p9.ctor === 'Just') {
-				var _p10 = _p9._0;
+			var _p8 = player.ring;
+			if (_p8.ctor === 'Just') {
+				var _p9 = _p8._0;
 				return _elm_lang$core$Native_Utils.eq(
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$ring(_p10)),
+						_jweissman$rogue$Item$ring(_p9)),
 					item) ? _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Ring$enchant(_p10)) : _elm_lang$core$Maybe$Just(_p10);
+					_jweissman$rogue$Ring$enchant(_p9)) : _elm_lang$core$Maybe$Just(_p9);
 			} else {
 				return _elm_lang$core$Maybe$Nothing;
 			}
 		}();
 		var helm$ = function () {
-			var _p11 = player.helm;
-			if (_p11.ctor === 'Just') {
-				var _p12 = _p11._0;
+			var _p10 = player.helm;
+			if (_p10.ctor === 'Just') {
+				var _p11 = _p10._0;
 				return _elm_lang$core$Native_Utils.eq(
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$helm(_p12)),
+						_jweissman$rogue$Item$helm(_p11)),
 					item) ? _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Helm$enchant(_p12)) : _elm_lang$core$Maybe$Just(_p12);
+					_jweissman$rogue$Helm$enchant(_p11)) : _elm_lang$core$Maybe$Just(_p11);
 			} else {
 				return _elm_lang$core$Maybe$Nothing;
 			}
@@ -14734,13 +14890,19 @@ var _jweissman$rogue$World$playerSheathesWeapon = function (model) {
 };
 var _jweissman$rogue$World$playerDrinks = F2(
 	function (item, model) {
-		var _p13 = item.kind;
-		if (_p13.ctor === 'Bottle') {
+		var _p12 = item.kind;
+		if (_p12.ctor === 'Bottle') {
+			var _p13 = _p12._0;
+			var player$ = A2(
+				_jweissman$rogue$Warrior$learnsWord,
+				A2(
+					_jweissman$rogue$Language$wordFor,
+					_jweissman$rogue$Liquid$idea(_p13),
+					model.language),
+				A2(_jweissman$rogue$Warrior$drink, _p13, model.player));
 			return _elm_lang$core$Native_Utils.update(
 				model,
-				{
-					player: A2(_jweissman$rogue$Warrior$drink, _p13._0, model.player)
-				});
+				{player: player$});
 		} else {
 			return model;
 		}
@@ -14928,12 +15090,19 @@ var _jweissman$rogue$World$playerWears = F2(
 						player: A2(_jweissman$rogue$Warrior$wearArmor, _p19._0, model.player)
 					});
 			case 'Jewelry':
+				var _p20 = _p19._0;
+				var player$ = A2(
+					_jweissman$rogue$Warrior$learnsWord,
+					A2(
+						_jweissman$rogue$Language$wordFor,
+						_jweissman$rogue$Spell$idea(
+							_jweissman$rogue$Ring$spell(_p20)),
+						model.language),
+					A2(_jweissman$rogue$Warrior$wearRing, _p20, model.player));
 				return _jweissman$rogue$World$playerViewsField(
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{
-							player: A2(_jweissman$rogue$Warrior$wearRing, _p19._0, model.player)
-						}));
+						{player: player$}));
 			case 'Headgear':
 				return _elm_lang$core$Native_Utils.update(
 					model,
@@ -14946,8 +15115,8 @@ var _jweissman$rogue$World$playerWears = F2(
 	});
 var _jweissman$rogue$World$playerTakesOff = F2(
 	function (item, model) {
-		var _p20 = item.kind;
-		switch (_p20.ctor) {
+		var _p21 = item.kind;
+		switch (_p21.ctor) {
 			case 'Shield':
 				return _elm_lang$core$Native_Utils.update(
 					model,
@@ -14975,10 +15144,10 @@ var _jweissman$rogue$World$floors = function (model) {
 	return _jweissman$rogue$World$level(model).floors;
 };
 var _jweissman$rogue$World$upstairs = function (model) {
-	var _p21 = _jweissman$rogue$World$level(model).upstairs;
-	if (_p21.ctor === 'Just') {
+	var _p22 = _jweissman$rogue$World$level(model).upstairs;
+	if (_p22.ctor === 'Just') {
 		return _elm_lang$core$Native_List.fromArray(
-			[_p21._0]);
+			[_p22._0]);
 	} else {
 		return _elm_lang$core$Native_List.fromArray(
 			[]);
@@ -15010,10 +15179,10 @@ var _jweissman$rogue$World$playerDescends = function (model) {
 		{player: player$, events: events$});
 };
 var _jweissman$rogue$World$downstairs = function (model) {
-	var _p22 = _jweissman$rogue$World$level(model).downstairs;
-	if (_p22.ctor === 'Just') {
+	var _p23 = _jweissman$rogue$World$level(model).downstairs;
+	if (_p23.ctor === 'Just') {
 		return _elm_lang$core$Native_List.fromArray(
-			[_p22._0]);
+			[_p23._0]);
 	} else {
 		return _elm_lang$core$Native_List.fromArray(
 			[]);
@@ -15057,10 +15226,10 @@ var _jweissman$rogue$World$playerAscendsOrDescends = function (model) {
 		_jweissman$rogue$World$upstairs(model)) && (_elm_lang$core$Native_Utils.cmp(model.depth, 0) > 0)) ? _jweissman$rogue$World$playerAscends(model) : model);
 };
 var _jweissman$rogue$World$entrances = function (model) {
-	var _p23 = _jweissman$rogue$World$level(model).entrance;
-	if (_p23.ctor === 'Just') {
+	var _p24 = _jweissman$rogue$World$level(model).entrance;
+	if (_p24.ctor === 'Just') {
 		return _elm_lang$core$Native_List.fromArray(
-			[_p23._0._0]);
+			[_p24._0._0]);
 	} else {
 		return _elm_lang$core$Native_List.fromArray(
 			[]);
@@ -15069,82 +15238,70 @@ var _jweissman$rogue$World$entrances = function (model) {
 var _jweissman$rogue$World$crystals = function (model) {
 	var location = _jweissman$rogue$Level$crystalLocation(
 		_jweissman$rogue$World$level(model));
-	var _p24 = location;
-	if (_p24.ctor === 'Just') {
+	var _p25 = location;
+	if (_p25.ctor === 'Just') {
 		return _elm_lang$core$Native_List.fromArray(
-			[_p24._0]);
+			[_p25._0]);
 	} else {
 		return _elm_lang$core$Native_List.fromArray(
 			[]);
 	}
 };
-var _jweissman$rogue$World$entitiesAt = F2(
+var _jweissman$rogue$World$entityAt = F2(
 	function (pt, model) {
-		var entities = A2(
-			_jweissman$rogue$Level$entitiesAt,
+		return A2(
+			_jweissman$rogue$Level$entityAt,
 			pt,
 			_jweissman$rogue$World$level(model));
-		var player = _elm_lang$core$Native_Utils.eq(model.player.position, pt) ? _elm_lang$core$Native_List.fromArray(
-			[
-				_jweissman$rogue$Entity$player(model.player)
-			]) : _elm_lang$core$Native_List.fromArray(
-			[]);
-		return A2(_elm_lang$core$Basics_ops['++'], entities, player);
 	});
 var _jweissman$rogue$World$listInvisibleEntities = function (model) {
-	var viewed$ = _jweissman$rogue$World$viewed(model);
+	if (_elm_lang$core$Basics$not(model.showMap)) {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	} else {
+		var explorable = A2(
+			_elm_lang$core$Set$union,
+			_jweissman$rogue$World$floors(model),
+			_jweissman$rogue$World$walls(model));
+		return A2(
+			_elm_lang$core$List$map,
+			_jweissman$rogue$Entity$imaginary,
+			A2(
+				_elm_lang$core$List$filterMap,
+				function (pt) {
+					return A2(_jweissman$rogue$World$entityAt, pt, model);
+				},
+				_elm_lang$core$Set$toList(
+					A2(
+						_elm_lang$core$Set$diff,
+						explorable,
+						_jweissman$rogue$World$viewed(model)))));
+	}
+};
+var _jweissman$rogue$World$listRememberedEntities = function (model) {
 	return A2(
 		_elm_lang$core$List$map,
-		_jweissman$rogue$Entity$imaginary,
+		_jweissman$rogue$Entity$memory,
 		A2(
-			_elm_lang$core$List$concatMap,
+			_elm_lang$core$List$filterMap,
 			function (pt) {
-				return _jweissman$rogue$World$lastSingleton(
-					A2(_jweissman$rogue$World$entitiesAt, pt, model));
+				return A2(_jweissman$rogue$World$entityAt, pt, model);
 			},
 			_elm_lang$core$Set$toList(
 				A2(
-					_elm_lang$core$Set$filter,
-					function (pt) {
-						return _elm_lang$core$Basics$not(
-							A2(_elm_lang$core$List$member, pt, viewed$));
-					},
-					A2(
-						_elm_lang$core$Set$union,
-						_jweissman$rogue$World$floors(model),
-						_jweissman$rogue$World$walls(model))))));
+					_elm_lang$core$Set$diff,
+					_jweissman$rogue$World$viewed(model),
+					_elm_lang$core$Set$fromList(model.illuminated)))));
 };
 var _jweissman$rogue$World$listEntities = function (model) {
+	var memoryEntities = _jweissman$rogue$World$listRememberedEntities(model);
 	var litEntities = A2(
-		_elm_lang$core$List$concatMap,
+		_elm_lang$core$List$filterMap,
 		function (pt) {
-			return _jweissman$rogue$World$lastSingleton(
-				A2(_jweissman$rogue$World$entitiesAt, pt, model));
+			return A2(_jweissman$rogue$World$entityAt, pt, model);
 		},
 		model.illuminated);
-	var memoryEntities = A2(
-		_elm_lang$core$List$filter,
-		function (pt) {
-			return _elm_lang$core$Basics$not(
-				A2(_elm_lang$core$List$member, pt, litEntities));
-		},
-		A2(
-			_elm_lang$core$List$map,
-			_jweissman$rogue$Entity$memory,
-			A2(
-				_elm_lang$core$List$filter,
-				function (_p25) {
-					return _elm_lang$core$Basics$not(
-						_jweissman$rogue$Entity$isCreature(_p25));
-				},
-				A2(
-					_elm_lang$core$List$concatMap,
-					function (pt) {
-						return _jweissman$rogue$World$lastSingleton(
-							A2(_jweissman$rogue$World$entitiesAt, pt, model));
-					},
-					_jweissman$rogue$World$viewed(model)))));
-	return model.showMap ? A2(
+	return A2(
 		_elm_lang$core$Basics_ops['++'],
 		memoryEntities,
 		A2(
@@ -15156,16 +15313,7 @@ var _jweissman$rogue$World$listEntities = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_jweissman$rogue$Entity$player(model.player)
-					])))) : A2(
-		_elm_lang$core$Basics_ops['++'],
-		memoryEntities,
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			litEntities,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_jweissman$rogue$Entity$player(model.player)
-				])));
+					]))));
 };
 var _jweissman$rogue$World$view = function (model) {
 	var highlight = _jweissman$rogue$World$highlightCells(model.debugPath);
@@ -15600,50 +15748,47 @@ var _jweissman$rogue$Status$view = F2(
 			level,
 			A2(_elm_lang$core$Basics_ops['++'], gold, life));
 	});
-var _jweissman$rogue$Engine$hoverMessage = function (model) {
-	var _p0 = model.hover;
-	if (_p0.ctor === 'Nothing') {
-		return 'You aren\'t looking at anything in particular.';
-	} else {
-		var _p2 = _p0._0;
-		var _p1 = _p2;
-		switch (_p1.ctor) {
-			case 'Memory':
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					'You remember seeing ',
-					A2(
+var _jweissman$rogue$Engine$hoverMessage = F3(
+	function (vocab, lang, model) {
+		var _p0 = model.hover;
+		if (_p0.ctor === 'Nothing') {
+			return 'You aren\'t looking at anything in particular.';
+		} else {
+			var _p2 = _p0._0;
+			var _p1 = _p2;
+			switch (_p1.ctor) {
+				case 'Memory':
+					return A2(
 						_elm_lang$core$Basics_ops['++'],
-						_jweissman$rogue$Entity$describe(_p1._0),
-						' here.'));
-			case 'Imaginary':
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					'You imagine there is ',
-					A2(
+						'You remember seeing ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							A3(_jweissman$rogue$Entity$describe, vocab, lang, _p1._0),
+							' here.'));
+				case 'Imaginary':
+					return A2(
 						_elm_lang$core$Basics_ops['++'],
-						_jweissman$rogue$Entity$describe(_p1._0),
-						' here.'));
-			default:
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					'You see ',
-					A2(
+						'You imagine there is ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							A3(_jweissman$rogue$Entity$describe, vocab, lang, _p1._0),
+							' here.'));
+				default:
+					return A2(
 						_elm_lang$core$Basics_ops['++'],
-						_jweissman$rogue$Entity$describe(_p2),
-						'.'));
+						'You see ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							A3(_jweissman$rogue$Entity$describe, vocab, lang, _p2),
+							'.'));
+			}
 		}
-	}
-};
+	});
 var _jweissman$rogue$Engine$view = function (model) {
 	var status = A2(
 		_jweissman$rogue$Status$view,
 		{ctor: '_Tuple2', _0: 1, _1: 1},
 		model.world);
-	var log = A2(
-		_jweissman$rogue$Log$view,
-		{ctor: '_Tuple2', _0: 2, _1: _jweissman$rogue$Configuration$viewHeight - 6},
-		model.world.events);
 	var rightBarY = _jweissman$rogue$Configuration$viewWidth - 15;
 	var quests = A3(
 		_jweissman$rogue$Journal$view,
@@ -15659,26 +15804,23 @@ var _jweissman$rogue$Engine$view = function (model) {
 		},
 		model.action,
 		model.world.player);
-	var inventory = A4(
-		_jweissman$rogue$Inventory$view,
-		{
-			ctor: '_Tuple2',
-			_0: rightBarY,
-			_1: 10 + _elm_lang$core$List$length(model.quests)
-		},
-		model.world.language,
-		model.action,
-		model.world.player);
-	var rightBar = A2(
-		_elm_lang$core$Basics_ops['++'],
-		quests,
-		A2(_elm_lang$core$Basics_ops['++'], character, inventory));
-	var debugMsg = function () {
-		var _p3 = model.action;
-		if (_p3.ctor === 'Just') {
-			return _jweissman$rogue$Action$question(_p3._0);
+	var path = function () {
+		var _p3 = model.followPath;
+		if (_p3.ctor === 'Nothing') {
+			return model.hoverPath;
 		} else {
-			return _jweissman$rogue$Engine$hoverMessage(model);
+			return _p3._0;
+		}
+	}();
+	var world = model.world;
+	var lang = world.language;
+	var vocab = world.player.vocabulary;
+	var debugMsg = function () {
+		var _p4 = model.action;
+		if (_p4.ctor === 'Just') {
+			return A3(_jweissman$rogue$Action$question, vocab, lang, _p4._0);
+		} else {
+			return A3(_jweissman$rogue$Engine$hoverMessage, vocab, lang, model);
 		}
 	}();
 	var note = A3(
@@ -15686,15 +15828,27 @@ var _jweissman$rogue$Engine$view = function (model) {
 		debugMsg,
 		{ctor: '_Tuple2', _0: 25, _1: 1},
 		_jweissman$rogue$Palette$accentLighter);
-	var path = function () {
-		var _p4 = model.followPath;
-		if (_p4.ctor === 'Nothing') {
-			return model.hoverPath;
-		} else {
-			return _p4._0;
-		}
-	}();
-	var world = model.world;
+	var inventory = A5(
+		_jweissman$rogue$Inventory$view,
+		{
+			ctor: '_Tuple2',
+			_0: rightBarY,
+			_1: 10 + _elm_lang$core$List$length(model.quests)
+		},
+		vocab,
+		lang,
+		model.action,
+		model.world.player);
+	var rightBar = A2(
+		_elm_lang$core$Basics_ops['++'],
+		quests,
+		A2(_elm_lang$core$Basics_ops['++'], character, inventory));
+	var log = A4(
+		_jweissman$rogue$Log$view,
+		{ctor: '_Tuple2', _0: 2, _1: _jweissman$rogue$Configuration$viewHeight - 6},
+		vocab,
+		lang,
+		model.world.events);
 	var worldView = _jweissman$rogue$World$view(
 		_elm_lang$core$Native_Utils.update(
 			world,
@@ -15711,52 +15865,6 @@ var _jweissman$rogue$Engine$view = function (model) {
 					[note]),
 				A2(_elm_lang$core$Basics_ops['++'], rightBar, log))));
 };
-var _jweissman$rogue$Engine$closestUnexplored = F3(
-	function (explored, unexplored, model) {
-		var toExplore = function (pt) {
-			return _elm_lang$core$Native_Utils.cmp(
-				_elm_lang$core$Set$size(
-					A2(
-						_elm_lang$core$Set$filter,
-						_jweissman$rogue$Point$isAdjacent(pt),
-						unexplored)),
-				0) > 0;
-		};
-		var distanceFromPlayer = function (pt) {
-			return A2(_jweissman$rogue$Point$distance, model.world.player.position, pt);
-		};
-		return _elm_lang$core$List$head(
-			A2(
-				_jweissman$rogue$Util$dropWhile,
-				function (_p5) {
-					return _elm_lang$core$Basics$not(
-						toExplore(_p5));
-				},
-				A2(
-					_elm_lang$core$List$sortBy,
-					distanceFromPlayer,
-					_elm_lang$core$Set$toList(explored))));
-	});
-var _jweissman$rogue$Engine$exploreFrontier = function (model) {
-	var floors = _jweissman$rogue$World$floors(model.world);
-	var walls = _jweissman$rogue$World$walls(model.world);
-	var viewed = _elm_lang$core$Set$fromList(
-		_jweissman$rogue$World$viewed(model.world));
-	var wasSeen = function (pt) {
-		return A2(_elm_lang$core$Set$member, pt, viewed);
-	};
-	var _p6 = A2(_elm_lang$core$Set$partition, wasSeen, floors);
-	var exploredFloors = _p6._0;
-	var unexploredFloors = _p6._1;
-	var _p7 = A2(_elm_lang$core$Set$partition, wasSeen, walls);
-	var unexploredWalls = _p7._1;
-	var playerPos = model.world.player.position;
-	return A3(
-		_jweissman$rogue$Engine$closestUnexplored,
-		exploredFloors,
-		A2(_elm_lang$core$Set$union, unexploredFloors, unexploredWalls),
-		model);
-};
 var _jweissman$rogue$Engine$exploreTargets = function (model) {
 	if (_jweissman$rogue$World$doesPlayerHaveCrystal(model.world)) {
 		return A2(
@@ -15764,27 +15872,20 @@ var _jweissman$rogue$Engine$exploreTargets = function (model) {
 			_jweissman$rogue$World$upstairs(model.world),
 			_jweissman$rogue$World$entrances(model.world));
 	} else {
-		var frontier = _jweissman$rogue$Engine$exploreFrontier(model);
-		var _p8 = frontier;
-		if (_p8.ctor === 'Just') {
-			return _elm_lang$core$Native_List.fromArray(
-				[_p8._0]);
-		} else {
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				_jweissman$rogue$World$downstairs(model.world),
-				_jweissman$rogue$World$crystals(model.world));
-		}
+		var frontier = _jweissman$rogue$World$viewFrontier(model.world);
+		return _elm_lang$core$Native_Utils.eq(
+			_elm_lang$core$Set$size(frontier),
+			0) ? A2(
+			_elm_lang$core$Basics_ops['++'],
+			_jweissman$rogue$World$downstairs(model.world),
+			_jweissman$rogue$World$crystals(model.world)) : _elm_lang$core$Set$toList(frontier);
 	}
 };
 var _jweissman$rogue$Engine$gatherTargets = function (model) {
-	var viewed = _elm_lang$core$Set$fromList(
-		_jweissman$rogue$World$viewed(model.world));
+	var viewed = _jweissman$rogue$World$viewed(model.world);
 	var explored = A2(
-		_elm_lang$core$Set$filter,
-		function (p) {
-			return A2(_elm_lang$core$Set$member, p, viewed);
-		},
+		_elm_lang$core$Set$intersect,
+		viewed,
 		_jweissman$rogue$World$floors(model.world));
 	var visibleCreatures = A2(
 		_elm_lang$core$List$filter,
@@ -15838,15 +15939,15 @@ var _jweissman$rogue$Engine$autorogueDestination = function (model) {
 };
 var _jweissman$rogue$Engine$playerExplores = function (model) {
 	var path = function () {
-		var _p9 = _jweissman$rogue$Engine$autorogueDestination(model);
-		if (_p9.ctor === 'Nothing') {
+		var _p5 = _jweissman$rogue$Engine$autorogueDestination(model);
+		if (_p5.ctor === 'Nothing') {
 			return _elm_lang$core$Maybe$Nothing;
 		} else {
 			var walls = _jweissman$rogue$World$walls(model.world);
 			var blocked = function (pt) {
 				return A2(_elm_lang$core$Set$member, pt, walls);
 			};
-			var path$ = A3(_jweissman$rogue$Path$seek, _p9._0, model.world.player.position, blocked);
+			var path$ = A3(_jweissman$rogue$Path$seek, _p5._0, model.world.player.position, blocked);
 			return _elm_lang$core$Native_Utils.eq(
 				_elm_lang$core$List$length(path$),
 				0) ? _elm_lang$core$Maybe$Nothing : _elm_lang$core$Maybe$Just(path$);
@@ -15857,9 +15958,9 @@ var _jweissman$rogue$Engine$playerExplores = function (model) {
 		{followPath: path});
 };
 var _jweissman$rogue$Engine$clickAt = F2(
-	function (_p10, model) {
-		var _p11 = model.followPath;
-		if (_p11.ctor === 'Nothing') {
+	function (_p6, model) {
+		var _p7 = model.followPath;
+		if (_p7.ctor === 'Nothing') {
 			return _elm_lang$core$Native_Utils.update(
 				model,
 				{
@@ -15872,9 +15973,9 @@ var _jweissman$rogue$Engine$clickAt = F2(
 var _jweissman$rogue$Engine$pathToEntity = F2(
 	function (entity, model) {
 		var alreadyHovering = function () {
-			var _p12 = model.hover;
-			if (_p12.ctor === 'Just') {
-				return _elm_lang$core$Native_Utils.eq(_p12._0, entity);
+			var _p8 = model.hover;
+			if (_p8.ctor === 'Just') {
+				return _elm_lang$core$Native_Utils.eq(_p8._0, entity);
 			} else {
 				return false;
 			}
@@ -15895,20 +15996,60 @@ var _jweissman$rogue$Engine$pathToEntity = F2(
 	});
 var _jweissman$rogue$Engine$imagineEntityAt = F2(
 	function (point, model) {
-		var entity = _elm_lang$core$List$head(
-			_elm_lang$core$List$reverse(
-				A2(_jweissman$rogue$World$entitiesAt, point, model.world)));
+		var entity = A2(_jweissman$rogue$World$entityAt, point, model.world);
 		var maybeEntity = function () {
-			var _p13 = entity;
-			if (_p13.ctor === 'Just') {
+			var _p9 = entity;
+			if (_p9.ctor === 'Just') {
 				return _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Entity$imaginary(_p13._0));
+					_jweissman$rogue$Entity$imaginary(_p9._0));
 			} else {
 				return _elm_lang$core$Maybe$Nothing;
 			}
 		}();
 		var path$ = function () {
-			var _p14 = maybeEntity;
+			var _p10 = maybeEntity;
+			if (_p10.ctor === 'Nothing') {
+				return _elm_lang$core$Native_List.fromArray(
+					[]);
+			} else {
+				return A2(_jweissman$rogue$Engine$pathToEntity, _p10._0, model);
+			}
+		}();
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{hover: maybeEntity, hoverPath: path$});
+	});
+var _jweissman$rogue$Engine$rememberEntityAt = F2(
+	function (point, model) {
+		var entity = A2(_jweissman$rogue$World$entityAt, point, model.world);
+		var maybeEntity = function () {
+			var _p11 = entity;
+			if (_p11.ctor === 'Just') {
+				var _p12 = _p11._0;
+				return _jweissman$rogue$Entity$isCreature(_p12) ? _elm_lang$core$Maybe$Nothing : _elm_lang$core$Maybe$Just(
+					_jweissman$rogue$Entity$memory(_p12));
+			} else {
+				return _elm_lang$core$Maybe$Nothing;
+			}
+		}();
+		var path$ = function () {
+			var _p13 = maybeEntity;
+			if (_p13.ctor === 'Nothing') {
+				return _elm_lang$core$Native_List.fromArray(
+					[]);
+			} else {
+				return A2(_jweissman$rogue$Engine$pathToEntity, _p13._0, model);
+			}
+		}();
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{hover: maybeEntity, hoverPath: path$});
+	});
+var _jweissman$rogue$Engine$seeEntityAt = F2(
+	function (point, model) {
+		var entity = A2(_jweissman$rogue$World$entityAt, point, model.world);
+		var path$ = function () {
+			var _p14 = entity;
 			if (_p14.ctor === 'Nothing') {
 				return _elm_lang$core$Native_List.fromArray(
 					[]);
@@ -15918,70 +16059,19 @@ var _jweissman$rogue$Engine$imagineEntityAt = F2(
 		}();
 		return _elm_lang$core$Native_Utils.update(
 			model,
-			{hover: maybeEntity, hoverPath: path$});
+			{hover: entity, hoverPath: path$});
 	});
-var _jweissman$rogue$Engine$rememberEntityAt = F2(
-	function (point, model) {
-		var entity = _elm_lang$core$List$head(
-			_elm_lang$core$List$reverse(
-				A2(
-					_elm_lang$core$List$filter,
-					function (_p15) {
-						return _elm_lang$core$Basics$not(
-							_jweissman$rogue$Entity$isCreature(_p15));
-					},
-					A2(_jweissman$rogue$World$entitiesAt, point, model.world))));
-		var maybeEntity = function () {
-			var _p16 = entity;
-			if (_p16.ctor === 'Just') {
-				return _elm_lang$core$Maybe$Just(
-					_jweissman$rogue$Entity$memory(_p16._0));
-			} else {
-				return _elm_lang$core$Maybe$Nothing;
-			}
-		}();
-		var path$ = function () {
-			var _p17 = maybeEntity;
-			if (_p17.ctor === 'Nothing') {
-				return _elm_lang$core$Native_List.fromArray(
-					[]);
-			} else {
-				return A2(_jweissman$rogue$Engine$pathToEntity, _p17._0, model);
-			}
-		}();
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{hover: maybeEntity, hoverPath: path$});
-	});
-var _jweissman$rogue$Engine$seeEntityAt = F2(
-	function (point, model) {
-		var entities = A2(_jweissman$rogue$World$entitiesAt, point, model.world);
-		var maybeEntity = _elm_lang$core$List$head(
-			_elm_lang$core$List$reverse(entities));
-		var path$ = function () {
-			var _p18 = maybeEntity;
-			if (_p18.ctor === 'Nothing') {
-				return _elm_lang$core$Native_List.fromArray(
-					[]);
-			} else {
-				return A2(_jweissman$rogue$Engine$pathToEntity, _p18._0, model);
-			}
-		}();
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{hover: maybeEntity, hoverPath: path$});
-	});
-var _jweissman$rogue$Engine$pointFromMouse = function (_p19) {
-	var _p20 = _p19;
+var _jweissman$rogue$Engine$pointFromMouse = function (_p15) {
+	var _p16 = _p15;
 	var scale = _jweissman$rogue$Configuration$viewScale;
-	return {ctor: '_Tuple2', _0: (_p20.x / scale) | 0, _1: ((_p20.y / scale) | 0) + 1};
+	return {ctor: '_Tuple2', _0: (_p16.x / scale) | 0, _1: ((_p16.y / scale) | 0) + 1};
 };
 var _jweissman$rogue$Engine$hoverAt = F2(
 	function (position, model) {
 		var point = _jweissman$rogue$Engine$pointFromMouse(position);
 		var isLit = A2(_elm_lang$core$List$member, point, model.world.illuminated);
 		var wasLit = A2(
-			_elm_lang$core$List$member,
+			_elm_lang$core$Set$member,
 			point,
 			_jweissman$rogue$World$viewed(model.world));
 		return isLit ? A2(_jweissman$rogue$Engine$seeEntityAt, point, model) : (wasLit ? A2(_jweissman$rogue$Engine$rememberEntityAt, point, model) : (model.telepathy ? A2(_jweissman$rogue$Engine$imagineEntityAt, point, model) : model));
@@ -16015,10 +16105,10 @@ var _jweissman$rogue$Engine$playerSteps = F2(
 	});
 var _jweissman$rogue$Engine$moveCreatures = function (model) {
 	var world = model.world;
-	var _p21 = A3(_jweissman$rogue$Dungeon$moveCreatures, world.player, world.depth, world.dungeon);
-	var dungeon$ = _p21._0;
-	var events = _p21._1;
-	var player$ = _p21._2;
+	var _p17 = A3(_jweissman$rogue$Dungeon$moveCreatures, world.player, world.depth, world.dungeon);
+	var dungeon$ = _p17._0;
+	var events = _p17._1;
+	var player$ = _p17._2;
 	var world$ = _elm_lang$core$Native_Utils.update(
 		world,
 		{
@@ -16099,10 +16189,10 @@ var _jweissman$rogue$Engine$resetAction = function (model) {
 };
 var _jweissman$rogue$Engine$playerApplies = F3(
 	function (item$, item, model) {
-		var _p22 = item$.kind;
-		if (_p22.ctor === 'Scroll') {
-			var _p23 = _p22._0;
-			if (_p23.ctor === 'Infuse') {
+		var _p18 = item$.kind;
+		if (_p18.ctor === 'Scroll') {
+			var _p19 = _p18._0;
+			if (_p19.ctor === 'Infuse') {
 				return A2(
 					_jweissman$rogue$Engine$playerEnchants,
 					item,
@@ -16118,47 +16208,47 @@ var _jweissman$rogue$Engine$isEquipped = F2(
 	function (item, model) {
 		var player = model.world.player;
 		var isArmor = function () {
-			var _p24 = player.armor;
-			if (_p24.ctor === 'Nothing') {
+			var _p20 = player.armor;
+			if (_p20.ctor === 'Nothing') {
 				return false;
 			} else {
 				return _elm_lang$core$Native_Utils.eq(
 					item,
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$armor(_p24._0)));
+						_jweissman$rogue$Item$armor(_p20._0)));
 			}
 		}();
 		var isWeapon = function () {
-			var _p25 = player.weapon;
-			if (_p25.ctor === 'Nothing') {
+			var _p21 = player.weapon;
+			if (_p21.ctor === 'Nothing') {
 				return false;
 			} else {
 				return _elm_lang$core$Native_Utils.eq(
 					item,
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$weapon(_p25._0)));
+						_jweissman$rogue$Item$weapon(_p21._0)));
 			}
 		}();
 		var isHelm = function () {
-			var _p26 = player.helm;
-			if (_p26.ctor === 'Nothing') {
+			var _p22 = player.helm;
+			if (_p22.ctor === 'Nothing') {
 				return false;
 			} else {
 				return _elm_lang$core$Native_Utils.eq(
 					item,
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$helm(_p26._0)));
+						_jweissman$rogue$Item$helm(_p22._0)));
 			}
 		}();
 		var isRing = function () {
-			var _p27 = player.ring;
-			if (_p27.ctor === 'Nothing') {
+			var _p23 = player.ring;
+			if (_p23.ctor === 'Nothing') {
 				return false;
 			} else {
 				return _elm_lang$core$Native_Utils.eq(
 					item,
 					_jweissman$rogue$Item$simple(
-						_jweissman$rogue$Item$ring(_p27._0)));
+						_jweissman$rogue$Item$ring(_p23._0)));
 			}
 		}();
 		return isArmor || (isWeapon || (isHelm || isRing));
@@ -16174,8 +16264,8 @@ var _jweissman$rogue$Engine$waitForSelection = F2(
 var _jweissman$rogue$Engine$castSpell = F3(
 	function (item, spell, model) {
 		var world = model.world;
-		var _p28 = spell;
-		if (_p28.ctor === 'Lux') {
+		var _p24 = spell;
+		if (_p24.ctor === 'Lux') {
 			return _jweissman$rogue$Engine$enhancePlayerVision(
 				A2(_jweissman$rogue$Engine$playerLosesItem, item, model));
 		} else {
@@ -16189,8 +16279,8 @@ var _jweissman$rogue$Engine$playerActsOnItem = F3(
 	function (item, act, model) {
 		playerActsOnItem:
 		while (true) {
-			var _p29 = act;
-			switch (_p29.ctor) {
+			var _p25 = act;
+			switch (_p25.ctor) {
 				case 'Drop':
 					return _elm_lang$core$Native_Utils.update(
 						model,
@@ -16237,27 +16327,27 @@ var _jweissman$rogue$Engine$playerActsOnItem = F3(
 								world: A2(_jweissman$rogue$World$playerDrinks, item, model.world)
 							}));
 				case 'Read':
-					var _p30 = item.kind;
-					if (_p30.ctor === 'Scroll') {
-						return A3(_jweissman$rogue$Engine$castSpell, item, _p30._0, model);
+					var _p26 = item.kind;
+					if (_p26.ctor === 'Scroll') {
+						return A3(_jweissman$rogue$Engine$castSpell, item, _p26._0, model);
 					} else {
 						return model;
 					}
 				case 'Use':
-					var _p31 = _p29._0;
-					return A2(_jweissman$rogue$Item$canApply, _p31, item) ? A2(
+					var _p27 = _p25._0;
+					return A2(_jweissman$rogue$Item$canApply, _p27, item) ? A2(
 						_jweissman$rogue$Engine$waitForSelection,
 						_jweissman$rogue$Action$default,
-						A3(_jweissman$rogue$Engine$playerApplies, _p31, item, model)) : model;
+						A3(_jweissman$rogue$Engine$playerApplies, _p27, item, model)) : model;
 				case 'Default':
 					var equipped = A2(_jweissman$rogue$Engine$isEquipped, item, model);
 					var action$ = A2(_jweissman$rogue$Action$defaultForItem, equipped, item);
-					var _v23 = item,
-						_v24 = action$,
-						_v25 = model;
-					item = _v23;
-					act = _v24;
-					model = _v25;
+					var _v22 = item,
+						_v23 = action$,
+						_v24 = model;
+					item = _v22;
+					act = _v23;
+					model = _v24;
 					continue playerActsOnItem;
 				default:
 					return model;
@@ -16267,21 +16357,21 @@ var _jweissman$rogue$Engine$playerActsOnItem = F3(
 var _jweissman$rogue$Engine$playerActs = F2(
 	function (idx, model) {
 		var maybeItem = A2(_jweissman$rogue$Inventory$itemAtIndex, idx, model.world.player);
-		var _p32 = maybeItem;
-		if (_p32.ctor === 'Nothing') {
+		var _p28 = maybeItem;
+		if (_p28.ctor === 'Nothing') {
 			return _jweissman$rogue$Engine$resetAction(model);
 		} else {
-			var _p35 = _p32._0;
-			var _p33 = model.action;
-			if (_p33.ctor === 'Nothing') {
+			var _p31 = _p28._0;
+			var _p29 = model.action;
+			if (_p29.ctor === 'Nothing') {
 				return model;
 			} else {
-				var _p34 = _p33._0;
+				var _p30 = _p29._0;
 				return A3(
 					_jweissman$rogue$Action$canPerform,
-					A2(_jweissman$rogue$Engine$isEquipped, _p35, model),
-					_p35,
-					_p34) ? A3(_jweissman$rogue$Engine$playerActsOnItem, _p35, _p34, model) : model;
+					A2(_jweissman$rogue$Engine$isEquipped, _p31, model),
+					_p31,
+					_p30) ? A3(_jweissman$rogue$Engine$playerActsOnItem, _p31, _p30, model) : model;
 			}
 		}
 	});
@@ -16294,24 +16384,24 @@ var _jweissman$rogue$Engine$illuminate = function (model) {
 };
 var _jweissman$rogue$Engine$handleKeypress = F2(
 	function (keyChar, model) {
-		var reset = function (_p36) {
+		var reset = function (_p32) {
 			return _jweissman$rogue$Engine$resetAction(
 				_jweissman$rogue$Engine$resetFollow(
 					_jweissman$rogue$Engine$resetAuto(
 						_jweissman$rogue$Engine$illuminate(
-							_jweissman$rogue$Engine$moveCreatures(_p36)))));
+							_jweissman$rogue$Engine$moveCreatures(_p32)))));
 		};
-		var _p37 = model.action;
-		if (_p37.ctor === 'Just') {
-			var _p39 = _p37._0;
+		var _p33 = model.action;
+		if (_p33.ctor === 'Just') {
+			var _p35 = _p33._0;
 			return function () {
-				var _p38 = keyChar;
-				switch (_p38.valueOf()) {
+				var _p34 = keyChar;
+				switch (_p34.valueOf()) {
 					case 'd':
-						var act$ = _elm_lang$core$Native_Utils.eq(_p39, _jweissman$rogue$Action$drop) ? _jweissman$rogue$Action$default : _jweissman$rogue$Action$drop;
+						var act$ = _elm_lang$core$Native_Utils.eq(_p35, _jweissman$rogue$Action$drop) ? _jweissman$rogue$Action$default : _jweissman$rogue$Action$drop;
 						return _jweissman$rogue$Engine$waitForSelection(act$);
 					case 'i':
-						return _elm_lang$core$Native_Utils.eq(_p39, _jweissman$rogue$Action$drop) ? _jweissman$rogue$Engine$waitForSelection(_jweissman$rogue$Action$default) : _jweissman$rogue$Engine$resetAction;
+						return _elm_lang$core$Native_Utils.eq(_p35, _jweissman$rogue$Action$drop) ? _jweissman$rogue$Engine$waitForSelection(_jweissman$rogue$Action$default) : _jweissman$rogue$Engine$resetAction;
 					default:
 						return _jweissman$rogue$Engine$playerActs(
 							_jweissman$rogue$Util$fromAlpha(keyChar));
@@ -16319,29 +16409,29 @@ var _jweissman$rogue$Engine$handleKeypress = F2(
 			}()(model);
 		} else {
 			return function () {
-				var _p40 = keyChar;
-				switch (_p40.valueOf()) {
+				var _p36 = keyChar;
+				switch (_p36.valueOf()) {
 					case 'a':
 						return _jweissman$rogue$Engine$autorogue;
 					case 'h':
-						return function (_p41) {
+						return function (_p37) {
 							return reset(
-								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$West, _p41));
+								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$West, _p37));
 						};
 					case 'j':
-						return function (_p42) {
+						return function (_p38) {
 							return reset(
-								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$South, _p42));
+								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$South, _p38));
 						};
 					case 'k':
-						return function (_p43) {
+						return function (_p39) {
 							return reset(
-								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$North, _p43));
+								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$North, _p39));
 						};
 					case 'l':
-						return function (_p44) {
+						return function (_p40) {
 							return reset(
-								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$East, _p44));
+								A2(_jweissman$rogue$Engine$playerSteps, _jweissman$rogue$Direction$East, _p40));
 						};
 					case 't':
 						return _jweissman$rogue$Engine$telepath;
@@ -16358,22 +16448,22 @@ var _jweissman$rogue$Engine$handleKeypress = F2(
 		}
 	});
 var _jweissman$rogue$Engine$playerFollowsPath = function (model) {
-	var _p45 = model.followPath;
-	if (_p45.ctor === 'Nothing') {
+	var _p41 = model.followPath;
+	if (_p41.ctor === 'Nothing') {
 		return model;
 	} else {
-		var _p48 = _p45._0;
-		var _p46 = _elm_lang$core$List$head(_p48);
-		if (_p46.ctor === 'Nothing') {
+		var _p44 = _p41._0;
+		var _p42 = _elm_lang$core$List$head(_p44);
+		if (_p42.ctor === 'Nothing') {
 			return _jweissman$rogue$Engine$resetFollow(
 				_jweissman$rogue$Engine$resetHover(model));
 		} else {
-			var _p47 = _p46._0;
-			var followPath$ = _elm_lang$core$List$tail(_p48);
+			var _p43 = _p42._0;
+			var followPath$ = _elm_lang$core$List$tail(_p44);
 			var playerPos = model.world.player.position;
-			var direction = A2(_jweissman$rogue$Point$towards, _p47, playerPos);
+			var direction = A2(_jweissman$rogue$Point$towards, _p43, playerPos);
 			var onPath = _elm_lang$core$Native_Utils.eq(
-				_p47,
+				_p43,
 				A2(_jweissman$rogue$Point$slide, direction, playerPos));
 			return onPath ? _jweissman$rogue$Engine$illuminate(
 				_jweissman$rogue$Engine$moveCreatures(
@@ -16388,8 +16478,8 @@ var _jweissman$rogue$Engine$playerFollowsPath = function (model) {
 	}
 };
 var _jweissman$rogue$Engine$followPaths = function (model) {
-	var _p49 = model.followPath;
-	if (_p49.ctor === 'Nothing') {
+	var _p45 = model.followPath;
+	if (_p45.ctor === 'Nothing') {
 		return model.auto ? _jweissman$rogue$Engine$playerExplores(model) : model;
 	} else {
 		return _jweissman$rogue$Engine$playerFollowsPath(model);
@@ -16416,9 +16506,9 @@ var _jweissman$rogue$Engine$enter = F2(
 		var player = world.player;
 		var dungeon$ = A2(_jweissman$rogue$Dungeon$prepare, _jweissman$rogue$Configuration$levelCount, dungeon);
 		var startPos = function () {
-			var _p50 = A2(_jweissman$rogue$Dungeon$levelAt, 0, dungeon$).entrance;
-			if (_p50.ctor === 'Just') {
-				return _p50._0._0;
+			var _p46 = A2(_jweissman$rogue$Dungeon$levelAt, 0, dungeon$).entrance;
+			if (_p46.ctor === 'Just') {
+				return _p46._0._0;
 			} else {
 				return {ctor: '_Tuple2', _0: 10, _1: 10};
 			}
@@ -16612,9 +16702,9 @@ var _jweissman$rogue$Main$view = function (model) {
 				_jweissman$rogue$Main$stateView(model))
 			]));
 };
-var _jweissman$rogue$Main$Model = F3(
-	function (a, b, c) {
-		return {engine: a, state: b, generationUnderway: c};
+var _jweissman$rogue$Main$Model = F5(
+	function (a, b, c, d, e) {
+		return {engine: a, state: b, generationUnderway: c, ticks: d, autoplay: e};
 	});
 var _jweissman$rogue$Main$Victory = {ctor: 'Victory'};
 var _jweissman$rogue$Main$Death = function (a) {
@@ -16646,10 +16736,15 @@ var _jweissman$rogue$Main$inferState = function (model) {
 		{state: state$});
 };
 var _jweissman$rogue$Main$Generating = {ctor: 'Generating'};
+var _jweissman$rogue$Main$startGeneration = function (model) {
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{state: _jweissman$rogue$Main$Generating, generationUnderway: false, engine: _jweissman$rogue$Engine$init});
+};
 var _jweissman$rogue$Main$Splash = {ctor: 'Splash'};
 var _jweissman$rogue$Main$init = {
 	ctor: '_Tuple2',
-	_0: {engine: _jweissman$rogue$Engine$init, state: _jweissman$rogue$Main$Splash, generationUnderway: false},
+	_0: {engine: _jweissman$rogue$Engine$init, state: _jweissman$rogue$Main$Splash, generationUnderway: false, ticks: 0, autoplay: false},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
 var _jweissman$rogue$Main$LangMsg = function (a) {
@@ -16712,13 +16807,20 @@ var _jweissman$rogue$Main$update = F2(
 				var _p4 = model.state;
 				switch (_p4.ctor) {
 					case 'Playing':
+						var model$ = model.autoplay ? _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								engine: _jweissman$rogue$Engine$autorogue(model.engine),
+								ticks: 0,
+								autoplay: false
+							}) : model;
 						return {
 							ctor: '_Tuple2',
 							_0: _jweissman$rogue$Main$inferState(
 								_elm_lang$core$Native_Utils.update(
-									model,
+									model$,
 									{
-										engine: A2(_jweissman$rogue$Engine$tick, _p3._0, model.engine)
+										engine: A2(_jweissman$rogue$Engine$tick, _p3._0, model$.engine)
 									})),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
@@ -16730,6 +16832,21 @@ var _jweissman$rogue$Main$update = F2(
 								{generationUnderway: true}),
 							_1: _jweissman$rogue$Main$generateMap
 						};
+					case 'Splash':
+						return (_elm_lang$core$Native_Utils.cmp(model.ticks, 200) > 0) ? {
+							ctor: '_Tuple2',
+							_0: _jweissman$rogue$Main$startGeneration(
+								_elm_lang$core$Native_Utils.update(
+									model,
+									{autoplay: true})),
+							_1: _elm_lang$core$Platform_Cmd$none
+						} : {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{ticks: model.ticks + 1}),
+							_1: _elm_lang$core$Platform_Cmd$none
+						};
 					default:
 						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				}
@@ -16739,9 +16856,7 @@ var _jweissman$rogue$Main$update = F2(
 					case 'Splash':
 						return {
 							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{state: _jweissman$rogue$Main$Generating, generationUnderway: false, engine: _jweissman$rogue$Engine$init}),
+							_0: _jweissman$rogue$Main$startGeneration(model),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
 					case 'Death':
