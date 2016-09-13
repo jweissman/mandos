@@ -1,5 +1,6 @@
 module Action exposing (Action(..), describe, question, defaultForItem, canPerform, drop, enchant, use, default, describeWithDefault)
 
+import Language exposing (Language)
 import Item exposing (Item, ItemKind(..))
 
 type Action = Drop
@@ -144,8 +145,8 @@ describeWithDefault item equipped action =
       describe (defaultForItem equipped item)
     _ -> describe action
 
-question : Action -> String
-question action =
+question : Language -> Language -> Action -> String
+question vocab language action =
   case action of
     Drop ->
       "What would you like to get rid of?"
@@ -181,7 +182,7 @@ question action =
       "What would you like to take off?"
 
     Use item action' ->
-      "What would you like to " ++ (describe action') ++ " with " ++ (Item.describe item) ++ "?"
+      "What would you like to " ++ (describe action') ++ " with " ++ (Item.describe vocab language item) ++ "?"
 
     Default ->
       "What would you like to do?"

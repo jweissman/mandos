@@ -24,8 +24,8 @@ castRay power blockers src dst =
       |> List.tail
       |> Maybe.withDefault []
 
-    notAbsorbed = \pt -> 
-      not (Set.member pt blockers) 
+    notAbsorbed = \pt ->
+      not (Set.member pt blockers)
       && not ((Point.distance src pt) > toFloat power)
 
   in
@@ -38,5 +38,3 @@ takeWhile' predicate list =
     []      -> []
     x::xs   -> if (predicate x) then x :: takeWhile' predicate xs
                else [x]
-
-

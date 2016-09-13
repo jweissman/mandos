@@ -2,6 +2,7 @@ module Event exposing (Event(..), describe, awaken, pickupCoin, attack, killEnem
 
 import Creature
 import Item exposing (Item)
+import Language exposing (Language)
 
 -- TYPES
 
@@ -67,8 +68,8 @@ isPlayerDeath event =
     Death _ -> True
     _ -> False
 
-describe : Event -> String
-describe event =
+describe : Language -> Language -> Event -> String
+describe vocab lang event =
   case event of
     Awaken ->
       "You awaken in the Timeless Halls of Mandos..."
@@ -104,4 +105,4 @@ describe event =
       "The doors swing open and you emerge into daylight...!"
 
     PickupItem item ->
-      "You pick up the " ++ (Item.describe item)
+      "You pick up the " ++ (Item.describe vocab lang item)

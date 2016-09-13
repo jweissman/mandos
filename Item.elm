@@ -1,4 +1,4 @@
-module Item exposing (Item, init, glyph, describe, ItemKind(..), weapon, armor, ring, helm, bottle, scroll, crystal, enchant, simple, canApply)
+module Item exposing (Item, init, glyph, name, describe, ItemKind(..), weapon, armor, ring, helm, bottle, scroll, crystal, enchant, simple, canApply)
 
 import Point exposing (Point)
 import Weapon exposing (Weapon)
@@ -7,6 +7,8 @@ import Ring exposing (Ring)
 import Helm exposing (Helm)
 import Liquid exposing (Liquid)
 import Spell exposing (Spell)
+import Language exposing (Language)
+import Idea
 
 type QuestItemKind = Crystal
 
@@ -77,8 +79,36 @@ glyph {kind} =
     QuestItem _ ->
       "∆"
 
-describe : Item -> String
-describe {kind} =
+name : Item -> String
+name item =
+  case item.kind of
+    Arm weapon' ->
+      Weapon.describe weapon'
+
+    Shield armor' ->
+      Armor.describe armor'
+
+    Jewelry ring ->
+      Idea.describe (Spell.idea (Ring.spell ring)) -- vocab language ring
+
+    Headgear helm ->
+      Helm.describe helm
+
+    Bottle liquid ->
+      "bottle of "
+      ++ (Idea.describe (Liquid.idea liquid))
+
+    Scroll spell ->
+      "scroll of "
+      ++ (Idea.describe (Spell.idea spell))
+
+    QuestItem kind ->
+      case kind of
+        Crystal ->
+          "Crystal of Time"
+
+describe : Language -> Language -> Item -> String
+describe vocab language {kind} =
   case kind of
     Arm weapon' ->
       Weapon.describe weapon'
@@ -87,16 +117,18 @@ describe {kind} =
       Armor.describe armor'
 
     Jewelry ring ->
-      Ring.describe ring
+      Ring.describe vocab language ring
 
     Headgear helm ->
       Helm.describe helm
 
     Bottle liquid ->
-      "bottle of " ++ (Liquid.describe liquid)
+      "bottle of "
+      ++ (Language.decode (Liquid.idea liquid) vocab language)
 
     Scroll spell ->
-      "scroll of " ++ (Spell.describe spell)
+      "scroll of "
+      ++ (Language.decode (Spell.idea spell) vocab language)
 
     QuestItem kind ->
       case kind of
@@ -151,3 +183,4 @@ canApply item' item =
 
     _ ->
       False
+

@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall, evolve)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall, evolve, viewFrontier)
 
 import Warrior
 import Creature
@@ -13,6 +13,7 @@ import Item exposing (Item)
 import Configuration
 
 import Random
+import Set exposing (Set)
 
 -- TYPE
 type alias Dungeon = List Level
@@ -25,8 +26,6 @@ generate depth =
 prepare : Int -> Dungeon -> Dungeon
 prepare depth model =
   model
-  --|> List.filter Level.navigable
-  --|> List.take depth
   |> List.indexedMap Level.finalize
 
 -- HELPERS
@@ -60,11 +59,6 @@ removeItem : Item -> Int -> Dungeon -> Dungeon
 removeItem item depth model =
   model
   |> apply (Level.removeItem item) depth
-
---liberateCrystal : Int -> Dungeon -> Dungeon
---liberateCrystal depth model =
---  model
---  |> apply (Level.liberateCrystal) depth
 
 moveCreatures : Warrior.Model -> Int -> Dungeon -> (Dungeon, List Event, Warrior.Model)
 moveCreatures player depth model =
@@ -103,5 +97,9 @@ playerDestroysWall pt depth model =
 
 evolve : Dungeon -> Dungeon
 evolve model =
-  model 
+  model
   |> List.map (\level -> level |> Level.evolveGrass 1)
+
+viewFrontier : Int -> Dungeon -> Set Point
+viewFrontier depth model =
+  model |> apply' (Level.viewFrontier) depth

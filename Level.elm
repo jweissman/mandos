@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entitiesAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entityAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass, viewFrontier)
 
 
 import Point exposing (Point)
@@ -32,6 +32,7 @@ type alias Level = { walls : Set Point
                    , grass : Set Point
 
                    , creatures : List Creature.Model
+
                    , downstairs : Maybe Point
                    , upstairs : Maybe Point
                    , entrance : Maybe (Point, Bool)
@@ -39,7 +40,8 @@ type alias Level = { walls : Set Point
                    , items : List Item
 
                    , rooms : List Room
-                   , viewed : List Point
+
+                   , viewed : Set Point
                    }
 
 -- INIT
@@ -51,13 +53,13 @@ init =
   , doors = Set.empty
   , coins = Set.empty
   , grass = Set.empty
-  , creatures = []
+  , creatures = [] --Set.empty
   , upstairs = Nothing
   , downstairs = Nothing
   , entrance = Nothing
   , rooms = []
-  , viewed = []
   , items = []
+  , viewed = Set.empty
   }
 
 finalize : Int -> Level -> Level
@@ -142,22 +144,25 @@ isEntrance position model =
 
 hasBeenViewed : Point -> Level -> Bool
 hasBeenViewed point model =
-  List.member point model.viewed
+  Set.member point model.viewed
 
 isAlive livingThing =
   livingThing.hp > 0
 
-entitiesAt : Point -> Level -> List Entity
-entitiesAt point model =
-  let
-    monster =
-      let creature = model |> creatureAt point in
-      case creature of
-        Just creature' ->
-          Just (Entity.monster creature')
-        Nothing ->
-          Nothing
+entityAt : Point -> Level -> Maybe Entity
+entityAt pt model =
+  case model |> creatureAt pt of
+    Just creature ->
+      Just (Entity.monster creature)
 
+    Nothing ->
+      model
+      |> nonCreatureEntityAt pt
+
+
+nonCreatureEntityAt : Point -> Level -> Maybe Entity
+nonCreatureEntityAt point model =
+  let
     door =
       if isDoor point model then
         Just (Entity.door point)
@@ -228,16 +233,18 @@ entitiesAt point model =
       , entrance
       , item
       , coin
-      , monster
+      --, monster
       ]
   in
     entities
     |> List.filterMap identity
+    |> List.reverse
+    |> List.head
 
 creatureAt : Point -> Level -> Maybe Creature.Model
 creatureAt pt model =
   model.creatures
-  |> List.filter (\c -> c.position == pt)
+  |> Util.dropWhile (\c -> not (c.position == pt))
   |> List.head
 
 itemAt : Point -> Level -> Maybe Item
@@ -253,19 +260,42 @@ crystalLocation model =
   |> List.map .position
   |> List.head
 
+viewFrontier : Level -> Set Point
+viewFrontier model =
+  let
+    {viewed, walls, floors} =
+      model
+
+    explored =
+      viewed
+      |> Set.intersect floors
+
+    unexplored =
+      viewed
+      |> Set.diff (Set.union floors walls)
+
+  in
+    model
+    |> detectFrontier explored unexplored
+
+detectFrontier explored unexplored model =
+  unexplored
+  |> Set.toList
+  |> List.concatMap Point.adjacent
+  |> Set.fromList
+  |> Set.intersect explored
+
 -- HELPERS (for update)
 
 playerSees : List Point -> Level -> Level
 playerSees pts model =
   let
-    pts' =
-      pts
-      |> List.filter (\pt -> not (List.member pt model.viewed))
-
     viewed' =
-      model.viewed
+      (model.viewed)
+      |> Set.union (pts |> Set.fromList)
+      --|> Set.toList
   in
-    { model | viewed = viewed' ++ pts' }
+    { model | viewed = viewed' }
 
 moveCreatures : Warrior.Model -> Level -> (Level, List Event, Warrior.Model)
 moveCreatures player model =

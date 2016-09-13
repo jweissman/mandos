@@ -31,7 +31,7 @@ organize model =
   let
     countItems = \it dict ->
       dict
-      |> Dict.update (Item.describe it) (\entry ->
+      |> Dict.update (Item.name it) (\entry ->
         case entry of
           Nothing ->
             Just (1,it)
@@ -49,10 +49,10 @@ organizedItemAt idx model =
     inv =
       model |> organize |> Dict.values
 
-    maybeName =
+    maybeTuple =
       Util.getAt inv idx
   in
-    case maybeName of
+    case maybeTuple of
       Nothing ->
         Nothing
 
@@ -62,10 +62,18 @@ organizedItemAt idx model =
 asItem : Equipment -> Item
 asItem equipment =
   let toItem = case equipment of
-    EquippedArmor armor -> Item.armor armor
-    EquippedWeapon weapon -> Item.weapon weapon
-    EquippedRing ring -> Item.ring ring
-    EquippedHelm helm -> Item.helm helm
+    EquippedArmor armor ->
+      Item.armor armor
+
+    EquippedWeapon weapon ->
+      Item.weapon weapon
+
+    EquippedRing ring ->
+      Item.ring ring
+
+    EquippedHelm helm ->
+      Item.helm helm
+
   in Item.simple toItem
 
 equippedItems model =
@@ -117,8 +125,8 @@ itemAtIndex idx model =
 
 -- VIEW
 
-view : Point -> Language -> Maybe Action -> Model -> List (Svg.Svg a)
-view (x,y) lang action model =
+view : Point -> Language -> Language -> Maybe Action -> Model -> List (Svg.Svg a)
+view (x,y) vocab lang action model =
   let
     act =
       not (action == Nothing)
@@ -127,7 +135,7 @@ view (x,y) lang action model =
       [ Graphics.render "GEAR" (x, y) Palette.secondaryLighter ]
 
     equipment =
-      equipmentView (x,y+2) lang action model
+      equipmentView (x,y+2) vocab lang action model
 
     hr =
       horizontalRule (x,y+2+equipCount)
@@ -137,7 +145,7 @@ view (x,y) lang action model =
 
     items =
       List.map2 (\n (ct,it) ->
-        itemView (x,y+3) action n ct False it
+        itemView (x,y+3) vocab lang action n ct False it
       ) [equipCount..30] (model |> organize |> Dict.values)
 
   in
@@ -149,17 +157,17 @@ view (x,y) lang action model =
 horizontalRule (x,y) =
   [ Graphics.render "---" (x,y) Palette.dim ]
 
-equipmentView : Point -> Language -> Maybe Action -> Warrior.Model -> List (Svg.Svg a)
-equipmentView (x,y) language action model =
+equipmentView : Point -> Language -> Language -> Maybe Action -> Warrior.Model -> List (Svg.Svg a)
+equipmentView (x,y) vocab language action model =
   model
   |> equippedItems
-  |> List.indexedMap (\n item -> itemView (x,y) action n 1 True item)
+  |> List.indexedMap (\n item -> itemView (x,y) vocab language action n 1 True item)
 
-itemView: Point -> Maybe Action -> Int -> Int -> Bool -> Item -> Svg.Svg a
-itemView (x,y) action idx count equipped item =
+itemView: Point -> Language -> Language -> Maybe Action -> Int -> Int -> Bool -> Item -> Svg.Svg a
+itemView (x,y) vocab lang action idx count equipped item =
   let
     message =
-      itemMessage idx action equipped item
+      itemMessage vocab lang idx action equipped item
 
     desc =
       if count > 1 then
@@ -187,15 +195,16 @@ itemColor action equipped item =
       else
         Palette.inactive
 
-itemMessage n action equipped item =
+itemMessage : Language -> Language -> Int -> Maybe Action -> Bool -> Item -> String
+itemMessage vocab lang n action equipped item =
   case action of
     Nothing ->
       "- "
-      ++ Item.describe item
+      ++ Item.describe vocab lang item
     Just action' ->
       "("
       ++ Util.toAlpha n
       ++ ") "
       ++ Action.describeWithDefault item equipped action'
       ++ " "
-      ++ Item.describe item
+      ++ Item.describe vocab lang item

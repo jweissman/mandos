@@ -46,8 +46,8 @@ type alias Model =
   { engine : Engine
   , state : GameState
   , generationUnderway : Bool
-  --, generatedMap : Bool
-  --, generatedLanguage : Bool
+  , ticks : Int
+  , autoplay : Bool
   }
 
 -- INIT
@@ -55,8 +55,8 @@ init : (Model, Cmd Msg)
 init = ( { engine = Engine.init
          , state = Splash
          , generationUnderway = False
-         --, generatedMap = False
-         --, generatedLanguage = False
+         , ticks = 0
+         , autoplay = False
          },
          Cmd.none
        )
@@ -100,9 +100,17 @@ update message model =
     TickMsg time ->
       case model.state of
         Playing ->
-          ({ model | engine = (model.engine |> Engine.tick time) }
-           |> inferState
-         , Cmd.none)
+          let
+            model' = if model.autoplay then
+              { model | engine = model.engine |> Engine.autorogue
+                      , ticks = 0
+                      , autoplay = False }
+            else
+              model
+          in
+            ({ model' | engine = (model'.engine |> Engine.tick time) }
+             |> inferState
+            , Cmd.none)
 
         Generating ->
           if model.generationUnderway then
@@ -110,16 +118,18 @@ update message model =
           else
              ({ model | generationUnderway = True }, generateMap)
 
+        Splash ->
+          if model.ticks > 200 then
+            ({model | autoplay = True} |> startGeneration, Cmd.none)
+          else
+            ({ model | ticks = model.ticks + 1}, Cmd.none)
+
         _ -> (model, Cmd.none)
 
     KeyMsg keyCode ->
       case model.state of
         Splash ->
-          ({model | state = Generating
-                  , generationUnderway = False
-                  , engine = Engine.init
-                  },
-                  Cmd.none)
+          (model |> startGeneration, Cmd.none)
 
         Death _ ->
           ({model | state = Splash}, Cmd.none)
@@ -141,6 +151,15 @@ update message model =
               |> Engine.resetHover
           in
             ({ model | engine = engine' } |> inferState, Cmd.none)
+
+
+startGeneration : Model -> Model
+startGeneration model =
+  {model | state = Generating
+         , generationUnderway = False
+         , engine = Engine.init
+       }
+
 
 inferState : Model -> Model
 inferState model =

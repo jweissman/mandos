@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entitiesAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entityAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent, viewFrontier)
 
 import Palette
 import Point exposing (Point, slide)
@@ -23,6 +23,7 @@ import Item exposing (Item)
 import Inventory
 import Spell exposing (Spell(..))
 import Language exposing (Language)
+import Liquid
 
 import Set exposing (Set)
 import String
@@ -67,7 +68,7 @@ level model =
   Util.getAt model.dungeon model.depth
   |> Maybe.withDefault Level.init
 
-viewed : Model -> List Point
+viewed : Model -> Set Point
 viewed model =
   let lvl = (level model) in
   lvl.viewed
@@ -128,19 +129,9 @@ isPlayer : Point -> Model -> Bool
 isPlayer position model =
   model.player.position == position
 
-entitiesAt : Point -> Model -> List Entity
-entitiesAt pt model =
-  let
-    player =
-      if model.player.position == pt then
-        [Entity.player model.player]
-      else
-        []
-
-    entities =
-      Level.entitiesAt pt (level model)
-  in
-    entities ++ player
+entityAt : Point -> Model -> Maybe Entity
+entityAt pt model =
+  Level.entityAt pt (level model)
 
 -- PLAYER STEP
 playerSteps : Direction -> Model -> Model
@@ -434,8 +425,13 @@ playerWears item model =
       { model | player = model.player |> Warrior.wearArmor armor }
 
     Item.Jewelry ring ->
-      { model | player = model.player |> Warrior.wearRing ring }
-              |> playerViewsField -- could be ring of light..
+      let player' =
+        model.player
+        |> Warrior.wearRing ring
+        |> Warrior.learnsWord (Language.wordFor (Spell.idea (Ring.spell ring)) model.language)
+      in
+        { model | player = player' }
+                |> playerViewsField -- could be ring of light..
 
     Item.Headgear helm ->
       { model | player = model.player |> Warrior.wearHelm helm }
@@ -461,7 +457,13 @@ playerDrinks : Item -> Model -> Model
 playerDrinks item model =
   case item.kind of
     Item.Bottle liquid ->
-      { model | player = model.player |> Warrior.drink liquid }
+      let 
+        player' =
+          model.player
+          |> Warrior.drink liquid
+          |> Warrior.learnsWord (Language.wordFor (Liquid.idea liquid) model.language)
+      in
+      { model | player = player' }
 
     _ -> model
 
@@ -544,40 +546,49 @@ deathEvent model =
   |> List.head
 
 
+viewFrontier : Model -> Set Point
+viewFrontier model =
+  model.dungeon
+  |> Dungeon.viewFrontier model.depth
+
 -- VIEW
 listInvisibleEntities : Model -> List Entity
 listInvisibleEntities model =
-  let viewed' = (viewed model) in
-  Set.union (model |> floors) (model |> walls)
-  |> Set.filter (\pt -> not (List.member pt viewed'))
+  if not model.showMap then
+    []
+  else
+    let explorable = (Set.union (model |> floors) (model |> walls)) in
+    viewed model
+    |> Set.diff explorable
+    |> Set.toList
+    |> List.filterMap (\pt -> model |> entityAt pt)
+    |> List.map (Entity.imaginary)
+
+listRememberedEntities : Model -> List Entity
+listRememberedEntities model =
+  model.illuminated
+  |> Set.fromList
+  |> Set.diff (viewed model)
   |> Set.toList
-  |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
-  |> List.map (Entity.imaginary)
+  |> List.filterMap (\pt -> model |> entityAt pt)
+  |> List.map (Entity.memory)
 
 listEntities : Model -> List Entity
 listEntities model =
   let
     litEntities =
       model.illuminated
-      |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
+      |> List.filterMap (\pt -> model |> entityAt pt)
 
     memoryEntities =
-      (viewed model)
-      |> List.concatMap (\pt -> (entitiesAt pt model) |> lastSingleton)
-      |> List.filter (not << Entity.isCreature)
-      |> List.map (Entity.memory)
-      |> List.filter (\pt -> not (List.member pt litEntities))
+      model
+      |> listRememberedEntities
 
   in
-    if model.showMap then
-      memoryEntities ++
-      (listInvisibleEntities model) ++
-      litEntities ++
-      [Entity.player model.player]
-    else
-      memoryEntities ++
-      litEntities ++
-      [Entity.player model.player]
+    memoryEntities ++
+    listInvisibleEntities model ++
+    litEntities ++
+    [Entity.player model.player]
 
 view : Model -> List (Svg.Svg a)
 view model =
@@ -617,14 +628,3 @@ highlightCells cells =
 
 highlightCell (x,y) color =
   Graphics.render "@" (x,y) color
-
-lastSingleton : List a -> List a
-lastSingleton ls =
-  case (ls |> List.reverse |> List.head) of
-    Nothing ->
-      []
-
-    Just e ->
-      [e]
-
-
