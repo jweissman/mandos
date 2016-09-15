@@ -1,10 +1,11 @@
-module Action exposing (Action(..), describe, question, defaultForItem, canPerform, drop, enchant, use, default, describeWithDefault)
+module Action exposing (Action(..), describe, question, defaultForItem, canPerform, drop, enchant, use, default, hurl, describeWithDefault)
 
 import Language exposing (Language)
 import Item exposing (Item, ItemKind(..))
 
 type Action = Drop
             | Throw
+            | Hurl Item
             | Identify
             | Wield
             | Wear
@@ -19,6 +20,12 @@ type Action = Drop
 
 drop =
   Drop
+
+throw =
+  Throw
+
+hurl it =
+  Hurl it
 
 default =
   Default
@@ -44,9 +51,17 @@ defaultForItem equipped {kind} =
     Headgear _ ->
       if equipped then TakeOff else Wear
 
-    Bottle _ -> Drink
-    Scroll _ -> Read
-    QuestItem _ -> Look
+    Bottle _ ->
+      Drink
+
+    Scroll _ ->
+      Read
+
+    QuestItem _ ->
+      Look
+
+    Throwing _ ->
+      Throw
 
 canPerform : Bool -> Item -> Action -> Bool
 canPerform equipped item action =
@@ -94,6 +109,14 @@ canPerform equipped item action =
     Use item' action' ->
       canPerform equipped item action'
 
+    Throw ->
+      case kind of
+        Throwing _ ->
+          True
+
+        _ ->
+          False
+
     _ -> False
 
 describe : Action -> String
@@ -132,8 +155,12 @@ describe action =
     TakeOff ->
       "Take off"
 
+    Hurl item ->
+      "Throw " ++ (Item.name item) ++ "..."
+
     Use item action' ->
       describe action'
+      --"Use " ++ (Item.name item) ++ " to " ++ describe action' ++ "..."
 
     Default ->
       "[Default]"
@@ -183,6 +210,9 @@ question vocab language action =
 
     Use item action' ->
       "What would you like to " ++ (describe action') ++ " with " ++ (Item.describe vocab language item) ++ "?"
+
+    Hurl item ->
+      "What would you like to throw the " ++ (Item.describe vocab language item) ++ " at?"
 
     Default ->
       "What would you like to do?"

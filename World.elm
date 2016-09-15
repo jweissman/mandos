@@ -44,6 +44,7 @@ type alias Model =
   , showMap : Bool
   , age : Int
   , language : Language
+  , animateEntities : List Entity
   }
 
 -- INIT
@@ -60,6 +61,7 @@ init =
   , showMap = False
   , age = 0
   , language = []
+  , animateEntities = []
   }
 
 
@@ -549,6 +551,7 @@ enchantItem item model =
       }
   in
     { model | player = player' }
+            |> playerViewsField -- could be enchanting ring of light..
 
 
 deathEvent : Model -> Maybe Event
@@ -576,10 +579,10 @@ listInvisibleEntities model =
     |> List.filterMap (\pt -> model |> entityAt pt)
     |> List.map (Entity.imaginary)
 
+-- todo try to optimize further -- almost 10% of our time is spent here :/
 listRememberedEntities : Model -> List Entity
 listRememberedEntities model =
   model.illuminated
-  --|> Set.fromList
   |> Set.diff (viewed model)
   |> Set.toList
   |> List.filterMap (\pt -> model |> entityAt pt)
@@ -608,6 +611,7 @@ view model =
   let
     entities =
       listEntities model
+      ++ model.animateEntities
 
     entityViews =
       List.map (Entity.view) entities

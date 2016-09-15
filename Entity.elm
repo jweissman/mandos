@@ -148,7 +148,7 @@ color entity =
       Palette.dim
 
     Floor _ ->
-      Palette.primaryDark
+      Palette.primary
 
     Entrance open _ ->
       Palette.bright

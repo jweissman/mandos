@@ -1,4 +1,4 @@
-module Optics exposing (illuminate)
+module Optics exposing (illuminate, castRay)
 
 import Set exposing (Set)
 import Point exposing (Point, code)
@@ -15,7 +15,6 @@ illuminate power perimeter blockers source =
     perimeter
     |> List.concatMap rays
     |> Set.fromList
-    --|> Util.uniqueBy Point.code
 
 castRay : Int -> Set Point -> Point -> Point -> List Point
 castRay power blockers src dst =

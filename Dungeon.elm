@@ -1,4 +1,4 @@
-module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall, evolve, viewFrontier)
+module Dungeon exposing (Dungeon, generate, prepare, moveCreatures, injureCreature, collectCoin, purge, levelAt, playerSees, removeItem, playerDestroysWall, evolve, viewFrontier, apply)
 
 import Warrior
 import Creature

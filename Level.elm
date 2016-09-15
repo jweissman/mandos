@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entityAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass, viewFrontier)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entityAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass, viewFrontier, addItem)
 
 
 import Point exposing (Point)
@@ -670,7 +670,8 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.helm Helm.cap
+          [ Item.javelin
+          , Item.helm Helm.cap
           , Item.scroll Spell.infuse
           , Item.bottle Liquid.water
           , Item.weapon Weapon.dagger
@@ -679,7 +680,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Barracks ->
-          [ Item.helm Helm.helmet
+          [ Item.javelin
+          , Item.helm Helm.helmet
           , Item.scroll Spell.infuse
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
@@ -689,7 +691,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Library ->
-          [ Item.ring Ring.light
+          [ Item.javelin
+          , Item.ring Ring.light
           , Item.scroll Spell.infuse
           , Item.bottle Liquid.water
           , Item.scroll Spell.lux
@@ -698,7 +701,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         MiningCamp ->
-          [ Item.ring Ring.power
+          [ Item.javelin
+          , Item.ring Ring.power
           , Item.weapon Weapon.pick
           , Item.bottle Liquid.water
           , Item.scroll Spell.lux

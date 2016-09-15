@@ -1,4 +1,4 @@
-module Item exposing (Item, init, glyph, name, describe, ItemKind(..), weapon, armor, ring, helm, bottle, scroll, crystal, enchant, simple, canApply)
+module Item exposing (Item, init, glyph, name, describe, ItemKind(..), weapon, armor, ring, helm, bottle, scroll, javelin, crystal, enchant, simple, canApply)
 
 import Point exposing (Point)
 import Weapon exposing (Weapon)
@@ -12,7 +12,11 @@ import Idea
 
 type QuestItemKind = Crystal
 
+type AmmoKind = Spear
+              | Javelin
+
 type ItemKind = Arm Weapon
+              | Throwing AmmoKind
               | Shield Armor
               | Bottle Liquid
               | Scroll Spell
@@ -38,6 +42,9 @@ ring ring' =
 helm helm' =
   Headgear helm'
 
+javelin =
+  Throwing Javelin
+
 crystal =
   QuestItem Crystal
 
@@ -59,25 +66,28 @@ glyph : Item -> String
 glyph {kind} =
   case kind of
     Arm _ ->
-      "!"
+      ")"
 
     Shield _ ->
-      "%"
+      "["
 
     Headgear _ ->
       "^"
 
     Jewelry _ ->
-      "~"
+      "&"
 
     Bottle _ ->
       "?"
 
     Scroll _ ->
-      "ø"
+      "~"
 
     QuestItem _ ->
       "∆"
+
+    Throwing _ ->
+      "|"
 
 name : Item -> String
 name item =
@@ -89,7 +99,8 @@ name item =
       Armor.describe armor'
 
     Jewelry ring ->
-      Idea.describe (Spell.idea (Ring.spell ring)) -- vocab language ring
+      "ring of "
+      ++ (Idea.describe (Spell.idea (Ring.spell ring)))
 
     Headgear helm ->
       Helm.describe helm
@@ -102,10 +113,15 @@ name item =
       "scroll of "
       ++ (Idea.describe (Spell.idea spell))
 
+    Throwing thrown ->
+      case thrown of
+        Spear -> "spear"
+        Javelin -> "javelin"
+
     QuestItem kind ->
       case kind of
         Crystal ->
-          "Crystal of Time"
+          "crystal of time"
 
 describe : Language -> Language -> Item -> String
 describe vocab language {kind} =
@@ -130,10 +146,15 @@ describe vocab language {kind} =
       "scroll of "
       ++ (Language.decode (Spell.idea spell) vocab language)
 
+    Throwing thrown ->
+      case thrown of
+        Spear -> "spear"
+        Javelin -> "javelin"
+
     QuestItem kind ->
       case kind of
         Crystal ->
-          "Crystal of Time"
+          "crystal of time"
 
 enchant : Item -> Item
 enchant item =
@@ -149,6 +170,9 @@ enchant item =
 
     Headgear helm ->
       { item | kind = Headgear (Helm.enchant helm) }
+
+    Throwing thrown ->
+      item
 
     Bottle _ ->
       item
@@ -183,4 +207,3 @@ canApply item' item =
 
     _ ->
       False
-
