@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entityAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent, viewFrontier, playerLearnsWord)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entityAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent, viewFrontier, playerLearnsWord, hitCreatureAt)
 
 import Palette
 import Point exposing (Point, slide)
@@ -553,6 +553,34 @@ enchantItem item model =
     { model | player = player' }
             |> playerViewsField -- could be enchanting ring of light..
 
+
+hitCreatureAt : Point -> Item -> Model -> Model
+hitCreatureAt pt item model =
+  case (level model) |> Level.creatureAt pt of
+    Just creature ->
+      let
+        (dungeon', events) =
+          model.dungeon
+          |> Dungeon.apply (Level.hitCreatureWith item creature) model.depth
+          |> Dungeon.purge model.depth
+          -- todo need event here if we hit something...
+
+        newEvents =
+          (Event.attack creature (Item.thrownDamage item)) :: events
+
+        model' =
+          { model | dungeon = dungeon'
+                  , events  = model.events ++ newEvents
+                  }
+      in
+         -- we could have killed a creature (destroyed a view obstacle)
+         model'
+         |> playerViewsField
+
+    Nothing ->
+      model
+
+ --model
 
 deathEvent : Model -> Maybe Event
 deathEvent model =

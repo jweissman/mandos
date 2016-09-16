@@ -118,6 +118,7 @@ handleKeypress keyChar model =
   else
     let
       reset = (
+        resetThrow <<
         resetAction <<
         resetFollow <<
         resetAuto <<
@@ -282,6 +283,7 @@ playerActsOnItem item act model =
 
     Throw ->
       model
+      |> resetAuto
       |> waitForPosition (Action.hurl item)
 
     Hurl it ->
@@ -313,8 +315,8 @@ playerApplies item' item model =
 
 resetAction : Engine -> Engine
 resetAction model =
-  { model | action = Nothing 
-          , selectPosition = False 
+  { model | action = Nothing
+          , selectPosition = False
   }
 
 playerLosesItem : Item -> Engine -> Engine
@@ -414,9 +416,17 @@ animateThrow model =
               let
                 item' =
                   { item | position = pt }
+
+                model' =
+                  { model | thrownItem = Just item'
+                          , throwPath = List.tail path }
               in
-                { model | thrownItem = Just item'
-                        , throwPath = List.tail path }
+                if List.length path > 1 then
+                  model'
+                else
+                  { model' | world = model.world
+                                   |> World.hitCreatureAt pt item' --thrownItem
+                  }
 
 resetThrow : Engine -> Engine
 resetThrow model =
@@ -424,7 +434,7 @@ resetThrow model =
     model' =
       { model | throwPath = Nothing -- Just model.hoverPath
               , animatingThrow = False
-              , action = Just Action.default
+              , action = Nothing --Just Action.default
               , thrownItem = Nothing
               --, auto = True
               , selectPosition = False

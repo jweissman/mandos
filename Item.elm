@@ -1,4 +1,4 @@
-module Item exposing (Item, init, glyph, name, describe, ItemKind(..), weapon, armor, ring, helm, bottle, scroll, javelin, crystal, enchant, simple, canApply)
+module Item exposing (Item, init, glyph, name, describe, ItemKind(..), weapon, armor, ring, helm, bottle, scroll, javelin, crystal, enchant, simple, canApply, thrownDamage)
 
 import Point exposing (Point)
 import Weapon exposing (Weapon)
@@ -207,3 +207,13 @@ canApply item' item =
 
     _ ->
       False
+
+
+thrownDamage item =
+  case item.kind of
+    Throwing ammo ->
+      200
+
+    _ ->
+      1
+
