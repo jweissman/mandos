@@ -13292,53 +13292,47 @@ var _jweissman$rogue$Entity$view = function (entity) {
 };
 var _jweissman$rogue$Entity$describe = F3(
 	function (vocab, language, entity) {
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			_elm_lang$core$Basics$toString(
-				_jweissman$rogue$Entity$position(entity)),
-			function () {
-				var _p3 = entity;
-				switch (_p3.ctor) {
-					case 'Monster':
-						return _jweissman$rogue$Creature$describe(_p3._0);
-					case 'Player':
-						return 'a nameless warrior';
-					case 'Wall':
-						return 'a sturdy wall';
-					case 'Coin':
-						return 'a golden coin';
-					case 'Floor':
-						return 'a cobblestone floor';
-					case 'Door':
-						return 'a creaky door';
-					case 'Grass':
-						return 'a patch of grass';
-					case 'StairsUp':
-						return 'an upward-curving staircase';
-					case 'StairsDown':
-						return 'a downward-curving staircase';
-					case 'Memory':
-						return A2(
-							_elm_lang$core$Basics_ops['++'],
-							'You saw ',
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								A3(_jweissman$rogue$Entity$describe, vocab, language, _p3._0),
-								' here'));
-					case 'Imaginary':
-						return A2(
-							_elm_lang$core$Basics_ops['++'],
-							'You imagine there is ',
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								A3(_jweissman$rogue$Entity$describe, vocab, language, _p3._0),
-								' here'));
-					case 'Entrance':
-						return _p3._0 ? 'an open heavy metal gateway and daylight beyond' : 'a closed heavy metal gateway';
-					default:
-						return A3(_jweissman$rogue$Item$describe, vocab, language, _p3._0);
-				}
-			}());
+		var _p3 = entity;
+		switch (_p3.ctor) {
+			case 'Monster':
+				return _jweissman$rogue$Creature$describe(_p3._0);
+			case 'Player':
+				return 'a nameless warrior';
+			case 'Wall':
+				return 'a sturdy wall';
+			case 'Coin':
+				return 'a golden coin';
+			case 'Floor':
+				return 'a cobblestone floor';
+			case 'Door':
+				return 'a creaky door';
+			case 'Grass':
+				return 'a patch of grass';
+			case 'StairsUp':
+				return 'an upward-curving staircase';
+			case 'StairsDown':
+				return 'a downward-curving staircase';
+			case 'Memory':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'You saw ',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						A3(_jweissman$rogue$Entity$describe, vocab, language, _p3._0),
+						' here'));
+			case 'Imaginary':
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					'You imagine there is ',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						A3(_jweissman$rogue$Entity$describe, vocab, language, _p3._0),
+						' here'));
+			case 'Entrance':
+				return _p3._0 ? 'an open heavy metal gateway and daylight beyond' : 'a closed heavy metal gateway';
+			default:
+				return A3(_jweissman$rogue$Item$describe, vocab, language, _p3._0);
+		}
 	});
 var _jweissman$rogue$Entity$isCreature = function (entity) {
 	var _p4 = entity;
@@ -17193,24 +17187,15 @@ var _jweissman$rogue$Main$view = function (model) {
 var _jweissman$rogue$Main$pointFromMouse = F2(
 	function (_p1, model) {
 		var _p2 = _p1;
-		var xScale = A2(
-			_elm_lang$core$Debug$log,
-			'scale',
-			_jweissman$rogue$Configuration$viewWidth / _elm_lang$core$Basics$toFloat(model.width));
-		var yScale = A2(
-			_elm_lang$core$Debug$log,
-			'scale',
-			_jweissman$rogue$Configuration$viewHeight / _elm_lang$core$Basics$toFloat(model.height));
-		return A2(
-			_elm_lang$core$Debug$log,
-			'point',
-			{
-				ctor: '_Tuple2',
-				_0: _elm_lang$core$Basics$round(
-					_elm_lang$core$Basics$toFloat(_p2.x) * yScale),
-				_1: _elm_lang$core$Basics$round(
-					_elm_lang$core$Basics$toFloat(_p2.y) * yScale)
-			});
+		var xScale = _jweissman$rogue$Configuration$viewWidth / _elm_lang$core$Basics$toFloat(model.width);
+		var yScale = _jweissman$rogue$Configuration$viewHeight / _elm_lang$core$Basics$toFloat(model.height);
+		return {
+			ctor: '_Tuple2',
+			_0: _elm_lang$core$Basics$round(
+				_elm_lang$core$Basics$toFloat(_p2.x) * yScale),
+			_1: _elm_lang$core$Basics$round(
+				_elm_lang$core$Basics$toFloat(_p2.y) * yScale)
+		};
 	});
 var _jweissman$rogue$Main$Model = F7(
 	function (a, b, c, d, e, f, g) {
