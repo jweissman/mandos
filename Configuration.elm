@@ -1,13 +1,13 @@
-module Configuration exposing (levelCount, tickInterval, viewScale, viewWidth, viewHeight, visionRadius, inventoryLimit, maxRoomWidth, maxRoomHeight, startingHitPoints, startingStrength, candidateRooms)
+module Configuration exposing (levelCount, tickInterval, visionRadius, inventoryLimit, maxRoomWidth, maxRoomHeight, startingHitPoints, startingStrength, candidateRooms, viewWidth, viewHeight)
 
 import Time exposing (Time, millisecond)
 
 tickInterval = 25*millisecond
 levelCount = 10
 
-viewScale = 16
-viewWidth = 90
-viewHeight = 56
+--viewScale = 16
+viewWidth = 60
+viewHeight = 40
 
 -- dungeon
 candidateRooms = 500

@@ -81,6 +81,7 @@ isCreature entity =
 
 describe : Language -> Language -> Entity -> String
 describe vocab language entity =
+  toString (position entity) ++
   case entity of
     Monster creature ->
       Creature.describe creature

@@ -8,21 +8,24 @@ import Configuration
 import Event exposing (Event(..))
 import Palette
 import Language exposing (Language)
+import Point exposing (Point)
 
 import Char
 import Task
+import Random
+import String
+
+import Time exposing (Time, millisecond)
 import Keyboard exposing (KeyCode)
 import Mouse
-import Random
-import Time exposing (Time, millisecond)
-import String
+import Window
 
 import Html exposing (Html)
 import Html.App as App
 import Html.Attributes exposing (type', style)
 
 import Svg exposing (svg, rect, text')
-import Svg.Attributes exposing (viewBox, width, height, x, y, fontSize, fontFamily)
+import Svg.Attributes exposing (viewBox, width, height, x, y, fontSize, fontFamily, preserveAspectRatio)
 import Svg.Events
 
 -- MAIN
@@ -48,6 +51,8 @@ type alias Model =
   , generationUnderway : Bool
   , ticks : Int
   , autoplay : Bool
+  , width : Int
+  , height : Int
   }
 
 -- INIT
@@ -57,8 +62,11 @@ init = ( { engine = Engine.init
          , generationUnderway = False
          , ticks = 0
          , autoplay = False
+         , width = 0
+         , height = 0
          },
-         Cmd.none
+         --Cmd.none
+         Task.perform (\_ -> NoOp) sizeToMsg Window.size
        )
 
 generateMap : Cmd Msg
@@ -77,11 +85,19 @@ type Msg
   | TickMsg Time
   | MapMsg Dungeon
   | LangMsg Language
+  | ResizeWindow (Int, Int)
+  | NoOp
 
 -- UPDATE
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
+    NoOp ->
+      (model, Cmd.none)
+
+    ResizeWindow (width, height) ->
+      ({ model | width = width, height = height }, Cmd.none)
+
     MapMsg dungeon ->
       ({ model | engine = (model.engine |> Engine.enter dungeon)
       }, generateLanguage)
@@ -95,7 +111,7 @@ update message model =
       ({ model | engine = (model.engine |> Engine.clickAt position) }, Cmd.none)
 
     HoverMsg position ->
-      ({ model | engine = (model.engine |> Engine.hoverAt position) }, Cmd.none)
+      ({ model | engine = (model.engine |> Engine.hoverAt (pointFromMouse position model)) }, Cmd.none)
 
     TickMsg time ->
       case model.state of
@@ -153,6 +169,21 @@ update message model =
             ({ model | engine = engine' } |> inferState, Cmd.none)
 
 
+pointFromMouse : Mouse.Position -> Model -> Point
+pointFromMouse {x,y} model =
+  let
+    yScale =
+      (Configuration.viewHeight / (toFloat (model.height))) -- / Configuration.viewWidth)
+      |> Debug.log "scale"
+
+    xScale =
+      (Configuration.viewWidth / (toFloat (model.width))) -- / Configuration.viewWidth)
+      |> Debug.log "scale"
+  in
+    ( round ((toFloat x)*yScale) , round ((toFloat y)*yScale))
+    |> Debug.log "point"
+
+
 startGeneration : Model -> Model
 startGeneration model =
   {model | state = Generating
@@ -197,7 +228,13 @@ subscriptions model =
     , Mouse.clicks ClickMsg
     , Keyboard.presses KeyMsg
     , Time.every Configuration.tickInterval TickMsg
+    , Window.resizes sizeToMsg
     ]
+
+sizeToMsg : Window.Size -> Msg
+sizeToMsg size =
+  ResizeWindow (size.width, size.height)
+
 
 -- VIEW
 view : Model -> Html Msg
@@ -210,27 +247,21 @@ view model =
   in
     Html.div [ style bgStyle ]
     [ Html.node "style" [type' "text/css"] [Html.text "@import 'https://fonts.googleapis.com/css?family=VT323'"]
-    , box (stateView model)
+    , box (stateView model) model
     ]
 
-box viewModel =
+box viewModel model =
   let
-    scale =
-      Configuration.viewScale
-
-    height' =
-      Configuration.viewHeight
-
-    width' =
-      Configuration.viewWidth
-
     dims =
-      [0,0,width',height']
+      [0,0,Configuration.viewWidth,Configuration.viewHeight]
       |> List.map toString
       |> String.join " "
   in
-    svg [ viewBox dims, width ((toString (width'*scale)) ++ "px"), height ((toString (height'*scale)) ++ "px") ] viewModel
-
+    svg [ viewBox dims
+        , style [("height", (toString model.height))
+                ,("width", (toString model.width))]
+        , preserveAspectRatio "xMinYMin" ] 
+        viewModel
 
 stateView model =
   let
