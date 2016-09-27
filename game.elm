@@ -171,14 +171,32 @@ update message model =
 
 pointFromMouse : Mouse.Position -> Model -> Point
 pointFromMouse {x,y} model =
-  let
-    yScale =
-      (Configuration.viewHeight / (toFloat (model.height)))
+  if model.height > model.width then
+    let
+      scale =
+        toFloat model.width
 
-    xScale =
-      (Configuration.viewWidth / (toFloat (model.width)))
-  in
-    ( round ((toFloat x)*yScale) , round ((toFloat y)*yScale))
+      yScale =
+        (Configuration.viewHeight / (scale * (40/60)))
+
+      xScale =
+        (Configuration.viewWidth / scale)
+    in
+      ( round ((toFloat x)*xScale) , round ((toFloat y)*yScale))
+      |> Debug.log "pt"
+  else
+    let
+      scale =
+        toFloat model.height
+
+      yScale =
+        (Configuration.viewHeight / scale)
+
+      xScale =
+        (Configuration.viewWidth / (scale * (60/40)))
+    in
+      ( round ((toFloat x)*xScale) , round ((toFloat y)*yScale))
+      |> Debug.log "pt"
 
 startGeneration : Model -> Model
 startGeneration model =
@@ -255,7 +273,8 @@ box viewModel model =
     svg [ viewBox dims
         , style [("height", (toString model.height))
                 ,("width", (toString model.width))]
-        , preserveAspectRatio "xMinYMin" ] 
+        , preserveAspectRatio "xMinYMin" 
+        ] 
         viewModel
 
 stateView model =
