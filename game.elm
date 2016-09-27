@@ -173,16 +173,12 @@ pointFromMouse : Mouse.Position -> Model -> Point
 pointFromMouse {x,y} model =
   let
     yScale =
-      (Configuration.viewHeight / (toFloat (model.height))) -- / Configuration.viewWidth)
-      |> Debug.log "scale"
+      (Configuration.viewHeight / (toFloat (model.height)))
 
     xScale =
-      (Configuration.viewWidth / (toFloat (model.width))) -- / Configuration.viewWidth)
-      |> Debug.log "scale"
+      (Configuration.viewWidth / (toFloat (model.width)))
   in
     ( round ((toFloat x)*yScale) , round ((toFloat y)*yScale))
-    |> Debug.log "point"
-
 
 startGeneration : Model -> Model
 startGeneration model =
@@ -190,7 +186,6 @@ startGeneration model =
          , generationUnderway = False
          , engine = Engine.init
        }
-
 
 inferState : Model -> Model
 inferState model =
