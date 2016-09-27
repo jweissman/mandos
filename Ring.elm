@@ -21,7 +21,7 @@ spell ring =
       spell'
 
     Enchanted _ ring' ->
-      spell ring
+      spell ring'
 
 describe : Language -> Language -> Ring -> String
 describe vocab language ring =

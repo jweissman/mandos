@@ -8,19 +8,21 @@ this is a learning elm project but i'd also like the code to be clear and well-f
 
 # features
 
-  - [x] event log
-  - [x] melee combat
+  - [x] armor
   - [x] auto-explore
-  - [x] map generation
+  - [x] event log
   - [x] field of vision
+  - [x] items
+  - [x] language
+  - [x] map generation
+  - [x] melee combat
   - [x] quest journal
   - [x] weapons
-  - [x] armor
-  - [x] items
-  - [ ] language
-  - [ ] history (statues)
+  - [ ] responsive
+  - [ ] thrown weapons
   - [ ] env hazards (water/lava features)
   - [ ] allies
+  - [ ] history (statues, engravings, monoliths)
 
 # caveats
 

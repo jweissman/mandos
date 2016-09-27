@@ -1,4 +1,4 @@
-module Optics exposing (illuminate)
+module Optics exposing (illuminate, castRay)
 
 import Set exposing (Set)
 import Point exposing (Point, code)
@@ -6,7 +6,7 @@ import Util
 import Bresenham exposing (line)
 import Configuration
 
-illuminate : Int -> List Point -> Set Point -> Point -> List Point
+illuminate : Int -> List Point -> Set Point -> Point -> Set Point
 illuminate power perimeter blockers source =
   let
     rays =
@@ -14,7 +14,7 @@ illuminate power perimeter blockers source =
   in
     perimeter
     |> List.concatMap rays
-    |> Util.uniqueBy Point.code
+    |> Set.fromList
 
 castRay : Int -> Set Point -> Point -> Point -> List Point
 castRay power blockers src dst =

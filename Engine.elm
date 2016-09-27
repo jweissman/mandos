@@ -19,8 +19,10 @@ import Spell exposing (Spell(..))
 import Action exposing (Action(..))
 import Palette
 import Inventory
-
+import Optics
 import Language exposing (Language)
+
+import Level
 
 import Set exposing (Set)
 import Time
@@ -38,6 +40,10 @@ type alias Engine =
   , telepathy : Bool
   , quests : List Quest
   , action : Maybe Action
+  , selectPosition : Bool
+  , throwPath : Maybe (List Point)
+  , animatingThrow : Bool
+  , thrownItem : Maybe Item
   }
 
 init : Engine
@@ -50,7 +56,15 @@ init =
   , telepathy = False
   , quests = Quest.coreCampaign
   , action = Nothing
+  , selectPosition = False
+  , throwPath = Nothing
+  , animatingThrow = False
+  , thrownItem = Nothing
   }
+
+isPerformingAnimation : Engine -> Bool
+isPerformingAnimation model =
+  model.animatingThrow
 
 enter : Dungeon -> Engine -> Engine
 enter dungeon model =
@@ -99,45 +113,59 @@ illuminate model =
 
 handleKeypress : Char -> Engine -> Engine
 handleKeypress keyChar model =
-  let
-    reset = (
-      resetAction <<
-      resetFollow <<
-      resetAuto <<
-      illuminate <<
-      moveCreatures
-    )
-  in
-    case model.action of
-      Just action ->
-        model |> case keyChar of
-          'd' ->
-            let act' = (if action == Action.drop then Action.default else Action.drop) in
-            waitForSelection act'
-          'i' ->
-            if action == Action.drop then
-              waitForSelection Action.default
-            else
-              resetAction
-          _ ->
-            playerActs (Util.fromAlpha keyChar)
+  if model |> isPerformingAnimation then
+    model -- ignore it until we're done animating
+  else
+    let
+      reset = (
+        resetThrow <<
+        resetAction <<
+        resetFollow <<
+        resetAuto <<
+        illuminate <<
+        moveCreatures
+      )
+    in
+      case model.action of
+        Just action ->
+          model |> case keyChar of
+            'd' ->
+              let act' = (if action == Action.drop then Action.default else Action.drop) in
+              waitForSelection act'
+            'i' ->
+              if action == Action.drop then
+                waitForSelection Action.default
+              else
+                resetAction
+            _ ->
+              let alpha = Util.fromAlpha keyChar in
+              if alpha == -1 then
+                resetAction
+              else
+                playerActs (Util.fromAlpha keyChar)
 
-      Nothing ->
-        model |> case keyChar of
-          'a' -> autorogue
-          'h' -> reset << playerSteps West
-          'j' -> reset << playerSteps South
-          'k' -> reset << playerSteps North
-          'l' -> reset << playerSteps East
-          't' -> telepath
-          'x' -> playerExplores
-          'd' -> waitForSelection Action.drop
-          'i' -> waitForSelection Action.default
-          _ -> reset
+        Nothing ->
+          model |> case keyChar of
+            'a' -> autorogue
+            'h' -> reset << playerSteps West
+            'j' -> reset << playerSteps South
+            'k' -> reset << playerSteps North
+            'l' -> reset << playerSteps East
+            't' -> telepath
+            'x' -> playerExplores
+            'd' -> waitForSelection Action.drop
+            'i' -> waitForSelection Action.default
+            _ -> reset
 
 waitForSelection : Action -> Engine -> Engine
 waitForSelection action model =
   { model | action = Just action }
+
+waitForPosition : Action -> Engine -> Engine
+waitForPosition action model =
+  { model | action = Just action
+          , selectPosition = True
+          }
 
 isEquipped : Item -> Engine -> Bool
 isEquipped item model =
@@ -253,7 +281,21 @@ playerActsOnItem item act model =
         model
         |> playerActsOnItem item action'
 
-    _ ->
+    Throw ->
+      model
+      |> resetAuto
+      |> waitForPosition (Action.hurl item)
+
+    Hurl it ->
+      model
+
+    Identify ->
+      model
+
+    Look ->
+      model
+
+    Enchant ->
       model
 
 playerApplies : Item -> Item -> Engine -> Engine
@@ -273,7 +315,9 @@ playerApplies item' item model =
 
 resetAction : Engine -> Engine
 resetAction model =
-  { model | action = Nothing }
+  { model | action = Nothing
+          , selectPosition = False
+  }
 
 playerLosesItem : Item -> Engine -> Engine
 playerLosesItem item model =
@@ -298,15 +342,22 @@ playerLosesItem item model =
 
 castSpell : Item -> Spell -> Engine -> Engine
 castSpell item spell model =
-  let world = model.world in
+  let
+    world' =
+      model.world
+      |> World.playerLearnsWord (Language.wordFor (Spell.idea spell) model.world.language)
+
+    model' =
+      { model | world = world' }
+  in
   case spell of
     Lux ->
-      model
+      model'
       |> playerLosesItem item
       |> enhancePlayerVision
 
     Infuse ->
-      model
+      model'
       |> waitForSelection (Action.use item (Action.enchant))
 
 enhancePlayerVision : Engine -> Engine
@@ -324,10 +375,91 @@ playerEnchants item model =
 
 tick : Time.Time -> Engine -> Engine
 tick time model =
-  model
-  |> followPaths
-  |> updateQuests
+  if model |> isPerformingAnimation then
+    Debug.log "ANIMATE MODEL"
+    model
+    |> animate
+  else
+    model
+    |> followPaths
+    |> updateQuests
 
+animate : Engine -> Engine
+animate model =
+  if model.animatingThrow then
+    model
+    |> animateThrow
+  else
+    Debug.log "animate called but nothing being animated...?"
+    model
+
+animateThrow : Engine -> Engine
+animateThrow model =
+  case model.thrownItem of
+    Nothing ->
+      Debug.log "no thrown item, reset throw"
+      model |> resetThrow
+
+    Just item ->
+      case model.throwPath of
+        Nothing ->
+          Debug.log "no throw path, reset throw"
+          model |> resetThrow
+
+        Just path ->
+          case path |> List.head of
+            Nothing ->
+              Debug.log "throw path empty, reset throw"
+              model |> resetThrow
+
+            Just pt ->
+              let
+                item' =
+                  { item | position = pt }
+
+                model' =
+                  { model | thrownItem = Just item'
+                          , throwPath = List.tail path }
+              in
+                if List.length path > 1 then
+                  model'
+                else
+                  { model' | world = model.world
+                                   |> World.hitCreatureAt pt item' --thrownItem
+                  }
+
+resetThrow : Engine -> Engine
+resetThrow model =
+  let
+    model' =
+      { model | throwPath = Nothing -- Just model.hoverPath
+              , animatingThrow = False
+              , action = Nothing --Just Action.default
+              , thrownItem = Nothing
+              --, auto = True
+              , selectPosition = False
+       }
+  in
+    case model.thrownItem of
+      Nothing -> -- but how did we get here?
+        model'
+
+      Just item ->
+        Debug.log "ADD ITEM BACK TO DUNGEON"
+        model'
+        |> addItem item
+
+addItem : Item -> Engine -> Engine
+addItem item model =
+  let
+    world =
+      model.world
+
+    dungeon =
+      world.dungeon
+      |> Dungeon.apply (Level.addItem item) world.depth
+  in
+  { model | world  = { world | dungeon = dungeon }}
 
 updateQuests : Engine -> Engine
 updateQuests model =
@@ -409,21 +541,48 @@ hoverAt position model =
       pointFromMouse position
 
     isLit =
-      List.member point (model.world.illuminated)
+      Set.member point (model.world.illuminated)
 
     wasLit =
       Set.member point (World.viewed model.world)
   in
-    if isLit then
-      model |> seeEntityAt point
+    if model.selectPosition then
+      model |> targetEntityAt point
     else
-      if wasLit then
-        model |> rememberEntityAt point
+      if isLit then
+        model |> seeEntityAt point
       else
-        if model.telepathy then
-          model |> imagineEntityAt point
+        if wasLit then
+          model |> rememberEntityAt point
         else
+          if model.telepathy then
+            model |> imagineEntityAt point
+          else
+            model
+
+targetEntityAt point model =
+  let
+    entity' =
+      World.entityAt point model.world
+
+    entity =
+      if entity' == Just (Entity.wall point) then
+        Nothing
+      else
+        entity'
+
+    path' =
+      case entity of
+        Nothing ->
+          []
+
+        Just entity' ->
           model
+          |> lineToEntity entity'
+  in
+    { model | hover = entity
+            , hoverPath = path'
+    }
 
 seeEntityAt point model =
   let
@@ -516,18 +675,73 @@ pathToEntity entity model =
       Path.seek entityPos playerPos (\pt -> Set.member pt (World.walls model.world))
 
 
+lineToEntity entity model =
+  let
+    entityPos =
+      Entity.position entity
+
+    playerPos =
+      model.world.player.position
+
+    alreadyHovering =
+      case model.hover of
+        Just entity' ->
+          entity' == entity
+
+        Nothing ->
+          False
+  in
+    if alreadyHovering || not (model.throwPath == Nothing) then
+      model.hoverPath
+    else
+      let ray = Optics.castRay (Warrior.vision model.world.player) (World.walls model.world) playerPos entityPos in
+      ray
+      |> List.filter (\pt -> not (Set.member pt (World.walls model.world)))
+
 clickAt : Mouse.Position -> Engine -> Engine
 clickAt _ model =
   case model.followPath of
     Nothing ->
-      { model | followPath = Just model.hoverPath }
+      if model.selectPosition then
+        case model.action of
+          Just action ->
+            case action of
+              Hurl item ->
+                model
+                |> throwItem item
+
+              _ ->
+                Debug.log "clicked for position, but some action was associated besides hurl?"
+                model
+                |> waitForSelection Action.default
+
+          Nothing ->
+            Debug.log "clicked for position, but no action was associated?"
+            model
+            |> waitForSelection Action.default
+      else
+        { model | followPath = Just model.hoverPath }
+
     Just path ->
       model
+
+throwItem : Item -> Engine -> Engine
+throwItem item model =
+  Debug.log ("THROW ITEM: " ++ (Item.name item))
+  { model | throwPath      = Just model.hoverPath
+          , animatingThrow = True
+          , selectPosition = False
+          , thrownItem     = Just item
+          , auto           = False
+  }
+  --|> resetAuto
 
 playerFollowsPath : Engine -> Engine
 playerFollowsPath model =
   case model.followPath of
-    Nothing -> model
+    Nothing ->
+      model
+
     Just path ->
       case (List.head path) of
         Nothing ->
@@ -558,7 +772,6 @@ playerFollowsPath model =
               model
               |> resetFollow
               |> resetHover
-
 
 gatherTargets : Engine -> List Point
 gatherTargets model =
@@ -661,7 +874,10 @@ view model =
     path =
       case model.followPath of
         Nothing ->
-          model.hoverPath
+          if model |> isPerformingAnimation then
+            []
+          else
+            model.hoverPath
 
         Just path ->
           path
@@ -669,6 +885,9 @@ view model =
     worldView =
       World.view { world | debugPath = path
                          , showMap = model.telepathy
+                         , animateEntities = [ model.thrownItem ]
+                                           |> List.filterMap identity
+                                           |> List.map Entity.item
                          }
 
     debugMsg =

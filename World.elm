@@ -1,4 +1,4 @@
-module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entityAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent, viewFrontier)
+module World exposing (Model, init, view, playerSteps, floors, walls, doors, coins, downstairs, upstairs, entrances, crystals, playerViewsField, playerDropsItem, entityAt, viewed, canPlayerStep, creatures, items, doesPlayerHaveCrystal, augmentVision, enchantItem, playerSheathesWeapon, playerTakesOff, playerWields, playerWears, playerDrinks, deathEvent, viewFrontier, playerLearnsWord, hitCreatureAt)
 
 import Palette
 import Point exposing (Point, slide)
@@ -22,7 +22,7 @@ import Configuration
 import Item exposing (Item)
 import Inventory
 import Spell exposing (Spell(..))
-import Language exposing (Language)
+import Language exposing (Language, Word)
 import Liquid
 
 import Set exposing (Set)
@@ -39,11 +39,12 @@ type alias Model =
   , player : Warrior.Model
   , events : Log.Model
   , debugPath : List Point
-  , illuminated : List Point
+  , illuminated : Set Point
   , hallsEscaped : Bool
   , showMap : Bool
   , age : Int
   , language : Language
+  , animateEntities : List Entity
   }
 
 -- INIT
@@ -55,11 +56,12 @@ init =
   , player = Warrior.init (0,0)
   , events = Log.init
   , debugPath = []
-  , illuminated = []
+  , illuminated = Set.empty --[]
   , hallsEscaped = False
   , showMap = False
   , age = 0
   , language = []
+  , animateEntities = []
   }
 
 
@@ -359,7 +361,7 @@ playerViewsField model =
             , illuminated = locations
     }
 
-illuminate : Point -> Model -> List Point
+illuminate : Point -> Model -> Set Point
 illuminate source model =
   let
     perimeter =
@@ -425,13 +427,18 @@ playerWears item model =
       { model | player = model.player |> Warrior.wearArmor armor }
 
     Item.Jewelry ring ->
-      let player' =
-        model.player
-        |> Warrior.wearRing ring
-        |> Warrior.learnsWord (Language.wordFor (Spell.idea (Ring.spell ring)) model.language)
+      let
+        player' =
+          model.player
+          |> Warrior.wearRing ring
+
+        word =
+          model.language
+          |> Language.wordFor (Spell.idea (Ring.spell ring))
       in
         { model | player = player' }
                 |> playerViewsField -- could be ring of light..
+                |> playerLearnsWord word
 
     Item.Headgear helm ->
       { model | player = model.player |> Warrior.wearHelm helm }
@@ -457,15 +464,22 @@ playerDrinks : Item -> Model -> Model
 playerDrinks item model =
   case item.kind of
     Item.Bottle liquid ->
-      let 
+      let
         player' =
           model.player
           |> Warrior.drink liquid
-          |> Warrior.learnsWord (Language.wordFor (Liquid.idea liquid) model.language)
+
+        word =
+          Language.wordFor (Liquid.idea liquid) model.language
       in
-      { model | player = player' }
+        { model | player = player' }
+                |> playerLearnsWord word
 
     _ -> model
+
+playerLearnsWord : Word -> Model -> Model
+playerLearnsWord word model =
+  { model | player = model.player |> Warrior.learnsWord word }
 
 playerSheathesWeapon : Model -> Model
 playerSheathesWeapon model =
@@ -537,7 +551,36 @@ enchantItem item model =
       }
   in
     { model | player = player' }
+            |> playerViewsField -- could be enchanting ring of light..
 
+
+hitCreatureAt : Point -> Item -> Model -> Model
+hitCreatureAt pt item model =
+  case (level model) |> Level.creatureAt pt of
+    Just creature ->
+      let
+        (dungeon', events) =
+          model.dungeon
+          |> Dungeon.apply (Level.hitCreatureWith item creature) model.depth
+          |> Dungeon.purge model.depth
+          -- todo need event here if we hit something...
+
+        newEvents =
+          (Event.attack creature (Item.thrownDamage item)) :: events
+
+        model' =
+          { model | dungeon = dungeon'
+                  , events  = model.events ++ newEvents
+                  }
+      in
+         -- we could have killed a creature (destroyed a view obstacle)
+         model'
+         |> playerViewsField
+
+    Nothing ->
+      model
+
+ --model
 
 deathEvent : Model -> Maybe Event
 deathEvent model =
@@ -564,10 +607,10 @@ listInvisibleEntities model =
     |> List.filterMap (\pt -> model |> entityAt pt)
     |> List.map (Entity.imaginary)
 
+-- todo try to optimize further -- almost 10% of our time is spent here :/
 listRememberedEntities : Model -> List Entity
 listRememberedEntities model =
   model.illuminated
-  |> Set.fromList
   |> Set.diff (viewed model)
   |> Set.toList
   |> List.filterMap (\pt -> model |> entityAt pt)
@@ -578,6 +621,7 @@ listEntities model =
   let
     litEntities =
       model.illuminated
+      |> Set.toList
       |> List.filterMap (\pt -> model |> entityAt pt)
 
     memoryEntities =
@@ -595,6 +639,7 @@ view model =
   let
     entities =
       listEntities model
+      ++ model.animateEntities
 
     entityViews =
       List.map (Entity.view) entities

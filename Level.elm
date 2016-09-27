@@ -1,4 +1,4 @@
-module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entityAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass, viewFrontier)
+module Level exposing (Level, init, fromRooms, finalize, moveCreatures, injureCreature, purge, collectCoin, isCoin, isEntrance, isCreature, creatureAt, entityAt, playerSees, itemAt, removeItem, crystalLocation, extrude, evolveGrass, viewFrontier, addItem, hitCreatureWith)
 
 
 import Point exposing (Point)
@@ -283,16 +283,17 @@ detectFrontier explored unexplored model =
   |> Set.toList
   |> List.concatMap Point.adjacent
   |> Set.fromList
+  --|> Set.diff unexplored ??
   |> Set.intersect explored
 
 -- HELPERS (for update)
 
-playerSees : List Point -> Level -> Level
+playerSees : Set Point -> Level -> Level
 playerSees pts model =
   let
     viewed' =
       (model.viewed)
-      |> Set.union (pts |> Set.fromList)
+      |> Set.union (pts) -- |> Set.fromList)
       --|> Set.toList
   in
     { model | viewed = viewed' }
@@ -395,20 +396,40 @@ playerDies cause (model, events, player) =
   else
     (model, events, player)
 
-
 injureCreature : Creature.Model -> Int -> Level -> Level
 injureCreature creature amount model =
   let
+    injure = \creature' ->
+      creature'
+      |> Creature.injure amount
+      |> Creature.engage
+  in
+    alterCreature injure creature model
+
+hitCreatureWith : Item -> Creature.Model -> Level -> Level
+hitCreatureWith item creature model =
+  let
+    damage =
+      Item.thrownDamage item
+  in
+    model
+    |> injureCreature creature damage
+
+alterCreature : (Creature.Model -> Creature.Model) -> Creature.Model -> Level -> Level
+alterCreature alter creature model =
+  let
+    alter' = \c ->
+      if c.id == creature.id then
+        alter c
+      else
+        c
+
     creatures' =
       model.creatures
-      |> List.map (\c ->
-        if c.id == creature.id then
-           c
-           |> Creature.injure amount
-           |> Creature.engage
-        else c)
+      |> List.map alter'
   in
     { model | creatures = creatures' }
+
 
 purge : Level -> (Level, List Event)
 purge model =
@@ -670,7 +691,8 @@ furnishRoomFor purpose room depth model =
     itemKinds =
       case purpose of
         Armory ->
-          [ Item.helm Helm.cap
+          [ Item.javelin
+          , Item.helm Helm.cap
           , Item.scroll Spell.infuse
           , Item.bottle Liquid.water
           , Item.weapon Weapon.dagger
@@ -679,7 +701,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Barracks ->
-          [ Item.helm Helm.helmet
+          [ Item.javelin
+          , Item.helm Helm.helmet
           , Item.scroll Spell.infuse
           , Item.weapon Weapon.sword
           , Item.bottle Liquid.water
@@ -689,7 +712,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         Library ->
-          [ Item.ring Ring.light
+          [ Item.javelin
+          , Item.ring Ring.light
           , Item.scroll Spell.infuse
           , Item.bottle Liquid.water
           , Item.scroll Spell.lux
@@ -698,7 +722,8 @@ furnishRoomFor purpose room depth model =
           ]
 
         MiningCamp ->
-          [ Item.ring Ring.power
+          [ Item.javelin
+          , Item.ring Ring.power
           , Item.weapon Weapon.pick
           , Item.bottle Liquid.water
           , Item.scroll Spell.lux

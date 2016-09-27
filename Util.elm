@@ -9,7 +9,7 @@ import String
 
 
 alphabet =
-  ['a','b','c','e','f','g','h','j','k','l','m','n','o','p','q','r','s','t','u','v','x','y','z','-']
+  ['b','c','e','f','g','m','n','o','p','q','r','s','t','u','v','x','y','z','-']
 
 toAlpha : Int -> String
 toAlpha idx =
