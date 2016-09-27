@@ -527,18 +527,13 @@ resetAuto : Engine -> Engine
 resetAuto model =
   { model | auto = False }
 
-pointFromMouse : Mouse.Position -> Point
-pointFromMouse {x,y} =
-  let scale = Configuration.viewScale in
-  ( x//scale
-  , (y//scale)+1
-  )
 
-hoverAt : Mouse.Position -> Engine -> Engine
-hoverAt position model =
+hoverAt : Point -> Engine -> Engine
+hoverAt pt model =
   let
     point =
-      pointFromMouse position
+      pt
+      --pointFromMouse position
 
     isLit =
       Set.member point (model.world.illuminated)
