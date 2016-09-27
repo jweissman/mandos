@@ -17187,15 +17187,37 @@ var _jweissman$rogue$Main$view = function (model) {
 var _jweissman$rogue$Main$pointFromMouse = F2(
 	function (_p1, model) {
 		var _p2 = _p1;
-		var xScale = _jweissman$rogue$Configuration$viewWidth / _elm_lang$core$Basics$toFloat(model.width);
-		var yScale = _jweissman$rogue$Configuration$viewHeight / _elm_lang$core$Basics$toFloat(model.height);
-		return {
-			ctor: '_Tuple2',
-			_0: _elm_lang$core$Basics$round(
-				_elm_lang$core$Basics$toFloat(_p2.x) * yScale),
-			_1: _elm_lang$core$Basics$round(
-				_elm_lang$core$Basics$toFloat(_p2.y) * yScale)
-		};
+		var _p4 = _p2.y;
+		var _p3 = _p2.x;
+		if (_elm_lang$core$Native_Utils.cmp(model.height, model.width) > 0) {
+			var scale = _elm_lang$core$Basics$toFloat(model.width);
+			var yScale = _jweissman$rogue$Configuration$viewHeight / (scale * (40 / 60));
+			var xScale = _jweissman$rogue$Configuration$viewWidth / scale;
+			return A2(
+				_elm_lang$core$Debug$log,
+				'pt',
+				{
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Basics$round(
+						_elm_lang$core$Basics$toFloat(_p3) * xScale),
+					_1: _elm_lang$core$Basics$round(
+						_elm_lang$core$Basics$toFloat(_p4) * yScale)
+				});
+		} else {
+			var scale = _elm_lang$core$Basics$toFloat(model.height);
+			var yScale = _jweissman$rogue$Configuration$viewHeight / scale;
+			var xScale = _jweissman$rogue$Configuration$viewWidth / (scale * (60 / 40));
+			return A2(
+				_elm_lang$core$Debug$log,
+				'pt',
+				{
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Basics$round(
+						_elm_lang$core$Basics$toFloat(_p3) * xScale),
+					_1: _elm_lang$core$Basics$round(
+						_elm_lang$core$Basics$toFloat(_p4) * yScale)
+				});
+		}
 	});
 var _jweissman$rogue$Main$Model = F7(
 	function (a, b, c, d, e, f, g) {
@@ -17213,11 +17235,11 @@ var _jweissman$rogue$Main$inferState = function (model) {
 		if (won) {
 			return _jweissman$rogue$Main$Victory;
 		} else {
-			var _p3 = deathEvent;
-			if (_p3.ctor === 'Just') {
-				var _p4 = _p3._0;
-				if (_p4.ctor === 'Death') {
-					return _jweissman$rogue$Main$Death(_p4._0);
+			var _p5 = deathEvent;
+			if (_p5.ctor === 'Just') {
+				var _p6 = _p5._0;
+				if (_p6.ctor === 'Death') {
+					return _jweissman$rogue$Main$Death(_p6._0);
 				} else {
 					return _jweissman$rogue$Main$Death('unknown causes');
 				}
@@ -17250,7 +17272,7 @@ var _jweissman$rogue$Main$init = {
 	_0: {engine: _jweissman$rogue$Engine$init, state: _jweissman$rogue$Main$Splash, generationUnderway: false, ticks: 0, autoplay: false, width: 0, height: 0},
 	_1: A3(
 		_elm_lang$core$Task$perform,
-		function (_p5) {
+		function (_p7) {
 			return _jweissman$rogue$Main$NoOp;
 		},
 		_jweissman$rogue$Main$sizeToMsg,
@@ -17269,8 +17291,8 @@ var _jweissman$rogue$Main$generateMap = A2(
 	_jweissman$rogue$Dungeon$generate(_jweissman$rogue$Configuration$levelCount));
 var _jweissman$rogue$Main$update = F2(
 	function (message, model) {
-		var _p6 = message;
-		switch (_p6.ctor) {
+		var _p8 = message;
+		switch (_p8.ctor) {
 			case 'NoOp':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 			case 'ResizeWindow':
@@ -17278,7 +17300,7 @@ var _jweissman$rogue$Main$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{width: _p6._0._0, height: _p6._0._1}),
+						{width: _p8._0._0, height: _p8._0._1}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'MapMsg':
@@ -17287,7 +17309,7 @@ var _jweissman$rogue$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							engine: A2(_jweissman$rogue$Engine$enter, _p6._0, model.engine)
+							engine: A2(_jweissman$rogue$Engine$enter, _p8._0, model.engine)
 						}),
 					_1: _jweissman$rogue$Main$generateLanguage
 				};
@@ -17297,7 +17319,7 @@ var _jweissman$rogue$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							engine: A2(_jweissman$rogue$Engine$speak, _p6._0, model.engine),
+							engine: A2(_jweissman$rogue$Engine$speak, _p8._0, model.engine),
 							state: _jweissman$rogue$Main$Playing
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
@@ -17308,7 +17330,7 @@ var _jweissman$rogue$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							engine: A2(_jweissman$rogue$Engine$clickAt, _p6._0, model.engine)
+							engine: A2(_jweissman$rogue$Engine$clickAt, _p8._0, model.engine)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -17320,14 +17342,14 @@ var _jweissman$rogue$Main$update = F2(
 						{
 							engine: A2(
 								_jweissman$rogue$Engine$hoverAt,
-								A2(_jweissman$rogue$Main$pointFromMouse, _p6._0, model),
+								A2(_jweissman$rogue$Main$pointFromMouse, _p8._0, model),
 								model.engine)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'TickMsg':
-				var _p7 = model.state;
-				switch (_p7.ctor) {
+				var _p9 = model.state;
+				switch (_p9.ctor) {
 					case 'Playing':
 						var model$ = model.autoplay ? _elm_lang$core$Native_Utils.update(
 							model,
@@ -17342,7 +17364,7 @@ var _jweissman$rogue$Main$update = F2(
 								_elm_lang$core$Native_Utils.update(
 									model$,
 									{
-										engine: A2(_jweissman$rogue$Engine$tick, _p6._0, model$.engine)
+										engine: A2(_jweissman$rogue$Engine$tick, _p8._0, model$.engine)
 									})),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
@@ -17373,8 +17395,8 @@ var _jweissman$rogue$Main$update = F2(
 						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				}
 			default:
-				var _p8 = model.state;
-				switch (_p8.ctor) {
+				var _p10 = model.state;
+				switch (_p10.ctor) {
 					case 'Splash':
 						return {
 							ctor: '_Tuple2',
@@ -17400,7 +17422,7 @@ var _jweissman$rogue$Main$update = F2(
 					case 'Generating':
 						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 					default:
-						var keyChar = _elm_lang$core$Char$fromCode(_p6._0);
+						var keyChar = _elm_lang$core$Char$fromCode(_p8._0);
 						var engine$ = _jweissman$rogue$Engine$resetHover(
 							A2(_jweissman$rogue$Engine$handleKeypress, keyChar, model.engine));
 						return {
